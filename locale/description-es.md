@@ -1,11 +1,9 @@
-# Custom Projectiles 1.7.0
+# Custom Projectiles 1.8.0
 
-Elige proyectiles, tamaños de salva e intervalos de disparo automático para los 77 tipos de unidades. Las catapultas pueden lanzar piedras de mangonel; las torres de asedio y las unidades cuerpo a cuerpo pueden obtener un ataque a distancia automático.
+Configura los 77 tipos de unidades mediante YAML. La munición normal y las vacas se ajustan por separado. Los intervalos respetan las animaciones de disparo compatibles; inaccuracy usa unidades nativas: 1 = 1/8 de casilla, 8 = 1 casilla, 0 = puntería exacta.
 
 Copia vanilla-projectiles.yml del ZIP del módulo a ucp/resources/custom-projectiles/, edita la copia y selecciónala aquí. Los ajustes omitidos no cambian; una ruta vacía no aplica cambios. Las reglas UCP de valores obligatorios o sugeridos se aplican al archivo seleccionado en su conjunto. Reinicia el juego tras los cambios.
 
-Requiere UCP 3.0.7+, map-extensions 1.x y Crusader/Extreme 1.41. Los 33 ajustes y 77 nombres de unidades se documentan en vanilla-projectiles.yml y README.md. Versión de prueba local; la validación en el juego sigue pendiente.
+Gráficos propios: añade un nombre en projectiles con inherits y sprites (archivo GM1 completo y compatible). Define decorations y las reglas near_decorations de las unidades; colócalas mediante el botón del brasero. Formatos: README.md y examples/custom-sprites-and-decorations.yml.
 
-Precisión: inaccuracy usa unidades enteras del juego: 1 = 1/8 de casilla, 8 = 1 casilla. 0 elimina el error aleatorio; omitirlo conserva la precisión original. spread es independiente.
-
-Unidades de disparo compatibles (consulta README.md): interval sigue la animación de disparo sin acortarla. sync_to_animation: false restaura el temporizador independiente. Inicia una partida nueva tras actualizar.
+Requiere UCP 3.0.7+, Crusader/Extreme 1.41 y las dependencias del módulo. Versión de prueba; consulta VALIDATION.md.

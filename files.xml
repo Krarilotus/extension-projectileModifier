@@ -9,6 +9,14 @@
     <file src="constants.lua" />
     <file src="templates.lua" />
     <file src="cadence.lua" />
+    <file src="mounted.lua" />
+    <file src="hunter.lua" />
+    <file src="sprite_resources.lua" />
+    <file src="sprite_runtime.lua" />
+    <file src="decorations.lua" />
+    <file src="decoration_runtime.lua" />
+    <file src="decoration_ui.lua" />
+    <file src="ui" />
     <file src="configuration.lua" />
     <file src="state.lua" />
     <file src="example-projectiles.yml" />

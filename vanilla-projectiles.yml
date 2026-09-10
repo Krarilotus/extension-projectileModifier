@@ -60,6 +60,7 @@
 #   sync_to_animation: true      # Default for catapult/trebuchet/mangonel/ballistas:
 #                               # native release frame; interval cannot cut the cycle.
 #                               # Also foot archers/crossbowmen/slingers/firethrowers.
+#                               # Horse archers keep moving; hunters keep work states.
 #                               # Crew/stance holds do not pause native cooldowns.
 #                               # false restores their old independent timer.
 #                               # Other units default false; true uses legacy wait.
@@ -71,6 +72,22 @@
 #     projectile: crossbow_bolt # Other fields inherit this unit's base settings.
 #     count: 2
 #                              # Stepping off restores the base settings.
+#   near_decorations:           # First nearby matching rule wins; inherits base/wall fields.
+#     - decoration: training    # Must name an entry in top-level decorations.
+#       projectile: arrow
+#       count: 2
+#
+# Optional top-level definitions (alongside units, not inside a unit):
+# projectiles:
+#   training_arrow:
+#     inherits: arrow           # Native damage/flight behavior; only sprites change.
+#     sprites: gm/body_missile.gm1 # Complete matching sheet; copy/edit your own GM1.
+# decorations:
+#   training:
+#     label: Training brazier   # Optional build-menu label.
+#     sprites: gm/body_brazier.gm1 # Optional: 8 images, GM1 type 6; native look if omitted.
+# Build via the brazier button. Rules use its 3-tile square and height difference <45.
+# Projectile sheets/formats: README.md; runnable example: examples/custom-sprites-and-decorations.yml.
 #
 # Any interval setting enables automatic fire; no base interval is required.
 # With automatic fire, suppress_default defaults to true and projectile defaults

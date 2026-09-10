@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=../projectile-config.schema.json
+# Runnable example using your game's existing GM1 files; no artwork is bundled.
+# Copy the matching sheet, edit its frames, and point sprites to the edited copy
+# under ucp/resources/custom-projectiles/ to give each variant a distinct look.
+projectiles:
+  training_arrow:
+    inherits: arrow
+    sprites: gm/body_missile.gm1 # Complete sheet: 184 images, GM1 type 2.
+decorations:
+  training_brazier:
+    label: Training brazier
+    sprites: gm/body_brazier.gm1 # Complete sheet: 8 images, GM1 type 6.
+units:
+  European archer:
+    near_decorations:
+      - decoration: training_brazier
+        projectile: training_arrow
+        count: 2
+  Catapult:
+    projectile: mangonel_pebble
+    # The regular ammunition changes; native cow ammunition stays untouched.

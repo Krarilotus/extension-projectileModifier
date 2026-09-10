@@ -134,6 +134,12 @@ pf_invalid:
 pf_done:
     cmp eax, MAXPROFILES
     jae pf_return
+    if HASDECOR = 1
+        push eax
+        push dword [esp+20]
+        call DECORPROFILE
+        add esp, 8
+    end if
     mov ecx, [esp+16]
     cmp dword [PROFILESTATET+ecx*4], eax
     je pf_return
@@ -559,9 +565,13 @@ h_unscheduled:
     cmp dword [SUPPRESST+eax*4], 0
     jne h_block
     mov ecx, [REMAPT+eax*4]
+    mov ebx, [SPRITET+eax*4]
+    mov [CURRENTVARIANT], ebx
     mov edx, [COUNTT+eax*4]
     jmp h_count
 h_cow:
+    mov ebx, [COWSPRITET+eax*4]
+    mov [CURRENTVARIANT], ebx
     mov ecx, [COWREMAPT+eax*4]
     mov edx, [COWCOUNTT+eax*4]
     test edx, edx
@@ -1081,6 +1091,8 @@ wc_no:
 ammo_code = [[
 chooseAmmo:
     pushad
+    mov ecx, [SPRITET+edx*4]
+    mov [CURRENTVARIANT], ecx
     mov ecx, [FORCEDT+edx*4]
     mov [S_PROJ], ecx
     mov ecx, [COUNTT+edx*4]
@@ -1112,6 +1124,8 @@ ca_regularcount:
     mov ecx, 23
 ca_cowtype:
     mov [S_PROJ], ecx
+    mov ecx, [COWSPRITET+edx*4]
+    mov [CURRENTVARIANT], ecx
     mov ecx, [COWCOUNTT+edx*4]
     mov [S_VOLLEYCOUNT], ecx
 ca_done:
@@ -1311,6 +1325,9 @@ t_newunit:
     mov dword [PENDINGT+eax*4], 0
     mov dword [PENDCDT+eax*4], 0
     mov dword [SYNCWAITT+eax*4], 0
+    mov dword [WEAPONCYCLET+eax*4], 0
+    mov dword [WEAPONTICKT+eax*4], 0
+    mov dword [WEAPONPHASET+eax*4], 0
     movzx ecx, word [edx+UNITARRAY+0xB6]
     shl ecx, 16
     movzx ebx, word [edx+UNITARRAY+0xB8]
@@ -1499,6 +1516,7 @@ tickHook:
     mov dword [NATIVEINTT+eax*4], -1
     mov dword [NATIVEBLOCKT+eax*4], 1
     mov dword [NATIVESEENT+eax*4], 0
+    mov dword [WEAPONSEENT+eax*4], 0
     mov edx, eax
     imul edx, edx, 0x490
     push eax

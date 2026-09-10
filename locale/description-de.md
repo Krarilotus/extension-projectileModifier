@@ -1,11 +1,9 @@
-# Custom Projectiles 1.7.0
+# Custom Projectiles 1.8.0
 
-Geschosse, Salvenstärken und automatische Schussintervalle für alle 77 Einheitentypen einstellen. Katapulte können Mangonelsteine verschießen; Belagerungstürme und Nahkämpfer können einen automatischen Fernkampfangriff erhalten.
+Alle 77 Einheitentypen per YAML einstellen. Normale Munition und Kühe sind unabhängig. Intervalle beachten unterstützte Schussanimationen; inaccuracy nutzt native Einheiten: 1 = 1/8 Feld, 8 = 1 Feld, 0 = genaues Zielen.
 
 vanilla-projectiles.yml aus dem Modul-ZIP nach ucp/resources/custom-projectiles/ kopieren, dort bearbeiten und hier auswählen. Ausgelassene Einstellungen bleiben unverändert; ein leerer Pfad bewirkt keine Änderungen. Die UCP-Regeln für erforderliche und vorgeschlagene Werte gelten für die gesamte Dateiauswahl. Nach Änderungen das Spiel neu starten.
 
-Benötigt UCP 3.0.7+, map-extensions 1.x und Crusader/Extreme 1.41. Alle 33 Einstellungen und 77 Einheitennamen sind in vanilla-projectiles.yml und README.md dokumentiert. Lokale Testversion; die Abnahme im Spiel steht noch aus.
+Eigene Grafik: unter projectiles einen Namen mit inherits und sprites anlegen (vollständige passende GM1-Datei). Dekorationen unter decorations und Einheitenregeln unter near_decorations definieren; über die Feuerkorb-Schaltfläche bauen. Formate: README.md und examples/custom-sprites-and-decorations.yml.
 
-Genauigkeit: inaccuracy nutzt ganze native Koordinateneinheiten: 1 = 1/8 Kachel, 8 = 1 Kachel. 0 entfernt zufällige Zielfehler; Weglassen erhält die ursprüngliche Genauigkeit. spread wirkt separat.
-
-Unterstützte Fernkampfeinheiten (siehe README.md): interval folgt der Schussanimation, ohne sie zu verkürzen. sync_to_animation: false stellt den unabhängigen Timer wieder her. Nach dem Update eine neue Partie starten.
+Benötigt UCP 3.0.7+, Crusader/Extreme 1.41 und die Modulabhängigkeiten. Testversion; siehe VALIDATION.md.

@@ -32,10 +32,10 @@ local function object(value, path)
     if type(value) ~= 'table' then fail(path, 'expected a mapping') end
 end
 
-local function validate_flat(config)
+local function validate_flat(config, variants)
     object(config, 'config')
     for key in pairs(config) do
-        if key ~= 'units' then fail(tostring(key), 'unknown section; expected units') end
+        if key ~= 'units' and key ~= 'projectiles' and key ~= 'decorations' then fail(tostring(key), 'unknown section; expected units, projectiles or decorations') end
     end
     local units = config.units
     if units == nil then units = {} end
@@ -60,8 +60,9 @@ local function validate_flat(config)
                 if type(value) ~= 'boolean' then fail(field, 'expected true or false') end
                 out[key] = value
             elseif key == 'projectile' or key == 'cow_projectile' then
-                local id = type(value) == 'string' and constants.projectile_names[value] or value
-                if not projectile_ids[id] then fail(field, 'unknown or unsafe projectile type') end
+                local variant = variants and variants[value]
+                local id = variant and variant.id or (type(value) == 'string' and constants.projectile_names[value] or value)
+                if not variant and not projectile_ids[id] then fail(field, 'unknown or unsafe projectile type') end
                 out[key] = id
             elseif key == 'targets' then
                 if type(value) == 'string' then value = {value} end
@@ -122,6 +123,9 @@ end
 
 function M.validate(config)
     object(config, 'config')
+    local variants = require('sprite_resources').definitions(config.projectiles)
+    local decorations = require('decorations')
+    local definitions = decorations.definitions(config.decorations)
     local units = config.units
     if units == nil then units = {} end
     object(units, 'units')
@@ -130,7 +134,7 @@ function M.validate(config)
         object(settings, 'units.' .. tostring(name))
         local base = {}
         for key, value in pairs(settings) do
-            if key ~= 'on_fortification' then base[key] = value end
+            if key ~= 'on_fortification' and key ~= 'near_decorations' then base[key] = value end
         end
         plain[name] = base
         if settings.on_fortification ~= nil then
@@ -156,11 +160,43 @@ function M.validate(config)
     local copied = {}
     for key, value in pairs(config) do copied[key] = value end
     copied.units = plain
-    local result = validate_flat(copied)
-    local alternates = validate_flat({units=fortified})
+    local result = validate_flat(copied, variants)
+    local alternates = validate_flat({units=fortified}, variants)
+    if next(variants) then result.projectiles = variants end
+    if next(definitions) then result.decorations = definitions end
     for name in pairs(fortified) do
         result.units[name] = result.units[name] or {}
         result.units[name].on_fortification = alternates.units[name] or {}
+    end
+    for name, settings in pairs(units) do
+        local rules = decorations.rules(settings.near_decorations, definitions, name)
+        if #rules > 0 then
+            local function effective(parent, fields)
+                local merged = {}
+                for key, value in pairs(parent) do merged[key] = value end
+                for key, value in pairs(fields) do
+                    merged[key] = value
+                    if key == 'spread' or key == 'inaccuracy' then merged[key .. '_tiles'] = nil end
+                    if key == 'spread_tiles' then merged.spread = nil end
+                    if key == 'inaccuracy_tiles' then merged.inaccuracy = nil end
+                end
+                return validate_flat({units={[name]=merged}}, variants).units[name] or {}
+            end
+            for _, rule in ipairs(rules) do
+                -- Validate sparse fields as part of their effective profile,
+                -- so inherited interval/stagger dependencies remain meaningful.
+                for _, key in ipairs({'spread', 'inaccuracy'}) do
+                    if rule.fields[key] ~= nil and rule.fields[key .. '_tiles'] ~= nil then
+                        fail('units.' .. name .. '.near_decorations', 'use only one accuracy/spread unit system')
+                    end
+                end
+                rule.ground = effective(plain[name], rule.fields)
+                rule.fortified = effective(fortified[name] or plain[name], rule.fields)
+                rule.fields = nil
+            end
+            result.units[name] = result.units[name] or {}
+            result.units[name].near_decorations = rules
+        end
     end
     return result
 end

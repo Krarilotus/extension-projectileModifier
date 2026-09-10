@@ -16,11 +16,14 @@ generate_vanilla()
 (ROOT/'projectile-config.schema.json').write_text(
     json.dumps(build_schema(), ensure_ascii=False, indent=2)+'\n', encoding='utf-8', newline='\n')
 files=['definition.yml','options.yml','init.lua','addresses.lua','constants.lua',
-       'templates.lua','cadence.lua','configuration.lua','state.lua','example-projectiles.yml',
+       'templates.lua','cadence.lua','mounted.lua','hunter.lua','configuration.lua','state.lua','example-projectiles.yml',
+       'sprite_resources.lua','sprite_runtime.lua',
+       'decorations.lua','decoration_runtime.lua','decoration_ui.lua','ui/decorations.lua',
        'all-settings-reference.yml','README.md','CHANGELOG.md','VALIDATION.md','IMPLEMENTATION-TODO.md',
        'projectile-config.schema.json','GUI-AUDIT.md','vanilla-projectiles.yml',
        'examples/ucp-plugin-required.yml','examples/ucp-plugin-suggested.yml',
        'examples/ucp-plugin-unspecified.yml']
+files.append('examples/custom-sprites-and-decorations.yml')
 for lang in LANGUAGES:
     files.extend([f'locale/{lang}.yml', f'locale/description-{lang}.md'])
 

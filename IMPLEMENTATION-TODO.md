@@ -1,48 +1,38 @@
-# Remaining implementation
+# Implementation and acceptance checklist
 
-Only checked items have implementation evidence. This checklist is not a release
-or live acceptance report; see VALIDATION.md for the test boundaries.
+Implementation is complete for the requested scope. Checked items have code and
+automated evidence; live release acceptance is listed separately below.
 
-- [ ] Reload-animation timing
-  - [x] Native artillery release hold: preserve release frame and ammunition
-    (catapult, trebuchet, mangonel and both ballistas; both EXEs).
-  - [x] Integrate siege interval/state/crew/target and volley scheduling.
-  - [x] Preserve siege native cycle minimum, omitted mangonel count, cow settings,
-    bounded target polling and saved continuation.
-  - [x] Cover native foot infantry animations and loaded target handoff
-    (European/Arabian foot archers, crossbowmen, slingers and firethrowers).
-  - [ ] Cover mounted ranged animations without freezing movement.
-  - [ ] Live animation/crew/multiplayer acceptance and remaining ranged units.
-- [ ] Named custom projectiles with independent GM1 sprites
-  - Scope agreed: inherit the native base's damage and flight behavior; custom
-    sprites only. Do not add independent damage/speed settings.
-  - [ ] Validate GM1 compatibility, native capacity and load ownership.
-  - [ ] Implement per-projectile selection, persistence and config validation.
-- [ ] Build-menu decorations with proximity projectile overrides
-  - [ ] Synchronized variant selection, placement, removal and save/load.
-  - [ ] Proximity/height checks and deterministic override precedence.
-- [ ] Final localized instructions, private Reconquista tester preset and PR update.
+- [x] Native reload timing for all 12 ranged types: five siege engines, five foot
+  shooters, horse archers and hunters. Preserve release frames/minimum cycles,
+  movement, stance/crew/target gating, volleys and saved continuation.
+- [x] Configurable projectile behavior for all 77 unit types; independent regular
+  and cow ammunition; stance-only rates and fallback intervals.
+- [x] Native accuracy units: 0 exact, 1 = 1/8 tile, 8 = one tile; sparse wall overrides.
+- [x] Named custom projectiles inheriting native damage/flight behavior, with
+  independent complete GM1 sprites, format/capacity checks and saved identities.
+- [x] Build-menu decoration selection using the standard UCP modal and native
+  brazier cursor, deterministic lockstep payload, cost/ownership checks and removal.
+- [x] Ordered decoration proximity overrides with native distance/height bounds,
+  separate ordinary brazier effects, bounded spatial lookup and save/load.
+- [x] Config-only GUI: one Legacy Balance Changes file picker with standard UCP
+  required/suggested/unspecified handling, all nine locale catalogs and previews.
+- [x] Inert vanilla configuration, full setting reference, editor schema and a
+  runnable custom-sprite/decorations example without distributed game artwork.
 
-Live rendering, multiplayer and replay acceptance remain separate from emulator
-checks. Research or an isolated helper does not complete a feature.
+## Delivery
 
-## Next integration boundaries
+- [x] Final full regression/archive checks and private Reconquista 1.8 tester bundle.
+- [x] Prepare source and store PR update for 1.8.0 (base 3.0.7), including TL;DR
+  and testing instructions. Release acceptance remains open below.
 
-- Horse archers share the main animation counter with movement. Hold only the
-  weapon animation; do not freeze the horse's movement cycle. Hunters use a
-  separate working/attack state machine and still need their own integration.
-- Custom sprite scope is inherited native behavior plus a separate GM1 sheet.
-  Native launch probes identify `body_missile` (184 images), `body_missile_2`
-  (144), `body_missile_cow` (29), `body_missile_fire` (144), and `rock_chips`
-  (32). The first four use GM1 type 2, rock chips type 1. A matching complete
-  base sheet is the initial compatibility target, not arbitrary frame indices.
-- Investigate cloning a loaded base sheet into unused GM slots, then applying
-  gmResourceModifier's resource conversion/replacement. Its SetGm API alone
-  cannot initialize an empty slot. Validate the actual post-load image count
-  against the 66,000 image-header capacity, reserve unoccupied GM IDs below 240,
-  and verify ownership, rendering, impact transitions and saved identity.
-  The original filename list leaves 33 slots; other modules may use them.
-- Decoration placement's native command carries only tile X/Y. A custom variant
-  must travel through the synchronized command, not receiver-local UI state.
-  Audit encoding/validation, menu placement, removal and save/replay paths before
-  implementing a deterministic proximity index. This remains unimplemented.
+## Release acceptance still requiring live play
+
+- [ ] Rendered animation, sprites and build-menu interaction on both EXEs.
+- [ ] Intended Legacy/Rebalancer combinations and long crowded sessions.
+- [ ] Paired multiplayer, recorder/replay and save/load during active firing.
+
+See VALIDATION.md for exact automated boundaries and manual testing steps. The
+isolated developer-game security prompt needs manual user handling before live
+checks; the shared desktop is not reserved while waiting. No signed release or
+merge is implied by implementation completion.

@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.8.0 (unreleased test candidate)
+
+- Complete native reload timing for horse archers and hunters. Mounted weapon
+  timing leaves the horse's movement animation running; hunter firing retains
+  the native bow script, facing and unrelated work states.
+- Add named projectiles inheriting native damage/flight behavior with independent
+  complete GM1 sheets. Validate formats, image tokens and shared graphics capacity;
+  keep pixel allocation/conversion owned by gmResourceModifier.
+- Add build-menu decoration variants using the standard UCP modal and native
+  brazier placement. Synchronize selection through a dedicated lockstep command;
+  preserve native cost, wall/tower ownership, placement validity and removal.
+- Add ordered near_decorations overrides with native brazier distance/height
+  semantics, a bounded spatial index, separate ordinary braziers and save/load.
+- Save format 5 preserves mounted clocks and projectile/decoration identities,
+  verifies sprite hashes and slot bindings, and rejects incompatible old state.
+- Ship an inert all-unit template, editor schema, runnable sprite/decorations
+  example and short instructions in all nine GUI locales. The customization tab
+  still contains only the standard file picker under Legacy's Balance Changes.
+
+Implementation is complete for the requested feature list. Rendered gameplay,
+paired multiplayer/replay and long-session acceptance remain required before
+release; see VALIDATION.md. No licensed graphics are distributed.
+
 ## 1.7.0 (unreleased test candidate)
 
 - Extend native reload timing to European/Arabian foot archers, crossbowmen,

@@ -1,19 +1,20 @@
-# Custom Projectiles 1.7.0 (test candidate)
+# Custom Projectiles 1.8.0 (test candidate)
 
 Configure projectile types, volley sizes and automatic firing for all 77 unit
 types using one readable YAML file. Based on Monsterfish's supplied 1.2.0 module.
-Requires UCP 3.0.7+, map-extensions 1.x and Crusader/Extreme 1.41.
+Requires UCP 3.0.7+, Crusader/Extreme 1.41 and the declared map-extensions,
+gmResourceModifier, protocol and ui dependencies (the launcher resolves them).
+The ui dependency requires launcher 1.0.12 or later.
 
 ## Installation and use
 
-Import `custom-projectiles-1.7.0.zip` into the launcher and enable the module and
-map-extensions. This unsigned local test candidate requires development module
+Import `custom-projectiles-1.8.0.zip` into the launcher and enable the module and its dependencies. This unsigned local test candidate requires development module
 loading. It is not a signed store release; see VALIDATION.md for test limits.
 
 Native reload timing covers catapults, trebuchets, mangonels, both ballistas,
-European/Arabian foot archers, crossbowmen, slingers and firethrowers.
-**Unfinished:** mounted/hunter animation timing, custom GM1
-projectiles and build-menu decoration triggers. Live acceptance remains pending.
+European/Arabian foot archers, crossbowmen, slingers, firethrowers, horse archers
+and hunters. Named GM1 variants and placeable decoration triggers are implemented.
+See VALIDATION.md for the distinction between automated and live acceptance.
 
 There is **one file picker** under **Customizations → Balance Changes**. There
 are no per-unit sliders, dropdowns, checkboxes or hidden override controls.
@@ -26,7 +27,7 @@ Legacy's displayed category name, including its English fallback.
    directory, creating it if needed. Keep your editable file outside the module
    archive so replacing the module does not overwrite your settings.
 2. Edit the copy, then select it with the file picker. The vanilla file lists all
-   77 units with empty `{}` mappings and documents all 33 settings in comments.
+   77 units with empty `{}` mappings and documents the settings in comments.
    It makes no changes until you add settings. To edit a unit, replace its `{}`
    with indented fields.
 3. Restart the game after changing the selected file or its contents. No live
@@ -101,7 +102,7 @@ balance plugin; identical path strings alone are insufficient.
 Enable only `custom-projectiles`, disabling the old `projectileModifier` module.
 Move its file-selector settings and plugin dependency to the new module ID.
 Existing YAML preset paths may stay where they are; the new resource folder is
-a suggested location. Start a new match: saved simulation state uses format 4
+a suggested location. Start a new match: saved simulation state uses format 5
 and deliberately rejects older states with different timing semantics. The internal save-section key
 remains `projectileModifier` so old state is detected instead of silently reset.
 
@@ -123,16 +124,17 @@ The original projectile YAML format (`units: ...`) remains supported.
 - `count` sets 1–64 projectiles per volley. It replaces the mangonel's native
   seven-projectile volley. Leaving count unset preserves native volley size.
 - `interval` enables automatic fire, using the native projectile or arrows for
-  units without one unless a projectile is selected. For the ten native shooters
+  units without one unless a projectile is selected. For the twelve native shooters
   listed above, it controls starts of volleys on their native
   firing frame. Reload proceeds during the interval, then waits before release.
   Short intervals cannot cut the native animation cycle short. The mangonel
   retains seven projectiles when `count` is omitted.
-- These ten unit types use native animation timing by default. They finish movement
-  before starting an attack. `sync_to_animation: false` explicitly selects the
-  previous independent timer, including automatic fire while moving.
-  Other units currently retain that timer by default; native animation timing
-  for mounted archers and hunters remains unfinished.
+- These twelve unit types use native animation timing by default. Horse archers
+  have a separate bow clock, preserving their movement animation. Hunters keep
+  their non-shooting work states and turn toward configured targets. Other native
+  shooters finish movement before attacking. `sync_to_animation: false` selects
+  the independent timer, including automatic fire while moving. Other unit types
+  retain that timer by default; adding projectiles does not invent a new animation.
 - Native cooldowns continue during stance/crew holds; release waits until the
   unit is eligible. A loaded foot shooter rechecks its configured target before
   release. Target loss earlier in wind-up may restart the native attack cycle.
@@ -167,9 +169,10 @@ completion and validation; Lua also checks cross-field comparisons.
 
 | Setting | Values and defaults |
 |---|---|
-| `projectile`, `cow_projectile` | Names or verified numeric IDs from the catalog below; cow ammunition is independent |
+| `projectile`, `cow_projectile` | Native names/IDs below, or a name defined in `projectiles`; cow ammunition is independent |
 | `count` | 1–64; unset preserves native volley size |
 | `cow_count` | 1–64; unset preserves one native cow |
+| `near_decorations` | Ordered list of sparse rules, each with a `decoration` name; first nearby match wins; cannot nest triggers |
 | `on_fortification` | Sparse mapping of the same settings; inherits base fields; cannot nest itself |
 | `interval` | 1–60000 ticks; optional fallback automatic-fire interval |
 | `interval_moving`, `interval_standing` | 0–60000; independently enable firing; inherit fallback or hold fire if omitted |
@@ -191,7 +194,7 @@ completion and validation; Lua also checks cross-field comparisons.
 | `ai_cow_vs_units` | Boolean; automatic unit-targeted shots use cows if the owner's AIC enables them; default false; does not enforce the AIC cow interval |
 | `preload` | Boolean; more frequent target searches after reload; default false |
 | `preload_poll` | 1–60000 ticks, default 5; ordinary retries take at most 20 ticks |
-| `sync_to_animation` | Boolean; native reload timing defaults on for catapult/trebuchet/mangonel/both ballistas. False selects the independent timer. Other units default false; true uses their legacy bounded animation wait. |
+| `sync_to_animation` | Boolean; native reload timing defaults on for the twelve shooters listed above. False selects the independent timer. Other units default false; true uses their legacy bounded animation wait. |
 | `sync_max_wait` | 1–60000 ticks, default 40; only the legacy animation wait, never a bypass of a native firing frame |
 | `suppress_default` | Boolean; defaults true with any interval, false otherwise; unchanged native cow orders remain available |
 
@@ -243,17 +246,91 @@ Attachment requires a siege tower linked to a live placed-tower building with
 the matching UID. Boarding detection is proximity to target candidates, not a
 native climbing-state check. See the live visibility/boarding acceptance cases.
 
+## Named projectiles and placeable decorations
+
+`examples/custom-sprites-and-decorations.yml` is a runnable starting point. It
+uses the game's existing sheets, so its names initially have the native look.
+Copy a matching GM1 sheet, edit its artwork, and change `sprites` to your copy's
+path relative to the game folder, for example `ucp/resources/custom-projectiles/frost.gm1`.
+No game artwork is included in the module.
+
+```yaml
+projectiles:
+  frost_arrow:
+    inherits: arrow
+    sprites: ucp/resources/custom-projectiles/frost-arrow.gm1
+decorations:
+  frost:
+    label: Frost brazier
+    sprites: ucp/resources/custom-projectiles/frost-brazier.gm1
+units:
+  European archer:
+    near_decorations:
+      - decoration: frost
+        projectile: frost_arrow
+        count: 2
+```
+
+Named projectiles inherit the base's damage, trajectory, speed, collision and
+impact behavior. They change the flying projectile's sheet only; there are no
+independent damage/speed fields. Use the name wherever `projectile` or
+`cow_projectile` is accepted, including fortification and decoration rules.
+
+| Base projectile or decoration | Required complete GM1 sheet | Images | GM1 type |
+|---|---|---:|---:|
+| Arrows, crossbow bolts, catapult/trebuchet/mangonel stones | `body_missile.gm1` | 184 | 2 |
+| Ballista and fire-ballista bolts | `body_missile_2.gm1` | 144 | 2 |
+| Cows | `body_missile_cow.gm1` | 29 | 2 |
+| Fire arrows | `body_missile_fire.gm1` | 144 | 2 |
+| Slinger stones and firethrower pots | `rock_chips.gm1` | 32 | 1 |
+| Placeable decorations | `body_brazier.gm1` | 8 | 6 |
+
+Preserve frame order, count, format and anchors. Type 2 uses indexed pixels and
+its GM1 palette; types 1 and 6 use native RGB555 pixels. Frames must be
+self-contained, without tiled/linked-image metadata. The loader validates
+headers, dimensions, offsets and image tokens before handing pixels to the game.
+It rejects missing files, incompatible sheets, absolute paths and parent traversal.
+
+Open the **brazier button in the castle decorations build menu**. The standard
+UCP modal offers the original brazier followed by the configured decorations,
+eight choices per page. Select one, then place it with the normal brazier cursor.
+Native placement restrictions, wall/ownership checks, cost and removal still
+apply. Omit a decoration's `sprites` to retain the native brazier appearance.
+`label` is an optional short build-menu name (defaults to the configuration name);
+use text supported by the installed game's font.
+
+The first matching `near_decorations` rule wins. A match uses the native brazier
+three-tile square in each axis and a height difference below 45 native height
+units; ownership does not restrict proximity. Fortification fields are applied
+first, then the winning rule's sparse fields. Missing fields inherit; rules do
+not stack. Leaving a trigger cancels its pending volley without resetting the
+main reload cooldown. Custom decorations do not enable native brazier fire arrows
+unless the selected rule explicitly requests a fire projectile.
+
+Names use lowercase letters, digits, `_` or `-`, starting with a letter, at most
+48 characters. There are at most 33 projectile names, 33 decoration names and
+33 rules per unit. Graphics share the remaining native GM slots: normally 33
+for both features combined, fewer if another extension uses them. Identical
+base-sheet/path pairs share one slot. Loading refuses occupied slots or a total
+above the native 66,000-image capacity; it never overwrites another sheet.
+
+All peers need the same module versions, YAML and sprite bytes. Saves record
+variant identities and sheet hashes/slot bindings. Changing a sheet, name or
+binding requires restoring the original files to load that save, or starting
+a new match. Build selections travel in a lockstep command; remote execution
+does not depend on another player's currently selected menu item.
+
 ## Saves and compatibility
 
 The `map-extensions` section saves the random generator, identities, cooldowns,
-movement tracking and pending volleys. New maps and saves without this section
+movement tracking, pending volleys, mounted bow clocks and custom projectile/decoration identities. New maps and saves without this section
 initialize fresh state. Saved state with different settings is rejected: restore
 the settings used to make the save. Loading with this module disabled does not
 retain its gameplay changes.
 
 Rebalancer damage, speed and projectile physics tables remain owned by Rebalancer.
-This module hooks the unit projectile dispatcher, unit-update loop and two
-native aim-error stages. A module replacing these sites conflicts; startup
+This module hooks native firing, timing and aim-error stages. When configured,
+it also hooks entity rendering selection, GM loading and brazier placement/menu entry points. A module replacing these sites conflicts; startup
 rejects missing or ambiguous signatures. Read-only
 reference comparison does not prove compatibility with every mod combination.
 

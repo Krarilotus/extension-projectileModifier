@@ -4,15 +4,20 @@ local constants = require('constants')
 local native_crews = constants.native_reload_crews
 
 -- Raw unit types, independent of the base/fortification profile selection.
-M.attack_states = {[22]=6, [23]=6, [39]=4, [40]=4, [41]=4,
+M.attack_states = {[6]=10, [22]=6, [23]=6, [39]=4, [40]=4, [41]=4,
     [61]=4, [70]=6, [72]=6, [76]=6, [77]=4}
-M.start_states = {[22]=4, [23]=4, [39]=2, [40]=2, [41]=2,
-    [61]=2, [70]=4, [72]=4, [76]=4, [77]=2}
+M.start_states = {[6]=10, [22]=4, [23]=4, [39]=2, [40]=2, [41]=2,
+    [61]=2, [70]=4, [72]=4, [74]=4, [76]=4, [77]=2}
 
 local function enabled(config, name)
     if config == nil then return true end
     local cfg = config.units[name] or {}
     local wall = cfg.on_fortification or {}
+    for _, rule in ipairs(cfg.near_decorations or {}) do
+        for _, profile in ipairs({rule.ground, rule.fortified}) do
+            if profile.interval and profile.sync_to_animation ~= false then return true end
+        end
+    end
     return (cfg.interval and cfg.sync_to_animation ~= false)
         or (wall.interval and wall.sync_to_animation ~= false)
 end
@@ -27,6 +32,7 @@ end
 function M.resolve(locate, config)
     local result = {}
     for _, item in ipairs({
+        {6, '0F BE 80 ? ? ? ? 83 C4 08 3B C5 89 86 ? ? ? ? 7E 14', 3, 22},
         {39, '80 BA ? ? ? ? 17 0F 85', 2, 23},
         {40, '80 BA ? ? ? ? 1B 0F 85', 2, 27},
         {41, '80 BA ? ? ? ? 16 75', 2, 22},
@@ -36,6 +42,7 @@ function M.resolve(locate, config)
         {70, '0F BE 81 ? ? ? ? 83 CA FF 85 C0 89 86 ? ? ? ? 7E 4B', 3, 22},
         {72, '0F BE 81 ? ? ? ? 85 C0 89 86 ? ? ? ? 7E 6D 0F BF 8E ? ? ? ? 8D 84 C1 C1 01 00 00', 3, 12},
         {76, '0F BE 81 ? ? ? ? 85 C0 89 86 ? ? ? ? 7E 14 0F BF 96 ? ? ? ? 8D 84 C2 39 01 00 00', 3, 20},
+        {74, '0F BE 89 ? ? ? ? 89 8E ? ? ? ? 8B 8E ? ? ? ? 3B CB', 3, 27},
     }) do
       if enabled(config, constants.unit_names[item[1]]) then
         local address = locate(item[2])
@@ -128,10 +135,24 @@ nativeIdle:
     mov eax, [S_ID]
     imul eax, eax, 0x490
     add eax, UNITARRAY
+    cmp word [eax+0x8E], 74
+    je ni_horse
     cmp word [eax+0x2C0], 0
     jne ni_done
     cmp word [eax+0x3B0], 0
     jne ni_done
+    jmp ni_target
+ni_horse:
+    cmp word [eax+0x424], 0
+    jne ni_done
+    movzx ecx, word [eax+0x2C0]
+    cmp ecx, 0
+    je ni_target
+    cmp ecx, 4
+    je ni_target
+    cmp ecx, 101
+    jne ni_done
+ni_target:
     push dword [S_PROFILE]
     push dword [S_ID]
     call NATIVETARGET
@@ -141,6 +162,12 @@ nativeIdle:
     mov eax, [S_ID]
     imul eax, eax, 0x490
     add eax, UNITARRAY
+    cmp word [eax+0x8E], 74
+    jne ni_ordinary
+    mov word [eax+0x424], 4
+    cmp word [eax+0x2C0], 0
+    jne ni_done
+ni_ordinary:
     movzx ecx, word [eax+0x8E]
     mov ecx, [NATIVESTARTT+ecx*4]
     mov word [eax+0x2C0], cx
@@ -168,6 +195,8 @@ nativeTarget:
     jz nt_restore
     mov ecx, [S_UNITPTR]
     movzx ecx, word [ecx+0x8E]
+    cmp ecx, 6
+    je nt_hunter
     cmp dword [NATIVESTARTT+ecx*4], 4
     jne nt_restore
     ; Configured infantry targets must reach the native wind-up and LOS/UID
@@ -183,6 +212,31 @@ nt_ground:
     call ACQUIRE
     test eax, eax
     jnz nt_done
+    jmp nt_restore
+nt_hunter:
+    ; Turn toward the temporary aim without overwriting the hunter's work order.
+    ; The native tile-facing helper also respects the current camera rotation.
+    cmp eax, 2
+    jne nt_hunterface
+    push ebx
+    mov ecx, UNITSTATE
+    call ACQUIRE
+    test eax, eax
+    jz nt_restore
+    mov eax, 2
+nt_hunterface:
+    push eax
+    mov ecx, [S_UNITPTR]
+    movsx edx, word [ecx+0xC0]
+    sar edx, 3
+    push edx
+    movsx edx, word [ecx+0xBE]
+    sar edx, 3
+    push edx
+    push ebx
+    mov ecx, UNITSTATE
+    call HUNTERFACE
+    pop eax
 nt_restore:
     push eax
     call RESTORETARGET
@@ -217,6 +271,9 @@ configuredAnimationHold:
     jae ca_pass
     cmp dword [NATIVEINTT+ebx*4], -1
     je ca_pass
+    imul eax, ebx, 0x490
+    cmp word [eax+UNITARRAY+0x8E], 74
+    je ca_pass                   ; bow routine owns a separate temporary clock
     push ebx
     call PROFILE
     add esp, 4

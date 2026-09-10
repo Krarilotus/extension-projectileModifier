@@ -1,6 +1,65 @@
 # Validation — unreleased work
 
-## Foot-shooter reload integration, 1.7.0
+## Completed feature integration, 1.8.0
+
+**86 Python/Lua/x86 tests passed** in the final full run. All **23 GUI/archive checks passed** (13 component/qualifier and 10 archive/locale checks). The private Reconquista preset passes both the production Lua validator and editor schema.
+
+The new mounted tests execute the original horse-archer weapon/body updates in
+both 1.41 executables. Moving and standing shots retain the native minimum cycle,
+while a held bow does not freeze horse movement. Hunter tests execute the native
+bow animation, target selection and facing, building shots and saved continuation.
+Sound/device calls and projectile observation are substituted in timing tests.
+
+Custom-sprite tests execute native entity allocation for all 16 base projectile
+kinds on both executables. They check custom/base GM switching, entity identity,
+impact/type transitions and save restoration. A native 16-tick flight comparison
+matches all entity bytes except the selected sheet. GM tests check complete
+sheet formats, bounds, token streams, occupied slots and the 66,000-image limit.
+They do not execute the Windows file loader, graphics driver or GM modifier DLL.
+The DLL's documented/source load sequence and resource ownership were audited.
+
+A separate maximum-capacity probe installs all 77 unit types with 33 decoration
+rules each on both EXEs: 1,041,772 / 1,521,772 bytes of runtime data and 7,397
+assembled bytes in 39 routines for this no-interval profile set. The native
+ui-module header also accepts the menu definitions through real LuaJIT FFI on
+the test host. These are allocation/schema checks, not rendering or FPS results.
+
+Decoration tests execute actual native construction, first entity update,
+brazier proximity and removal in both executables. They verify the five-gold
+native cost, insufficient funds and wrong wall ownership, custom identity,
+ordinary brazier separation and removal cleanup. The correct native input path
+is entity command 69; command 97 is area removal, not construction. Custom
+placement carries three 32-bit values (microtile X/Y and variant), derives the
+player from the synchronized invoker, and rechecks native placement/price/height
+on execution. GUI selection never supplies another player's identity.
+
+Further tests cover square/height/edge proximity bounds, dead/reused entities,
+first-rule precedence, fortification inheritance, actual projectile firing and
+save/load. Menu logic covers the standard native callback group, all 33 choices,
+pagination, empty rows, original-brazier choice and reopening. UI/FFI boundaries
+are substituted in menu-logic tests; those tests are not visual acceptance.
+
+The implementation checklist is complete. These release checks remain open:
+
+1. On both EXEs, load examples/custom-sprites-and-decorations.yml, open the brazier
+   button, select/place/remove/reselect ordinary and custom braziers. Verify
+   cursor ownership/price restrictions, custom appearance and ordinary fire arrows.
+2. Replace the example sheets with complete edited GM1 files; test every listed
+   base sheet, flight/impact appearance, multiple variants and another GM user.
+3. Fire all 12 supported native shooters at interval 400 and 1. Horse archers
+   must keep moving during reload; hunters must face targets and retain hunting
+   work outside configured attacks. Exercise all stance/crew/target holds.
+4. Combine wall and decoration rules, enter/leave overlapping triggers, save/load
+   while loaded and mid-volley, remove a trigger and start another map.
+5. Repeat paired multiplayer and recorder/replay with identical YAML/assets;
+   test intended Legacy/Rebalancer combinations and a long crowded match.
+
+Live testing was prepared in an isolated game copy. Its UCP developer-build
+security prompt awaits manual user handling; no security choice was automated.
+The shared desktop was released while waiting. No rendered, multiplayer or
+replay pass is claimed. This remains an unsigned draft test candidate.
+
+## Historical foot-shooter reload integration, 1.7.0
 
 Final native/configuration run: **66 Python/Lua/x86 tests passed**. The complete
 GUI/archive suite also passes **23 checks** (13 component/qualifier and 10

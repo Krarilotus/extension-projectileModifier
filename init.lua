@@ -3,6 +3,8 @@ local constants = require("constants")
 local templates = require("templates")
 local configuration = require('configuration')
 local cadence = require('cadence')
+local sprites = require('sprite_resources')
+local decorations = require('decorations')
 
 local namespace = {}
 
@@ -40,11 +42,28 @@ local aim_error_addr = locate("0F B7 86 CE 06 00 00 0F B7 8E D6 06 00 00 66 3B C
 
 -- Inside UnitsState::updateUnits, reached once per tick for every living unit.
 local unit_tick_addr = locate("83 C2 01 89 16 8B 15 ? ? ? ? 69 D2 90 04 00 00 33 C9 66 89 8C 32 AE 09 00 00")
-local animation_addr, release_cycles
+local animation_addr, release_cycles, horse_addr, hunter_addr, hunter_script, hunter_sound, sound_this, hunter_end, hunter_face
 if native_cadence then
     animation_addr = locate('A1 ? ? ? ? 69 C0 90 04 00 00 01 9C 30 54 06 00 00')
     assert(core.readByte(animation_addr + 0xA1) == 0x69, 'unsupported animation continuation')
     release_cycles = cadence.resolve(locate, config)
+    if release_cycles[74] then
+        horse_addr = locate('53 56 8B 74 24 0C 69 F6 90 04 00 00 0F B7 86 ? ? ? ? 33 DB 66 3B C3')
+    end
+    if release_cycles[6] then
+        hunter_face = locate('8B 44 24 04 8B 54 24 08 69 C0 90 04 00 00 53 0F BF 9C 08 C8 08 00 00')
+        hunter_addr = locate('53 55 56 57 8B 3D ? ? ? ? 8B F7 69 F6 90 04 00 00 0F BF 9E ? ? ? ? 33 C9')
+        local script_site=locate('0F BE 80 ? ? ? ? 83 C4 08 3B C5 89 86 ? ? ? ? 7E 14')
+        hunter_script = core.readInteger(script_site+3)
+        assert(core.readByte(script_site+0x13E)==0xB9 and core.readByte(script_site+0x143)==0xE8,
+            'unsupported hunter sound call')
+        sound_this=core.readInteger(script_site+0x13F)
+        hunter_sound=(script_site+0x148+core.readInteger(script_site+0x144))%4294967296
+        for index=1,99 do
+            if core.readByte(hunter_script+index)==0 then hunter_end=index;break end
+        end
+        assert(hunter_end and hunter_end>release_cycles[6], 'unsupported hunter recoil script')
+    end
 end
 
 -- Tile layer bases, read out of the wall-validation code inside acquireShootTarget.
@@ -77,8 +96,9 @@ local unit_state_this = unit_array_base - 0x614
 local current_unit_id_addr = core.readInteger(unit_tick_addr + 7)
 assert(core.readInteger(unit_tick_addr + 0x3A4) == MAX_UNITS,
     '[custom-projectiles] unsupported unit-array capacity modification')
-return {fire=fire_projectile_addr, acquire=acquire_target_addr, tick=unit_tick_addr,
-    animation=animation_addr, releaseCycles=release_cycles,
+return {locate=locate, fire=fire_projectile_addr, acquire=acquire_target_addr, tick=unit_tick_addr,
+    animation=animation_addr, releaseCycles=release_cycles, horse=horse_addr,
+    hunter=hunter_addr, hunterScript=hunter_script, hunterSound=hunter_sound, soundThis=sound_this, hunterEnd=hunter_end, hunterFace=hunter_face,
     groundAim=ground_aim_addr, aimError=aim_error_addr,
     rows=tile_rows_addr, flags=tile_flags_addr, terrain=terrain_height_addr,
     teams=team_table_addr, buildings=building_base_addr, aic=aic_array_base,
@@ -87,62 +107,87 @@ return {fire=fire_projectile_addr, acquire=acquire_target_addr, tick=unit_tick_a
 end
 
 -- Private tables, non-overlapping scratch and persistent per-unit firing state.
-local TABLE_BYTES = MAX_PROFILES * 4
-local OFF_REENTRY   = 0x00
-local OFF_SEED      = 0x04
-local OFF_SCATY     = 0x08
-local OFF_REMAP     = 0x10
-local OFF_COUNT     = OFF_REMAP    + TABLE_BYTES
-local OFF_SPREAD    = OFF_COUNT    + TABLE_BYTES
-local OFF_INTERVAL  = OFF_SPREAD   + TABLE_BYTES
-local OFF_SUPPRESS  = OFF_INTERVAL + TABLE_BYTES
-local OFF_FORCED    = OFF_SUPPRESS + TABLE_BYTES
-local OFF_COOLDOWN  = OFF_FORCED   + TABLE_BYTES
-local OFF_ORDER     = OFF_COOLDOWN + MAX_UNITS * 4   -- 4 target kinds per unit type
-local OFF_RANGE     = OFF_ORDER    + TABLE_BYTES
-local OFF_WALLMIN   = OFF_RANGE    + TABLE_BYTES
-local OFF_MULTI     = OFF_WALLMIN  + TABLE_BYTES     -- random-target volleys
-local OFF_HEIGHT    = OFF_MULTI    + TABLE_BYTES     -- extra firing height
-local OFF_MANNED    = OFF_HEIGHT   + TABLE_BYTES     -- crew members required
-local OFF_BLDCLASS  = OFF_MANNED   + TABLE_BYTES     -- byte per building type
-local OFF_SCRATCH   = OFF_BLDCLASS + constants.MAX_BUILDING_TYPES
-local OFF_CANDS     = OFF_SCRATCH  + 0x100           -- scratch includes fields through 0xB0
-local OFF_IMOVE     = OFF_CANDS    + constants.MAX_CANDIDATES * 4
-local OFF_ISTAND    = OFF_IMOVE    + TABLE_BYTES
-local OFF_LASTPOS   = OFF_ISTAND   + TABLE_BYTES     -- packed position, per unit
-local OFF_MOVECD    = OFF_LASTPOS  + MAX_UNITS * 4   -- ticks left counting as moving
-local OFF_STAGMIN   = OFF_MOVECD   + MAX_UNITS * 4
-local OFF_STAGMAX   = OFF_STAGMIN  + TABLE_BYTES
-local OFF_PENDING   = OFF_STAGMAX  + TABLE_BYTES     -- projectiles still owed
-local OFF_PENDCD    = OFF_PENDING  + MAX_UNITS * 4   -- ticks until the next one
-local OFF_DMIN      = OFF_PENDCD   + MAX_UNITS * 4   -- enemies needed in a cluster
-local OFF_DRAD      = OFF_DMIN     + TABLE_BYTES     -- cluster radius, tiles
-local OFF_ATTINT    = OFF_DRAD     + TABLE_BYTES     -- interval while attached
-local OFF_ATTCREW   = OFF_ATTINT   + TABLE_BYTES     -- attached ignores the crew
-local OFF_ATTBOARD  = OFF_ATTCREW  + TABLE_BYTES     -- stop when enemies board
-local OFF_ATTBR2    = OFF_ATTBOARD + TABLE_BYTES     -- boarding radius, squared
-local OFF_AICOW     = OFF_ATTBR2   + TABLE_BYTES     -- AI lords may send cows
-local OFF_COWREMAP  = OFF_AICOW    + TABLE_BYTES
-local OFF_COWCOUNT  = OFF_COWREMAP + TABLE_BYTES
-local OFF_PRELOAD   = OFF_COWCOUNT + TABLE_BYTES     -- hold a loaded weapon ready
-local OFF_PRELPOLL  = OFF_PRELOAD  + TABLE_BYTES
-local OFF_SYNC      = OFF_PRELPOLL + TABLE_BYTES     -- fire on an animation beat
-local OFF_SYNCMAX   = OFF_SYNC     + TABLE_BYTES
-local OFF_SYNCWAIT  = OFF_SYNCMAX  + TABLE_BYTES     -- per unit, ticks waited
-local OFF_INACC     = OFF_SYNCWAIT + MAX_UNITS * 4   -- per-shot aiming error
-local OFF_INACCSET  = OFF_INACC    + TABLE_BYTES     -- explicit zero differs from omitted
-local OFF_AIONLY    = OFF_INACCSET + TABLE_BYTES     -- leave the player's units alone
-local OFF_UID       = OFF_AIONLY   + TABLE_BYTES
-local OFF_IDENTITY  = OFF_UID      + MAX_UNITS * 4
-local OFF_NATIVESEEN = OFF_IDENTITY + MAX_UNITS * 4
-local OFF_FORTIFIED = OFF_NATIVESEEN + MAX_UNITS * 4
-local OFF_PROFILESTATE = OFF_FORTIFIED + MAX_TYPES * 4
-local OFF_NATIVECYCLE = OFF_PROFILESTATE + MAX_UNITS * 4
-local OFF_NATIVEINT = OFF_NATIVECYCLE + TABLE_BYTES
-local OFF_NATIVEBLOCK = OFF_NATIVEINT + MAX_UNITS * 4
-local OFF_NATIVEATTACK = OFF_NATIVEBLOCK + MAX_UNITS * 4
-local OFF_NATIVESTART = OFF_NATIVEATTACK + MAX_TYPES * 4
-local DATA_SIZE     = OFF_NATIVESTART + MAX_TYPES * 4
+local TABLE_BYTES, OFF_REENTRY, OFF_SEED, OFF_SCATY, OFF_REMAP, OFF_COUNT, OFF_SPREAD, OFF_INTERVAL, OFF_SUPPRESS, OFF_FORCED, OFF_COOLDOWN, OFF_ORDER, OFF_RANGE, OFF_WALLMIN, OFF_MULTI, OFF_HEIGHT, OFF_MANNED, OFF_BLDCLASS, OFF_SCRATCH, OFF_CANDS, OFF_IMOVE, OFF_ISTAND, OFF_LASTPOS, OFF_MOVECD, OFF_STAGMIN, OFF_STAGMAX, OFF_PENDING, OFF_PENDCD, OFF_DMIN, OFF_DRAD, OFF_ATTINT, OFF_ATTCREW, OFF_ATTBOARD, OFF_ATTBR2, OFF_AICOW, OFF_COWREMAP, OFF_COWCOUNT, OFF_PRELOAD, OFF_PRELPOLL, OFF_SYNC, OFF_SYNCMAX, OFF_SYNCWAIT, OFF_INACC, OFF_INACCSET, OFF_AIONLY, OFF_UID, OFF_IDENTITY, OFF_NATIVESEEN, OFF_FORTIFIED, OFF_PROFILESTATE, OFF_NATIVECYCLE, OFF_NATIVEINT, OFF_NATIVEBLOCK, OFF_NATIVEATTACK, OFF_NATIVESTART, OFF_WEAPONSEEN, OFF_WEAPONCYCLE, OFF_WEAPONTICK, OFF_WEAPONPHASE, OFF_SPRITE, OFF_COWSPRITE, OFF_CURRENTVARIANT, OFF_VARIANTGM, OFF_VARIANTBASEGM, OFF_VARIANTCOUNT, OFF_ENTITYVARIANT, OFF_ENTITYUID, OFF_ENTITYTYPE, OFF_DECORVARIANT, OFF_DECORUID, OFF_DECORGM, OFF_DECORGRID, OFF_DECORNEXT, OFF_DECORRULEMAP, OFF_DECORRULEST, DATA_SIZE
+local function layout(profile_count)
+    MAX_PROFILES = profile_count
+    TABLE_BYTES = MAX_PROFILES * 4
+    OFF_REENTRY   = 0x00
+    OFF_SEED      = 0x04
+    OFF_SCATY     = 0x08
+    OFF_REMAP     = 0x10
+    OFF_COUNT     = OFF_REMAP    + TABLE_BYTES
+    OFF_SPREAD    = OFF_COUNT    + TABLE_BYTES
+    OFF_INTERVAL  = OFF_SPREAD   + TABLE_BYTES
+    OFF_SUPPRESS  = OFF_INTERVAL + TABLE_BYTES
+    OFF_FORCED    = OFF_SUPPRESS + TABLE_BYTES
+    OFF_COOLDOWN  = OFF_FORCED   + TABLE_BYTES
+    OFF_ORDER     = OFF_COOLDOWN + MAX_UNITS * 4   -- 4 target kinds per unit type
+    OFF_RANGE     = OFF_ORDER    + TABLE_BYTES
+    OFF_WALLMIN   = OFF_RANGE    + TABLE_BYTES
+    OFF_MULTI     = OFF_WALLMIN  + TABLE_BYTES     -- random-target volleys
+    OFF_HEIGHT    = OFF_MULTI    + TABLE_BYTES     -- extra firing height
+    OFF_MANNED    = OFF_HEIGHT   + TABLE_BYTES     -- crew members required
+    OFF_BLDCLASS  = OFF_MANNED   + TABLE_BYTES     -- byte per building type
+    OFF_SCRATCH   = OFF_BLDCLASS + constants.MAX_BUILDING_TYPES
+    OFF_CANDS     = OFF_SCRATCH  + 0x100           -- scratch includes fields through 0xB0
+    OFF_IMOVE     = OFF_CANDS    + constants.MAX_CANDIDATES * 4
+    OFF_ISTAND    = OFF_IMOVE    + TABLE_BYTES
+    OFF_LASTPOS   = OFF_ISTAND   + TABLE_BYTES     -- packed position, per unit
+    OFF_MOVECD    = OFF_LASTPOS  + MAX_UNITS * 4   -- ticks left counting as moving
+    OFF_STAGMIN   = OFF_MOVECD   + MAX_UNITS * 4
+    OFF_STAGMAX   = OFF_STAGMIN  + TABLE_BYTES
+    OFF_PENDING   = OFF_STAGMAX  + TABLE_BYTES     -- projectiles still owed
+    OFF_PENDCD    = OFF_PENDING  + MAX_UNITS * 4   -- ticks until the next one
+    OFF_DMIN      = OFF_PENDCD   + MAX_UNITS * 4   -- enemies needed in a cluster
+    OFF_DRAD      = OFF_DMIN     + TABLE_BYTES     -- cluster radius, tiles
+    OFF_ATTINT    = OFF_DRAD     + TABLE_BYTES     -- interval while attached
+    OFF_ATTCREW   = OFF_ATTINT   + TABLE_BYTES     -- attached ignores the crew
+    OFF_ATTBOARD  = OFF_ATTCREW  + TABLE_BYTES     -- stop when enemies board
+    OFF_ATTBR2    = OFF_ATTBOARD + TABLE_BYTES     -- boarding radius, squared
+    OFF_AICOW     = OFF_ATTBR2   + TABLE_BYTES     -- AI lords may send cows
+    OFF_COWREMAP  = OFF_AICOW    + TABLE_BYTES
+    OFF_COWCOUNT  = OFF_COWREMAP + TABLE_BYTES
+    OFF_PRELOAD   = OFF_COWCOUNT + TABLE_BYTES     -- hold a loaded weapon ready
+    OFF_PRELPOLL  = OFF_PRELOAD  + TABLE_BYTES
+    OFF_SYNC      = OFF_PRELPOLL + TABLE_BYTES     -- fire on an animation beat
+    OFF_SYNCMAX   = OFF_SYNC     + TABLE_BYTES
+    OFF_SYNCWAIT  = OFF_SYNCMAX  + TABLE_BYTES     -- per unit, ticks waited
+    OFF_INACC     = OFF_SYNCWAIT + MAX_UNITS * 4   -- per-shot aiming error
+    OFF_INACCSET  = OFF_INACC    + TABLE_BYTES     -- explicit zero differs from omitted
+    OFF_AIONLY    = OFF_INACCSET + TABLE_BYTES     -- leave the player's units alone
+    OFF_UID       = OFF_AIONLY   + TABLE_BYTES
+    OFF_IDENTITY  = OFF_UID      + MAX_UNITS * 4
+    OFF_NATIVESEEN = OFF_IDENTITY + MAX_UNITS * 4
+    OFF_FORTIFIED = OFF_NATIVESEEN + MAX_UNITS * 4
+    OFF_PROFILESTATE = OFF_FORTIFIED + MAX_TYPES * 4
+    OFF_NATIVECYCLE = OFF_PROFILESTATE + MAX_UNITS * 4
+    OFF_NATIVEINT = OFF_NATIVECYCLE + TABLE_BYTES
+    OFF_NATIVEBLOCK = OFF_NATIVEINT + MAX_UNITS * 4
+    OFF_NATIVEATTACK = OFF_NATIVEBLOCK + MAX_UNITS * 4
+    OFF_NATIVESTART = OFF_NATIVEATTACK + MAX_TYPES * 4
+    OFF_WEAPONSEEN = OFF_NATIVESTART + MAX_TYPES * 4
+    OFF_WEAPONCYCLE = OFF_WEAPONSEEN + MAX_UNITS * 4
+    OFF_WEAPONTICK = OFF_WEAPONCYCLE + MAX_UNITS * 4
+    OFF_WEAPONPHASE = OFF_WEAPONTICK + MAX_UNITS * 4
+    OFF_SPRITE = OFF_WEAPONPHASE + MAX_UNITS * 4
+    OFF_COWSPRITE = OFF_SPRITE + TABLE_BYTES
+    OFF_CURRENTVARIANT = OFF_COWSPRITE + TABLE_BYTES
+    OFF_VARIANTGM = OFF_CURRENTVARIANT + 4
+    OFF_VARIANTBASEGM = OFF_VARIANTGM + 34*4
+    OFF_VARIANTCOUNT = OFF_VARIANTBASEGM + 34*4
+    OFF_ENTITYVARIANT = OFF_VARIANTCOUNT + 34*4
+    OFF_ENTITYUID = OFF_ENTITYVARIANT + 3000*4
+    OFF_ENTITYTYPE = OFF_ENTITYUID + 3000*4
+    OFF_DECORVARIANT = OFF_ENTITYTYPE + 3000*4
+    OFF_DECORUID = OFF_DECORVARIANT + 3000*4
+    OFF_DECORGM = OFF_DECORUID + 3000*4
+    OFF_DECORGRID = OFF_DECORGM + 34*4
+    OFF_DECORNEXT = OFF_DECORGRID + 10000*4
+    OFF_DECORRULEMAP = OFF_DECORNEXT + 3000*4
+    OFF_DECORRULEST = OFF_DECORRULEMAP + MAX_TYPES*408
+    DATA_SIZE = OFF_DECORRULEST + MAX_TYPES*4
+
+end
 
 local data_addr = nil
 local volley_addr = nil
@@ -150,6 +195,7 @@ local apply_unit
 local installed = false
 local persistent
 local release_cycles
+local variant_by_id = {}
 
 local function unit_type_id(name)
     local index = table.find(unit_names, name)
@@ -161,6 +207,7 @@ end
 
 local function projectile_id(value)
     if type(value) == "number" then
+        if variant_by_id[value] then return variant_by_id[value].base end
         return math.floor(value)
     end
     local id = projectile_names[value]
@@ -221,7 +268,14 @@ local function assemble_blob(script, values)
 end
 
 local function install(config)
+    local has_decorations = next(config.decorations or {}) ~= nil
+    local profile_count = MAX_TYPES * 2
+    for _, cfg in pairs(config.units) do profile_count = profile_count + 2 * #(cfg.near_decorations or {}) end
+    layout(profile_count)
+    local resources = sprites.prepare(config.projectiles or {}, config.decorations)
+    for _, spec in pairs(config.projectiles or {}) do variant_by_id[spec.id] = spec end
     local native = resolve(cadence.required(config), config)
+    local native_decorations = has_decorations and decorations.resolve(native.locate)
     release_cycles = native.releaseCycles or {}
     local fire_projectile_addr, acquire_target_addr, unit_tick_addr = native.fire, native.acquire, native.tick
     local tile_rows_addr, tile_flags_addr, terrain_height_addr = native.rows, native.flags, native.terrain
@@ -293,6 +347,29 @@ local function install(config)
         NATIVEBLOCKT  = data_addr + OFF_NATIVEBLOCK,
         NATIVEATTACKT = data_addr + OFF_NATIVEATTACK,
         NATIVESTARTT  = data_addr + OFF_NATIVESTART,
+        HUNTERFACE    = native.hunterFace or 0,
+        SPRITET       = data_addr + OFF_SPRITE,
+        COWSPRITET    = data_addr + OFF_COWSPRITE,
+        CURRENTVARIANT = data_addr + OFF_CURRENTVARIANT,
+        VARIANTGM     = data_addr + OFF_VARIANTGM,
+        VARIANTBASEGM = data_addr + OFF_VARIANTBASEGM,
+        VARIANTCOUNT  = data_addr + OFF_VARIANTCOUNT,
+        ENTITYVARIANT = data_addr + OFF_ENTITYVARIANT,
+        ENTITYUID     = data_addr + OFF_ENTITYUID,
+        ENTITYTYPE    = data_addr + OFF_ENTITYTYPE,
+        ENTITYARRAY   = core.readInteger(fire_projectile_addr+0x416)+20,
+        HASDECOR      = has_decorations and 1 or 0,
+        DECORVARIANT  = data_addr + OFF_DECORVARIANT,
+        DECORUID      = data_addr + OFF_DECORUID,
+        DECORGM       = data_addr + OFF_DECORGM,
+        DECORGRID     = data_addr + OFF_DECORGRID,
+        DECORNEXT     = data_addr + OFF_DECORNEXT,
+        DECORRULEMAP  = data_addr + OFF_DECORRULEMAP,
+        DECORRULEST   = data_addr + OFF_DECORRULEST,
+        WEAPONSEENT   = data_addr + OFF_WEAPONSEEN,
+        WEAPONCYCLET   = data_addr + OFF_WEAPONCYCLE,
+        WEAPONTICKT    = data_addr + OFF_WEAPONTICK,
+        WEAPONPHASET   = data_addr + OFF_WEAPONPHASE,
         MAXUNITS      = MAX_UNITS,
         ORDERT        = data_addr + OFF_ORDER,
         RANGET        = data_addr + OFF_RANGE,
@@ -392,19 +469,44 @@ local function install(config)
         NATIVESEENT   = data_addr + OFF_NATIVESEEN,
     }
 
+    local next_profile = MAX_TYPES * 2
+    for _, spec in pairs(config.decorations or {}) do set_entry(OFF_DECORGM, spec.id, 138) end
     for _, name in ipairs(unit_names) do
         if config.units[name] then
             apply_unit(name, config.units[name])
-            if config.units[name].on_fortification then
+            local rules = config.units[name].near_decorations or {}
+            if config.units[name].on_fortification or #rules > 0 then
                 local id = unit_type_id(name)
-                apply_unit(name, config.units[name].on_fortification, id + MAX_TYPES)
+                apply_unit(name, config.units[name].on_fortification or config.units[name], id + MAX_TYPES)
                 core.writeInteger(data_addr + OFF_FORTIFIED + id * 4, 1)
+            end
+            local id = unit_type_id(name)
+            for _, rule in ipairs(rules) do
+                apply_unit(name, rule.ground, next_profile)
+                apply_unit(name, rule.fortified, next_profile + 1)
+                local record = values.DECORRULEMAP + id * 408 + rule.id * 12
+                core.writeInteger(record, rule.priority)
+                core.writeInteger(record + 4, next_profile)
+                core.writeInteger(record + 8, next_profile + 1)
+                set_entry(OFF_DECORRULEST, id, 1)
+                next_profile = next_profile + 2
             end
         end
     end
 
     -- Each blob starts with the routine the others call, so its address is its
     -- entry point. Order matters: a blob may only reference blobs built before it.
+    local decoration_filter
+    if has_decorations then
+        local runtime = require('decoration_runtime')
+        values.REBUILDDECOR = assemble_blob(runtime.rebuild, values)
+        values.DECORPROFILE = assemble_blob(runtime.profile, values)
+        values.BRAZIERRESUME = native_decorations.filterResume
+        values.BRAZIERNEXT = native_decorations.filterNext
+        decoration_filter = assemble_blob(runtime.native_filter, values)
+    else
+        values.REBUILDDECOR, values.DECORPROFILE = 0, 0
+    end
     values.PROFILE = assemble_blob(templates.profile_code, values)
     values.FIXSCATTER = assemble_blob(templates.fixscatter_code, values)
     values.RND = assemble_blob(templates.rand_code, values)
@@ -452,6 +554,38 @@ local function install(config)
         animation_hook = assemble_blob(cadence.configured_hook, values)
     end
 
+    local horse_hook
+    if native.horse then
+        local mounted = require('mounted')
+        values.HORSERESUME = native.horse + 6
+        values.HORSEORIGINAL = assemble_blob(mounted.original, values)
+        horse_hook = assemble_blob(mounted.hook, values)
+    end
+    local hunter_hook
+    if native.hunter then
+        values.HUNTERRESUME = native.hunter + 10
+        values.HUNTERSCRIPT = native.hunterScript
+        values.HUNTEREND = native.hunterEnd
+        values.HUNTERSOUND = native.hunterSound
+        values.SOUNDTHIS = native.soundThis
+        hunter_hook = assemble_blob(require('hunter').hook, values)
+    end
+    local spawn_site, entity_site, spawn_hook, entity_hook
+    if #resources>0 or has_decorations then
+        local runtime=require('sprite_runtime')
+        spawn_site=native.locate('83 EC 08 53 8B 5C 24 34 83 FB 2B 56 8B F1')
+        entity_site=native.locate('51 53 55 56 8B F1 8B 0D ? ? ? ? B8 67 66 66 66 F7 E9')
+        values.ENTITYARRAY=core.readInteger(fire_projectile_addr+0x416)+20
+        values.SPRITEONE=assemble_blob(runtime.one,values)
+        values.SPRITEALL=assemble_blob(runtime.all,values)
+        values.SPAWNRESUME=spawn_site+8
+        values.SPAWNORIGINAL=assemble_blob(runtime.spawn_original,values)
+        spawn_hook=assemble_blob(runtime.spawn,values)
+        values.ENTITYRESUME=entity_site+6
+        values.ENTITYORIGINAL=assemble_blob(runtime.update_original,values)
+        entity_hook=assemble_blob(runtime.update,values)
+    end
+
     -- Prepare persistence and all code before either entry point is redirected.
     persistent = require('state').new({
         {'seed', data_addr + OFF_SEED, 4},
@@ -464,7 +598,34 @@ local function install(config)
         {'uid', data_addr + OFF_UID, MAX_UNITS * 4},
         {'identity', data_addr + OFF_IDENTITY, MAX_UNITS * 4},
         {'profile', data_addr + OFF_PROFILESTATE, MAX_UNITS * 4},
-    }, config)
+        {'weapon-cycle', data_addr + OFF_WEAPONCYCLE, MAX_UNITS * 4},
+        {'weapon-tick', data_addr + OFF_WEAPONTICK, MAX_UNITS * 4},
+        {'weapon-phase', data_addr + OFF_WEAPONPHASE, MAX_UNITS * 4},
+        {'entity-variant', data_addr + OFF_ENTITYVARIANT, 3000*4},
+        {'entity-uid', data_addr + OFF_ENTITYUID, 3000*4},
+        {'entity-type', data_addr + OFF_ENTITYTYPE, 3000*4},
+        {'variant-gm', data_addr + OFF_VARIANTGM, 34*4, true},
+        {'decoration-variant', data_addr + OFF_DECORVARIANT, 3000*4},
+        {'decoration-uid', data_addr + OFF_DECORUID, 3000*4},
+        {'decoration-gm', data_addr + OFF_DECORGM, 34*4, true},
+    }, config, MAX_PROFILES, has_decorations and core.exposeCode(values.REBUILDDECOR,0,0) or nil)
+    sprites.install(resources,native.locate,function(asset)
+        for _, name in ipairs(asset.decorations or {}) do
+            set_entry(OFF_DECORGM, config.decorations[name].id, asset.slot)
+        end
+        for _, name in ipairs(asset.names) do
+            local index=config.projectiles[name].id-256
+            core.writeInteger(values.VARIANTGM+index*4,asset.slot)
+            core.writeInteger(values.VARIANTBASEGM+index*4,asset.gm)
+            core.writeInteger(values.VARIANTCOUNT+index*4,sprites.sheets[asset.gm].count)
+        end
+    end)
+    if has_decorations then
+        local open_menu, choose = require('decoration_ui').prepare(config.decorations)
+        choose(decorations.install(config.decorations, native_decorations, values, open_menu))
+        core.writeCode(native_decorations.filter, {0xE9,
+            core.itob(core.getRelativeAddress(native_decorations.filter,decoration_filter,-5)),0x90})
+    end
     assert(modules['map-extensions'], '[custom-projectiles] map-extensions is required')
     modules['map-extensions']:registerSection('projectileModifier', persistent)
     core.writeCode(fire_projectile_addr, {
@@ -485,6 +646,21 @@ local function install(config)
             0xE9, core.itob(core.getRelativeAddress(animation_site, animation_hook, -5)), 0x90, 0x90
         })
     end
+    if native.horse then
+        core.writeCode(native.horse, {
+            0xE9, core.itob(core.getRelativeAddress(native.horse, horse_hook, -5)), 0x90
+        })
+    end
+    if native.hunter then
+        core.writeCode(native.hunter, {
+            0xE9, core.itob(core.getRelativeAddress(native.hunter, hunter_hook, -5)),
+            0x90, 0x90, 0x90, 0x90, 0x90
+        })
+    end
+    if spawn_site then
+        core.writeCode(spawn_site, {0xE9,core.itob(core.getRelativeAddress(spawn_site,spawn_hook,-5)),0x90,0x90,0x90})
+        core.writeCode(entity_site, {0xE9,core.itob(core.getRelativeAddress(entity_site,entity_hook,-5)),0x90})
+    end
 
     log(INFO, string.format(
         "[custom-projectiles] fire=%X acquire=%X tick=%X teams=%X buildings=%X aic=%X data=%X volley=%X",
@@ -495,7 +671,7 @@ end
 -- Every key this module understands. Anything else in a unit entry is a typo,
 -- and silently ignoring it makes for a long evening.
 local KNOWN_KEYS = {
-    projectile = true, count = true, cow_projectile = true, cow_count = true, on_fortification = true, spread = true,
+    projectile = true, count = true, cow_projectile = true, cow_count = true, on_fortification = true, near_decorations = true, spread = true,
     interval = true, interval_moving = true, interval_standing = true,
     suppress_default = true, targets = true, range = true,
     wall_min_distance = true, require_manned = true,
@@ -528,13 +704,17 @@ apply_unit = function(name, cfg, profile)
         if pid ~= nil then
             set_entry(OFF_REMAP, id, pid)
             set_entry(OFF_FORCED, id, pid)
+            if variant_by_id[cfg.projectile] then set_entry(OFF_SPRITE,id,cfg.projectile-256) end
         end
     end
 
     if cfg["count"] ~= nil then
         set_entry(OFF_COUNT, id, math.max(1, math.floor(cfg["count"])))
     end
-    if cfg.cow_projectile ~= nil then set_entry(OFF_COWREMAP, id, cfg.cow_projectile) end
+    if cfg.cow_projectile ~= nil then
+        set_entry(OFF_COWREMAP, id, projectile_id(cfg.cow_projectile))
+        if variant_by_id[cfg.cow_projectile] then set_entry(OFF_COWSPRITE,id,cfg.cow_projectile-256) end
+    end
     if cfg.cow_count ~= nil then set_entry(OFF_COWCOUNT, id, cfg.cow_count) end
 
     if cfg["spread"] ~= nil then
@@ -690,7 +870,7 @@ end
 namespace.apply = function(config)
     assert(not installed, '[custom-projectiles] settings cannot be changed during a running session; relaunch the game')
     local validated = configuration.validate(config)
-    if next(validated.units) == nil then return end
+    if next(validated.units) == nil and not next(validated.decorations or {}) then return end
     install(validated)
     installed = true
 end
@@ -723,7 +903,7 @@ namespace.disable = function(self, config)
     return true
 end
 
-namespace.simulationStateFormat = 4
+namespace.simulationStateFormat = 5
 namespace.serializeSimulationState = function(self, handle)
     if persistent then persistent:serialize(handle) end
 end
