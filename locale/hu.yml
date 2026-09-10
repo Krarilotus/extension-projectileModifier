@@ -1,0 +1,131 @@
+projectiles: Lövedékek
+siege: Ostromgépek
+european: Európai egységek
+arabian: Arab egységek
+civilian: Civilek
+wildlife: Állatok és egyéb egységek
+inherit: Változatlan / a fájl értéke
+advanced: Haladó beállítások fájlja (opcionális)
+unit_description: Nyiss meg egy csoportot, majd egy egységet. A kard jelölőnégyzetével engedélyezheted a számérték
+  módosítását; a beállítást lenyitva olvashatod a súgót. A kikapcsolt beállítások megtartják a fájl értékeit vagy
+  az eredeti működést. A változtatások alkalmazásához indítsd újra a játékot.
+projectile_config_file_selector: Lövedékbeállítások fájlja (YAML)
+projectile_config_file_selector_descr: 'Tölts be YAML-fájlt a haladó beállításokhoz: mozgás, késleltetett sortűz,
+  pontosság, magasság és animáció. Az alább bekapcsolt beállítások felülírják a fájl értékeit. Fájl nélkül az alapbeállítások
+  használhatók. Példák és teljes táblázat a README.md fájlban; szerkesztési séma a projectile-config.schema.json
+  fájlban.'
+projectile: Lövedék
+projectile_descr: Lecseréli az egység lövedékét. Automatikus időköz nélkül megmarad az eredeti támadási ütem.
+targets: Automatikus célpontok
+targets_descr: Az automatikus tüzelés célpontjai. A szövetséges egységek és épületek kimaradnak. A falak közé a
+  saját falak is beletartoznak. Egyéni fontossági sorrend a YAML-fájlban adható meg.
+units: Ellenséges egységek
+buildings: Ellenséges épületek
+fortifications: Ellenséges erődítmények
+siege_towers: Falhoz csatlakozott ellenséges ostromtornyok
+cluster: Ellenséges egységcsoportok
+walls: Minden fal (a sajátokat is beleértve)
+units_buildings: Egységek, majd erődítmények, majd épületek
+count: Lövedékek száma sortüzenként
+count_descr: Az eredeti vagy automatikus sortűz lövedékeinek száma (1–64). Felülírja a mangonel eredeti sortüzének
+  méretét.
+interval: Automatikus tüzelési időköz (játékütem)
+interval_descr: Engedélyezi az automatikus tüzelést a közelharci egységeknek és az ostromtornyoknak is. Alapértelmezés
+  szerint lecseréli az eredeti lövéseket. Az eredeti lövedéket használja, ennek hiányában nyilakat. A játékütem
+  szimulációs lépés, nem ezredmásodperc.
+range: Automatikus hatótáv (mező)
+range_descr: Az automatikus célpontkeresés sugara. Nem módosítja az eredeti támadási hatótávot.
+spread_tiles: További lövedékek szórása (mező)
+spread_tiles_descr: Véletlen eltérés az egyidejű sortűz második lövedékétől kezdve.
+require_manned: Szükséges mérnökök (0–4)
+require_manned_descr: Az automatikus tüzeléshez ennyi mérnöknek kell az ostromgépben lennie. A nulla kikapcsolja
+  a legénység ellenőrzését.
+balance_changes: Balance Changes
+unit_peasant: Paraszt
+unit_burning_man: Égő ember
+unit_woodcutter: Favágó
+unit_fletcher: Íjkészítő
+unit_tunneler: Alagútásó
+unit_hunter: Vadász
+unit_quarry_mason: Kőfaragó
+unit_quarry_grunt: Kőbányász
+unit_quarry_ox: Kőszállító ökör
+unit_pitch_worker: Szurokmunkás
+unit_wheat_farmer: Búzatermesztő
+unit_hops_farmer: Komlótermesztő
+unit_apple_farmer: Almatermesztő
+unit_dairy_farmer: Tehenész
+unit_miller: Molnár
+unit_baker: Pék
+unit_brewer: Sörfőző
+unit_poleturner: Lándzsakészítő
+unit_blacksmith: Kovács
+unit_armourer: Páncélkészítő
+unit_tanner: Tímár
+unit_european_archer: Európai íjász
+unit_european_crossbowman: Európai számszeríjász
+unit_european_spearman: Európai lándzsás
+unit_european_pikeman: Európai pikás
+unit_european_maceman: Európai buzogányos
+unit_european_swordsman: Európai kardforgató
+unit_european_knight: Európai lovag
+unit_ladderman: Létrás
+unit_engineer: Mérnök
+unit_iron_miner1: Vasbányász 1
+unit_iron_miner2: Vasbányász 2
+unit_priest: Pap
+unit_healer: Gyógyító
+unit_drunkard: Részeg
+unit_innkeeper: Kocsmáros
+unit_monk: Szerzetes
+unit_unknown1: Ismeretlen egység 1
+unit_catapult: Katapult
+unit_trebuchet: Ellensúlyos hajítógép
+unit_mangonel: Mangonel
+unit_trader: Kereskedő
+unit_trader_horse: Kereskedő lova
+unit_deer: Szarvas
+unit_lion: Oroszlán
+unit_rabbit: Nyúl
+unit_camel: Teve
+unit_crow: Varjú
+unit_seagull: Sirály
+unit_siege_tent: Ostromsátor
+unit_cow: Tehén
+unit_hunter_dog: Vadászkutya
+unit_fireman: Tűzoltó
+unit_ghost: Szellem
+unit_lord: Várúr
+unit_lady: Úrnő
+unit_jester: Udvari bolond
+unit_siege_tower: Ostromtorony
+unit_battering_ram: Faltörő kos
+unit_portable_shield: Hordozható pajzs
+unit_tower_ballista: Toronyballiszta
+unit_chicken: Tyúk
+unit_mother: Anya
+unit_child: Gyermek
+unit_juggler: Zsonglőr
+unit_fireeater: Tűznyelő
+unit_dog: Kutya
+unit_unknown2: Ismeretlen egység 2
+unit_unknown3: Ismeretlen egység 3
+unit_arabian_archer: Arab íjász
+unit_arabian_slave: Arab rabszolga
+unit_arabian_slinger: Arab parittyás
+unit_arabian_assassin: Arab orgyilkos
+unit_arabian_horse_archer: Arab lovasíjász
+unit_arabian_swordsman: Arab kardforgató
+unit_arabian_firethrower: Arab tűzhajító
+unit_fire_ballista: Tűzballiszta
+p_arrow: Nyílvessző
+p_catapult_rock: Katapult köve
+p_trebuchet_rock: Ellensúlyos hajítógép köve
+p_mangonel_pebble: Mangonel köve
+p_crossbow_bolt: Számszeríjvessző
+p_ballista_bolt: Ballisztalövedék
+p_cow: Beteg tehén
+p_slinger_stone: Parittyakő
+p_firethrower_pot: Tüzes edény
+p_firethrower_pot_untargeted: Célpont nélküli tüzes edény
+p_fire_ballista_bolt: Tűzballiszta lövedéke

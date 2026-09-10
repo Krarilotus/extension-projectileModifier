@@ -1,0 +1,479 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Projectile Modifier preset",
+  "type": "object",
+  "additionalProperties": false,
+  "description": "Optional advanced preset. Enabled GUI overrides are applied before runtime validation. See README.md for the full settings table.",
+  "properties": {
+    "units": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Peasant": {
+          "$ref": "#/$defs/unit"
+        },
+        "Burning man": {
+          "$ref": "#/$defs/unit"
+        },
+        "Woodcutter": {
+          "$ref": "#/$defs/unit"
+        },
+        "Fletcher": {
+          "$ref": "#/$defs/unit"
+        },
+        "Tunneler": {
+          "$ref": "#/$defs/unit"
+        },
+        "Hunter": {
+          "$ref": "#/$defs/unit"
+        },
+        "Quarry mason": {
+          "$ref": "#/$defs/unit"
+        },
+        "Quarry grunt": {
+          "$ref": "#/$defs/unit"
+        },
+        "Quarry ox": {
+          "$ref": "#/$defs/unit"
+        },
+        "Pitch worker": {
+          "$ref": "#/$defs/unit"
+        },
+        "Wheat farmer": {
+          "$ref": "#/$defs/unit"
+        },
+        "Hops farmer": {
+          "$ref": "#/$defs/unit"
+        },
+        "Apple farmer": {
+          "$ref": "#/$defs/unit"
+        },
+        "Dairy farmer": {
+          "$ref": "#/$defs/unit"
+        },
+        "Miller": {
+          "$ref": "#/$defs/unit"
+        },
+        "Baker": {
+          "$ref": "#/$defs/unit"
+        },
+        "Brewer": {
+          "$ref": "#/$defs/unit"
+        },
+        "Poleturner": {
+          "$ref": "#/$defs/unit"
+        },
+        "Blacksmith": {
+          "$ref": "#/$defs/unit"
+        },
+        "Armourer": {
+          "$ref": "#/$defs/unit"
+        },
+        "Tanner": {
+          "$ref": "#/$defs/unit"
+        },
+        "European archer": {
+          "$ref": "#/$defs/unit"
+        },
+        "European crossbowman": {
+          "$ref": "#/$defs/unit"
+        },
+        "European spearman": {
+          "$ref": "#/$defs/unit"
+        },
+        "European pikeman": {
+          "$ref": "#/$defs/unit"
+        },
+        "European maceman": {
+          "$ref": "#/$defs/unit"
+        },
+        "European swordsman": {
+          "$ref": "#/$defs/unit"
+        },
+        "European knight": {
+          "$ref": "#/$defs/unit"
+        },
+        "Ladderman": {
+          "$ref": "#/$defs/unit"
+        },
+        "Engineer": {
+          "$ref": "#/$defs/unit"
+        },
+        "Iron miner1": {
+          "$ref": "#/$defs/unit"
+        },
+        "Iron miner2": {
+          "$ref": "#/$defs/unit"
+        },
+        "Priest": {
+          "$ref": "#/$defs/unit"
+        },
+        "Healer": {
+          "$ref": "#/$defs/unit"
+        },
+        "Drunkard": {
+          "$ref": "#/$defs/unit"
+        },
+        "Innkeeper": {
+          "$ref": "#/$defs/unit"
+        },
+        "Monk": {
+          "$ref": "#/$defs/unit"
+        },
+        "unknown1": {
+          "$ref": "#/$defs/unit"
+        },
+        "Catapult": {
+          "$ref": "#/$defs/unit"
+        },
+        "Trebuchet": {
+          "$ref": "#/$defs/unit"
+        },
+        "Mangonel": {
+          "$ref": "#/$defs/unit"
+        },
+        "Trader": {
+          "$ref": "#/$defs/unit"
+        },
+        "Trader horse": {
+          "$ref": "#/$defs/unit"
+        },
+        "Deer": {
+          "$ref": "#/$defs/unit"
+        },
+        "Lion": {
+          "$ref": "#/$defs/unit"
+        },
+        "Rabbit": {
+          "$ref": "#/$defs/unit"
+        },
+        "Camel": {
+          "$ref": "#/$defs/unit"
+        },
+        "Crow": {
+          "$ref": "#/$defs/unit"
+        },
+        "Seagull": {
+          "$ref": "#/$defs/unit"
+        },
+        "Siege tent": {
+          "$ref": "#/$defs/unit"
+        },
+        "Cow": {
+          "$ref": "#/$defs/unit"
+        },
+        "Hunter dog": {
+          "$ref": "#/$defs/unit"
+        },
+        "Fireman": {
+          "$ref": "#/$defs/unit"
+        },
+        "Ghost": {
+          "$ref": "#/$defs/unit"
+        },
+        "Lord": {
+          "$ref": "#/$defs/unit"
+        },
+        "Lady": {
+          "$ref": "#/$defs/unit"
+        },
+        "Jester": {
+          "$ref": "#/$defs/unit"
+        },
+        "Siege tower": {
+          "$ref": "#/$defs/unit"
+        },
+        "Battering ram": {
+          "$ref": "#/$defs/unit"
+        },
+        "Portable shield": {
+          "$ref": "#/$defs/unit"
+        },
+        "Tower ballista": {
+          "$ref": "#/$defs/unit"
+        },
+        "Chicken": {
+          "$ref": "#/$defs/unit"
+        },
+        "Mother": {
+          "$ref": "#/$defs/unit"
+        },
+        "Child": {
+          "$ref": "#/$defs/unit"
+        },
+        "Juggler": {
+          "$ref": "#/$defs/unit"
+        },
+        "Fireeater": {
+          "$ref": "#/$defs/unit"
+        },
+        "Dog": {
+          "$ref": "#/$defs/unit"
+        },
+        "unknown2": {
+          "$ref": "#/$defs/unit"
+        },
+        "unknown3": {
+          "$ref": "#/$defs/unit"
+        },
+        "Arabian archer": {
+          "$ref": "#/$defs/unit"
+        },
+        "Arabian slave": {
+          "$ref": "#/$defs/unit"
+        },
+        "Arabian slinger": {
+          "$ref": "#/$defs/unit"
+        },
+        "Arabian assassin": {
+          "$ref": "#/$defs/unit"
+        },
+        "Arabian horse archer": {
+          "$ref": "#/$defs/unit"
+        },
+        "Arabian swordsman": {
+          "$ref": "#/$defs/unit"
+        },
+        "Arabian firethrower": {
+          "$ref": "#/$defs/unit"
+        },
+        "Fire ballista": {
+          "$ref": "#/$defs/unit"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "unit": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "attached_board_radius": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "attached_interval": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 60000
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64
+        },
+        "density_min": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 256
+        },
+        "density_radius": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "inaccuracy": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 800
+        },
+        "inaccuracy_tiles": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "interval": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 60000
+        },
+        "interval_moving": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 60000
+        },
+        "interval_standing": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 60000
+        },
+        "preload_poll": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 60000
+        },
+        "range": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "require_manned": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4
+            },
+            {
+              "type": "boolean"
+            }
+          ]
+        },
+        "shoot_height": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 500
+        },
+        "spread": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 800
+        },
+        "spread_tiles": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "stagger_max": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 60000
+        },
+        "stagger_min": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 60000,
+          "description": "Requires stagger_max; must not exceed it when staggering is enabled. Checked by the game loader."
+        },
+        "sync_max_wait": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 60000
+        },
+        "wall_min_distance": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "ai_cow_vs_units": {
+          "type": "boolean"
+        },
+        "ai_only": {
+          "type": "boolean"
+        },
+        "attached_ignore_crew": {
+          "type": "boolean"
+        },
+        "attached_stop_when_boarded": {
+          "type": "boolean"
+        },
+        "preload": {
+          "type": "boolean"
+        },
+        "random_targets": {
+          "type": "boolean"
+        },
+        "suppress_default": {
+          "type": "boolean"
+        },
+        "sync_to_animation": {
+          "type": "boolean"
+        },
+        "projectile": {
+          "enum": [
+            "arrow",
+            "ballista_bolt",
+            "catapult_rock",
+            "cow",
+            "crossbow_bolt",
+            "fire_ballista_bolt",
+            "firethrower_pot",
+            "firethrower_pot_untargeted",
+            "mangonel_pebble",
+            "slinger_stone",
+            "trebuchet_rock",
+            1,
+            2,
+            3,
+            4,
+            7,
+            20,
+            23,
+            33,
+            35,
+            36,
+            37
+          ]
+        },
+        "targets": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "buildings",
+                "cluster",
+                "fortifications",
+                "siege_towers",
+                "units",
+                "walls"
+              ]
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "buildings",
+                  "cluster",
+                  "fortifications",
+                  "siege_towers",
+                  "units",
+                  "walls"
+                ]
+              },
+              "minItems": 1,
+              "maxItems": 4,
+              "uniqueItems": true
+            }
+          ]
+        }
+      },
+      "dependentRequired": {
+        "interval_moving": [
+          "interval"
+        ],
+        "interval_standing": [
+          "interval"
+        ],
+        "attached_interval": [
+          "interval"
+        ],
+        "stagger_max": [
+          "interval"
+        ],
+        "stagger_min": [
+          "stagger_max"
+        ]
+      },
+      "allOf": [
+        {
+          "not": {
+            "required": [
+              "spread",
+              "spread_tiles"
+            ]
+          }
+        },
+        {
+          "not": {
+            "required": [
+              "inaccuracy",
+              "inaccuracy_tiles"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

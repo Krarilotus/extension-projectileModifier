@@ -1,0 +1,131 @@
+projectiles: Projectiles
+siege: Engins de siège
+european: Unités européennes
+arabian: Unités arabes
+civilian: Civils
+wildlife: Animaux et autres unités
+inherit: Inchangé / utiliser le fichier
+advanced: Fichier de configuration avancée (facultatif)
+unit_description: Ouvrez une famille, puis une unité. Cochez l’épée pour modifier une valeur numérique ; dépliez
+  le réglage pour afficher son aide. Les réglages désactivés conservent les valeurs du fichier ou le comportement
+  d’origine. Relancez le jeu pour appliquer les changements.
+projectile_config_file_selector: Fichier de projectiles (YAML)
+projectile_config_file_selector_descr: 'Chargez un préréglage YAML pour les options avancées : mouvement, salves
+  échelonnées, précision, hauteur et animation. Les réglages activés ci-dessous remplacent ses valeurs. Sans fichier,
+  utilisez les réglages courants. Exemples et tableau complet dans README.md ; schéma d’édition dans projectile-config.schema.json.'
+projectile: Projectile
+projectile_descr: Remplace le projectile de cette unité. Sans intervalle automatique, le rythme d’attaque d’origine
+  est conservé.
+targets: Cibles automatiques
+targets_descr: Cibles du tir automatique. Les unités et bâtiments alliés sont exclus. Les murs incluent les vôtres.
+  Le fichier YAML permet de définir une liste de priorités personnalisée.
+units: Unités ennemies
+buildings: Bâtiments ennemis
+fortifications: Fortifications ennemies
+siege_towers: Tours de siège ennemies accostées
+cluster: Groupes d’unités ennemies
+walls: Tous les murs (y compris les vôtres)
+units_buildings: Unités, puis fortifications, puis bâtiments
+count: Projectiles par salve
+count_descr: Nombre de projectiles par salve d’origine ou automatique (1–64). Remplace la taille de salve d’origine
+  du mangonneau.
+interval: Intervalle de tir automatique (ticks)
+interval_descr: Active le tir automatique, même pour les unités de mêlée et les tours de siège. Remplace les tirs
+  d’origine par défaut. Utilise le projectile d’origine ou des flèches si l’unité n’en possède pas. Un tick est
+  un pas de simulation, pas une milliseconde.
+range: Portée automatique (cases)
+range_descr: Rayon de recherche des cibles automatiques. Ne modifie pas la portée de l’attaque d’origine.
+spread_tiles: Dispersion des projectiles supplémentaires (cases)
+spread_tiles_descr: Écart aléatoire à partir du deuxième projectile d’une salve simultanée.
+require_manned: Ingénieurs requis (0–4)
+require_manned_descr: Nombre d’ingénieurs à bord requis pour le tir automatique. Zéro désactive la vérification
+  de l’équipage.
+balance_changes: Balance Changes
+unit_peasant: Paysan
+unit_burning_man: Homme en flammes
+unit_woodcutter: Bûcheron
+unit_fletcher: Fabricant d’arcs
+unit_tunneler: Sapeur
+unit_hunter: Chasseur
+unit_quarry_mason: Tailleur de pierre
+unit_quarry_grunt: Ouvrier de carrière
+unit_quarry_ox: Bœuf de carrière
+unit_pitch_worker: Ouvrier du brai
+unit_wheat_farmer: Cultivateur de blé
+unit_hops_farmer: Cultivateur de houblon
+unit_apple_farmer: Pomiculteur
+unit_dairy_farmer: Éleveur laitier
+unit_miller: Meunier
+unit_baker: Boulanger
+unit_brewer: Brasseur
+unit_poleturner: Fabricant de lances
+unit_blacksmith: Forgeron
+unit_armourer: Armurier
+unit_tanner: Tanneur
+unit_european_archer: Archer européen
+unit_european_crossbowman: Arbalétrier européen
+unit_european_spearman: Lancier européen
+unit_european_pikeman: Piquier européen
+unit_european_maceman: Massier européen
+unit_european_swordsman: Épéiste européen
+unit_european_knight: Chevalier européen
+unit_ladderman: Porteur d’échelle
+unit_engineer: Ingénieur
+unit_iron_miner1: Mineur de fer 1
+unit_iron_miner2: Mineur de fer 2
+unit_priest: Prêtre
+unit_healer: Guérisseur
+unit_drunkard: Ivrogne
+unit_innkeeper: Aubergiste
+unit_monk: Moine
+unit_unknown1: Unité inconnue 1
+unit_catapult: Catapulte
+unit_trebuchet: Trébuchet
+unit_mangonel: Mangonneau
+unit_trader: Marchand
+unit_trader_horse: Cheval de marchand
+unit_deer: Cerf
+unit_lion: Lion
+unit_rabbit: Lapin
+unit_camel: Chameau
+unit_crow: Corbeau
+unit_seagull: Mouette
+unit_siege_tent: Tente de siège
+unit_cow: Vache
+unit_hunter_dog: Chien de chasse
+unit_fireman: Pompier
+unit_ghost: Fantôme
+unit_lord: Seigneur
+unit_lady: Dame
+unit_jester: Bouffon
+unit_siege_tower: Tour de siège
+unit_battering_ram: Bélier
+unit_portable_shield: Bouclier mobile
+unit_tower_ballista: Baliste de tour
+unit_chicken: Poule
+unit_mother: Mère
+unit_child: Enfant
+unit_juggler: Jongleur
+unit_fireeater: Cracheur de feu
+unit_dog: Chien
+unit_unknown2: Unité inconnue 2
+unit_unknown3: Unité inconnue 3
+unit_arabian_archer: Archer arabe
+unit_arabian_slave: Esclave arabe
+unit_arabian_slinger: Frondeur arabe
+unit_arabian_assassin: Assassin arabe
+unit_arabian_horse_archer: Archer monté arabe
+unit_arabian_swordsman: Épéiste arabe
+unit_arabian_firethrower: Lanceur de feu arabe
+unit_fire_ballista: Baliste incendiaire
+p_arrow: Flèche
+p_catapult_rock: Pierre de catapulte
+p_trebuchet_rock: Pierre de trébuchet
+p_mangonel_pebble: Pierre de mangonneau
+p_crossbow_bolt: Carreau d’arbalète
+p_ballista_bolt: Trait de baliste
+p_cow: Vache malade
+p_slinger_stone: Pierre de fronde
+p_firethrower_pot: Pot incendiaire
+p_firethrower_pot_untargeted: Pot incendiaire sans cible
+p_fire_ballista_bolt: Trait de baliste incendiaire

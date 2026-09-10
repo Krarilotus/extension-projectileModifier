@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=./projectile-config.schema.json
+# Optional preset. Enabled GUI controls override this file.
+# Intervals are simulation ticks, not milliseconds.
+units:
+  Catapult:
+    projectile: mangonel_pebble
+    count: 3
+    spread_tiles: 4
+  Siege tower:
+    projectile: crossbow_bolt
+    count: 2
+    interval: 50
+    interval_moving: 100
+    interval_standing: 50
+    require_manned: 4
+    targets: [units]
+    range: 18
+    shoot_height: 50

@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=./projectile-config.schema.json
+# Valid advanced example; copy only the fields needed. See README.md for bounds.
+units:
+  Siege tower:
+    projectile: crossbow_bolt
+    count: 3
+    interval: 100
+    interval_moving: 150
+    interval_standing: 100
+    suppress_default: true
+    targets: [cluster, units, fortifications, buildings]
+    range: 20
+    wall_min_distance: 3
+    require_manned: 4
+    random_targets: true
+    shoot_height: 50
+    spread_tiles: 2
+    inaccuracy_tiles: 1
+    # Alternatively use spread: 16 and inaccuracy: 8 (micro units).
+    # Do not set both unit systems for the same setting.
+    stagger_min: 1
+    stagger_max: 3
+    density_min: 4
+    density_radius: 5
+    attached_interval: 75
+    attached_ignore_crew: true
+    attached_stop_when_boarded: true
+    attached_board_radius: 2
+    ai_cow_vs_units: false
+    ai_only: false
+    preload: true
+    preload_poll: 5
+    sync_to_animation: false
+    sync_max_wait: 40

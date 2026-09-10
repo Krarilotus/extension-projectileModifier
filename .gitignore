@@ -1,0 +1,6 @@
+__pycache__/
+.pytest_cache/
+dist/
+tests/output/
+node_modules/
+.vite/

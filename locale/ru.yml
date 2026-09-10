@@ -1,0 +1,129 @@
+projectiles: Снаряды
+siege: Осадные машины
+european: Европейские юниты
+arabian: Арабские юниты
+civilian: Мирные жители
+wildlife: Животные и прочие юниты
+inherit: Без изменений / значение из файла
+advanced: Файл расширенных настроек (необязательно)
+unit_description: Раскройте группу, затем юнита. Отметьте меч, чтобы изменить числовое значение; раскройте настройку,
+  чтобы прочитать подсказку. Отключённые настройки сохраняют значения из файла или исходное поведение. Для применения
+  изменений перезапустите игру.
+projectile_config_file_selector: Файл настроек снарядов (YAML)
+projectile_config_file_selector_descr: 'Загрузите файл YAML для расширенных настроек: движения, последовательных
+  залпов, точности, высоты и анимации. Включённые ниже настройки заменяют значения из файла. Без файла доступны
+  основные настройки. Примеры и полная таблица приведены в README.md; схема для редактора — projectile-config.schema.json.'
+projectile: Снаряд
+projectile_descr: Заменяет снаряд этого юнита. Без автоматического интервала сохраняется исходный темп атаки.
+targets: Автоматические цели
+targets_descr: Цели автоматической стрельбы. Союзные юниты и здания исключены. Стены включают и ваши собственные.
+  Свой порядок приоритетов можно задать в файле YAML.
+units: Вражеские юниты
+buildings: Вражеские здания
+fortifications: Вражеские укрепления
+siege_towers: Пристыкованные вражеские осадные башни
+cluster: Группы вражеских юнитов
+walls: Любые стены (включая собственные)
+units_buildings: Юниты, затем укрепления, затем здания
+count: Снарядов в залпе
+count_descr: Число снарядов в исходном или автоматическом залпе (1–64). Заменяет исходное число снарядов мангонели.
+interval: Интервал автоматической стрельбы (тики)
+interval_descr: Включает автоматическую стрельбу, в том числе для бойцов ближнего боя и осадных башен. По умолчанию
+  заменяет исходные выстрелы. Используется исходный снаряд, а при его отсутствии — стрелы. Тик — шаг симуляции,
+  а не миллисекунда.
+range: Автоматическая дальность (клетки)
+range_descr: Радиус поиска автоматических целей. Не меняет исходную дальность атаки.
+spread_tiles: Разброс дополнительных снарядов (клетки)
+spread_tiles_descr: Случайное отклонение начиная со второго снаряда одновременного залпа.
+require_manned: Требуется инженеров (0–4)
+require_manned_descr: Число инженеров внутри осадной машины, необходимое для автоматической стрельбы. Ноль отключает
+  проверку экипажа.
+balance_changes: Balance Changes
+unit_peasant: Крестьянин
+unit_burning_man: Горящий человек
+unit_woodcutter: Дровосек
+unit_fletcher: Мастер луков
+unit_tunneler: Землекоп
+unit_hunter: Охотник
+unit_quarry_mason: Каменотёс
+unit_quarry_grunt: Рабочий каменоломни
+unit_quarry_ox: Вол каменоломни
+unit_pitch_worker: Смолокур
+unit_wheat_farmer: Земледелец
+unit_hops_farmer: Хмелевод
+unit_apple_farmer: Садовник
+unit_dairy_farmer: Молочник
+unit_miller: Мельник
+unit_baker: Пекарь
+unit_brewer: Пивовар
+unit_poleturner: Копьедел
+unit_blacksmith: Кузнец
+unit_armourer: Бронник
+unit_tanner: Кожевник
+unit_european_archer: Европейский лучник
+unit_european_crossbowman: Европейский арбалетчик
+unit_european_spearman: Европейский копейщик
+unit_european_pikeman: Европейский пикинёр
+unit_european_maceman: Европейский булавоносец
+unit_european_swordsman: Европейский мечник
+unit_european_knight: Европейский рыцарь
+unit_ladderman: Лестничник
+unit_engineer: Инженер
+unit_iron_miner1: Железорудный шахтёр 1
+unit_iron_miner2: Железорудный шахтёр 2
+unit_priest: Священник
+unit_healer: Лекарь
+unit_drunkard: Пьяница
+unit_innkeeper: Трактирщик
+unit_monk: Монах
+unit_unknown1: Неизвестный юнит 1
+unit_catapult: Катапульта
+unit_trebuchet: Требушет
+unit_mangonel: Мангонель
+unit_trader: Торговец
+unit_trader_horse: Лошадь торговца
+unit_deer: Олень
+unit_lion: Лев
+unit_rabbit: Кролик
+unit_camel: Верблюд
+unit_crow: Ворона
+unit_seagull: Чайка
+unit_siege_tent: Осадная палатка
+unit_cow: Корова
+unit_hunter_dog: Охотничья собака
+unit_fireman: Пожарный
+unit_ghost: Призрак
+unit_lord: Лорд
+unit_lady: Леди
+unit_jester: Шут
+unit_siege_tower: Осадная башня
+unit_battering_ram: Таран
+unit_portable_shield: Переносной щит
+unit_tower_ballista: Башенная баллиста
+unit_chicken: Курица
+unit_mother: Мать
+unit_child: Ребёнок
+unit_juggler: Жонглёр
+unit_fireeater: Глотатель огня
+unit_dog: Собака
+unit_unknown2: Неизвестный юнит 2
+unit_unknown3: Неизвестный юнит 3
+unit_arabian_archer: Арабский лучник
+unit_arabian_slave: Арабский раб
+unit_arabian_slinger: Арабский пращник
+unit_arabian_assassin: Арабский ассасин
+unit_arabian_horse_archer: Арабский конный лучник
+unit_arabian_swordsman: Арабский мечник
+unit_arabian_firethrower: Арабский огнеметатель
+unit_fire_ballista: Огненная баллиста
+p_arrow: Стрела
+p_catapult_rock: Камень катапульты
+p_trebuchet_rock: Камень требушета
+p_mangonel_pebble: Камень мангонели
+p_crossbow_bolt: Арбалетный болт
+p_ballista_bolt: Болт баллисты
+p_cow: Больная корова
+p_slinger_stone: Камень пращника
+p_firethrower_pot: Горшок с огнём
+p_firethrower_pot_untargeted: Горшок с огнём без цели
+p_fire_ballista_bolt: Болт огненной баллисты

@@ -1,0 +1,130 @@
+balance_changes: Balance Changes
+projectiles: Geschosse
+siege: Belagerungsgeräte
+european: Europäische Einheiten
+arabian: Arabische Einheiten
+civilian: Zivilisten
+wildlife: Tiere und sonstige Einheiten
+inherit: Unverändert / Dateieinstellung verwenden
+advanced: Erweiterte Konfigurationsdatei (optional)
+unit_description: Eine Gruppe und dann eine Einheit aufklappen. Das Schwert-Kontrollkästchen aktiviert eine Zahlenänderung;
+  die aufgeklappte Einstellung zeigt ihre Hilfe. Deaktivierte Einstellungen behalten Dateiwert oder ursprüngliches
+  Verhalten bei. Das Spiel neu starten, um Änderungen anzuwenden.
+projectile_config_file_selector: Geschosseinstellungsdatei (YAML)
+projectile_config_file_selector_descr: Eine YAML-Vorlage für erweiterte Einstellungen zu Bewegung, verzögerten Salven,
+  Genauigkeit, Höhe und Animation laden. Aktivierte Regler unten überschreiben ihre Werte. Ohne Datei sind die üblichen
+  Einstellungen verfügbar. Beispiele und vollständige Tabelle stehen in README.md; das Editorschema heißt projectile-config.schema.json.
+projectile: Geschoss
+projectile_descr: Ersetzt das Geschoss dieser Einheit. Ohne Intervall bleibt der ursprüngliche Angriffszeitpunkt
+  erhalten.
+targets: Automatische Ziele
+targets_descr: Ziele für den Intervallangriff. Einheiten und Gebäude schließen Verbündete aus. Mauern schließen
+  eigene Mauern ein. Eigene Prioritätslisten sind in der YAML-Datei möglich.
+units: Feindliche Einheiten
+buildings: Feindliche Gebäude
+fortifications: Feindliche Befestigungen
+siege_towers: Angedockte feindliche Belagerungstürme
+cluster: Gruppen feindlicher Einheiten
+walls: Alle Mauern (auch eigene)
+units_buildings: Einheiten, dann Befestigungen, dann Gebäude
+count: Geschosse pro Salve
+count_descr: Anzahl pro ursprünglicher oder automatischer Salve (1–64). Ersetzt die ursprüngliche Salvenstärke der
+  Mangonel.
+interval: Automatisches Schussintervall (Ticks)
+interval_descr: Aktiviert automatisches Feuer, auch für Nahkämpfer und Belagerungstürme. Ersetzt ursprüngliche Schüsse,
+  sofern die Unterdrückung nicht ausdrücklich ausgeschaltet wird. Nutzt das ursprüngliche Geschoss oder sonst Pfeile.
+  Ein Tick ist ein Simulationsschritt, keine Millisekunde.
+range: Automatische Reichweite (Felder)
+range_descr: Suchradius für automatische Ziele. Ändert nicht die ursprüngliche Angriffsreichweite.
+spread_tiles: Streuung zusätzlicher Geschosse (Felder)
+spread_tiles_descr: Zufällige Abweichung ab dem zweiten Geschoss einer gleichzeitigen Salve.
+require_manned: Benötigte Ingenieure (0–4)
+require_manned_descr: Automatisches Feuer benötigt diese Anzahl an Ingenieuren im Gerät. Null deaktiviert die Besatzungsprüfung.
+p_arrow: Pfeil
+p_catapult_rock: Katapultstein
+p_trebuchet_rock: Tribokstein
+p_mangonel_pebble: Mangonelstein
+p_crossbow_bolt: Armbrustbolzen
+p_ballista_bolt: Ballistenbolzen
+p_cow: Verseuchte Kuh
+p_slinger_stone: Schleuderstein
+p_firethrower_pot: Feuertopf
+p_firethrower_pot_untargeted: Ungezielter Feuertopf
+p_fire_ballista_bolt: Feuerballistenbolzen
+unit_peasant: Bauer
+unit_burning_man: Brennender Mann
+unit_woodcutter: Holzfäller
+unit_fletcher: Bogenmacher
+unit_tunneler: Tunnelgräber
+unit_hunter: Jäger
+unit_quarry_mason: Steinmetz
+unit_quarry_grunt: Steinbrucharbeiter
+unit_quarry_ox: Ochse
+unit_pitch_worker: Pechgräber
+unit_wheat_farmer: Weizenbauer
+unit_hops_farmer: Hopfenbauer
+unit_apple_farmer: Apfelbauer
+unit_dairy_farmer: Milchbauer
+unit_miller: Müller
+unit_baker: Bäcker
+unit_brewer: Brauer
+unit_poleturner: Lanzenmacher
+unit_blacksmith: Schmied
+unit_armourer: Rüstungsmacher
+unit_tanner: Gerber
+unit_european_archer: Europäischer Bogenschütze
+unit_european_crossbowman: Armbrustschütze
+unit_european_spearman: Lanzenträger
+unit_european_pikeman: Pikenier
+unit_european_maceman: Streitkolbenkämpfer
+unit_european_swordsman: Europäischer Schwertkämpfer
+unit_european_knight: Ritter
+unit_ladderman: Leiterträger
+unit_engineer: Ingenieur
+unit_iron_miner1: Eisenarbeiter 1
+unit_iron_miner2: Eisenarbeiter 2
+unit_priest: Priester
+unit_healer: Heiler
+unit_drunkard: Betrunkener
+unit_innkeeper: Wirt
+unit_monk: Mönch
+unit_unknown1: Unbekannte Einheit 1
+unit_catapult: Katapult
+unit_trebuchet: Tribok
+unit_mangonel: Mangonel
+unit_trader: Händler
+unit_trader_horse: Händlerpferd
+unit_deer: Hirsch
+unit_lion: Löwe
+unit_rabbit: Kaninchen
+unit_camel: Kamel
+unit_crow: Krähe
+unit_seagull: Möwe
+unit_siege_tent: Belagerungszelt
+unit_cow: Kuh
+unit_hunter_dog: Jagdhund
+unit_fireman: Feuerlöscher
+unit_ghost: Geist
+unit_lord: Burgherr
+unit_lady: Burgfrau
+unit_jester: Hofnarr
+unit_siege_tower: Belagerungsturm
+unit_battering_ram: Rammbock
+unit_portable_shield: Tragbarer Schild
+unit_tower_ballista: Turmballiste
+unit_chicken: Huhn
+unit_mother: Mutter
+unit_child: Kind
+unit_juggler: Gaukler
+unit_fireeater: Feuerschlucker
+unit_dog: Hund
+unit_unknown2: Unbekannte Einheit 2
+unit_unknown3: Unbekannte Einheit 3
+unit_arabian_archer: Arabischer Bogenschütze
+unit_arabian_slave: Sklave
+unit_arabian_slinger: Steinschleuderer
+unit_arabian_assassin: Assassine
+unit_arabian_horse_archer: Berittener Bogenschütze
+unit_arabian_swordsman: Arabischer Schwertkämpfer
+unit_arabian_firethrower: Feuerwerfer
+unit_fire_ballista: Feuerballiste
