@@ -43,7 +43,7 @@ import { buildExtensionConfigurationDB } from '../../UCP3-GUI-extension-dependen
 const options=parse(readFileSync('options.yml','utf8')).options;
 const url=options[0].url;
 const languages=Object.keys(parse(readFileSync('../UCP3-GUI/resources/lang/languages.yaml','utf8')));
-const extension={name:'custom-projectiles',version:'1.5.0',type:'module',ui:options,configEntries:{}} as any;
+const extension={name:'custom-projectiles',version:parse(readFileSync('definition.yml','utf8')).version,type:'module',ui:options,configEntries:{}} as any;
 afterEach(cleanup);
 function setup(lang='en',lock=false) {
   const locale=parse(readFileSync('locale/'+lang+'.yml','utf8'));

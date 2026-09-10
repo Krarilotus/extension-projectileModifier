@@ -1,5 +1,49 @@
 # Validation — unreleased work
 
+## Siege reload integration, 1.6.0
+
+Final run: all **59 Python/Lua/x86 tests** passed, along with the complete
+**23 GUI/archive checks** (13 component/qualifier and 10 archive/locale tests).
+The private Reconquista conversion also passes the schema and production Lua
+validator; it is distributed separately from the public module.
+
+The cadence tests execute original animation advancement and catapult,
+trebuchet, mangonel, tower-ballista and fire-ballista update functions in both
+1.41 executables. They check actual release frames, shot-to-shot intervals and
+stone stock. Requested intervals below the native cycle are compared with the
+unconfigured native cycle; no animation frames are skipped.
+
+Additional cases cover crew defaults and explicit overrides, moving/standing
+holds, target loss, bounded preload polling, long staggered volleys, separate AI
+cow ammunition, omitted mangonel count, conditional hook installation and saved
+continuation. Save tests restore both the game-owned unit animation and the
+module's saved timers; old format-2 state is rejected before changing timers.
+Regression tests reproduced both bypassed default crew gates and the extra
+reload delay after a long staggered volley before their fixes.
+
+With the native reload hook enabled, 31 routines assemble under the 63,488-byte
+FASM test budget and total 6,104 executable bytes. Runtime data occupies
+142,864 bytes in Crusader and 502,864 in Extreme. These are allocation/code-size
+measurements, not a frame-rate benchmark. The new animation patch sites are
+0x579E62 and 0x57A282 respectively, resolved and checked before patching.
+
+Sound/device calls and projectile-spawn observation are substituted in these
+reload tests. They do not establish rendered animation, crew rendering, complete
+game-loop behavior, multiplayer synchronization or replay acceptance. The tests
+use full native engine updates, but supply a small simulated world and explicit
+simulation ticks rather than launching the game.
+
+For live acceptance, compare interval 400 and interval 1 with the native engine
+cycle, on both EXEs. Remove/restore crew and targets while loaded; stone stock
+must not decrease during a hold. Test long staggered volleys, ordinary cow
+orders and AI cows, moving commands, and save/load while waiting and while a
+volley is pending. Repeat with the intended Legacy/Rebalancer configuration and
+paired multiplayer/replays using identical module and preset files.
+
+Infantry/mounted/hunter native timing, custom GM1 projectiles and build-menu
+decorations remain unfinished. See IMPLEMENTATION-TODO.md. This is an unsigned
+candidate and not a live acceptance report.
+
 ## Accuracy correction, 10 September 2026
 
 Follow-up native-unit check: `inaccuracy: 1` produces only the five integer points

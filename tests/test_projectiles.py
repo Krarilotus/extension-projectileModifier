@@ -317,6 +317,7 @@ class NativeTests(unittest.TestCase):
 
     def test_ai_cow_volley_uses_separate_ammunition_and_count(self):
         h=self.prepare({'Catapult':{'interval':30,'projectile':'mangonel_pebble','count':3,
+                                   'sync_to_animation':False,
                                    'ai_cow_vs_units':True,'cow_projectile':'arrow','cow_count':2,
                                    'stagger_max':1}})
         h.unit(1,39); h.unit(2,22,2,x=44)

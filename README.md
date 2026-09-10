@@ -1,4 +1,4 @@
-# Custom Projectiles 1.5.0 (test candidate)
+# Custom Projectiles 1.6.0 (test candidate)
 
 Configure projectile types, volley sizes and automatic firing for all 77 unit
 types using one readable YAML file. Based on Monsterfish's supplied 1.2.0 module.
@@ -6,13 +6,13 @@ Requires UCP 3.0.7+, map-extensions 1.x and Crusader/Extreme 1.41.
 
 ## Installation and use
 
-Import `custom-projectiles-1.5.0.zip` into the launcher and enable the module and
+Import `custom-projectiles-1.6.0.zip` into the launcher and enable the module and
 map-extensions. This unsigned local test candidate requires development module
 loading. It is not a signed store release; see VALIDATION.md for test limits.
 
-**Unfinished:** intervals still schedule automatic shots independently of native
-reload animations. Animation-aligned reload timing, custom GM1 projectiles and
-build-menu decoration triggers are not included in this candidate.
+Native reload timing is implemented for catapults, trebuchets, mangonels and both
+ballistas. **Unfinished:** infantry/mounted/hunter animation timing, custom GM1
+projectiles and build-menu decoration triggers. Live acceptance remains pending.
 
 There is **one file picker** under **Customizations → Balance Changes**. There
 are no per-unit sliders, dropdowns, checkboxes or hidden override controls.
@@ -100,8 +100,8 @@ balance plugin; identical path strings alone are insufficient.
 Enable only `custom-projectiles`, disabling the old `projectileModifier` module.
 Move its file-selector settings and plugin dependency to the new module ID.
 Existing YAML preset paths may stay where they are; the new resource folder is
-a suggested location. Start a new match: saved simulation state uses format 2
-and deliberately rejects older format-1 state. The internal save-section key
+a suggested location. Start a new match: saved simulation state uses format 3
+and deliberately rejects older states with different timing semantics. The internal save-section key
 remains `projectileModifier` so old state is detected instead of silently reset.
 
 For profiles from 1.3.x:
@@ -122,11 +122,22 @@ The original projectile YAML format (`units: ...`) remains supported.
 - `count` sets 1–64 projectiles per volley. It replaces the mangonel's native
   seven-projectile volley. Leaving count unset preserves native volley size.
 - `interval` enables automatic fire, using the native projectile or arrows for
-  units without one unless a projectile is selected. Native shots are suppressed
-  by default. Set `suppress_default: false` to combine automatic and native fire.
-  Set it true without an interval to disarm native fire.
+  units without one unless a projectile is selected. For catapults, trebuchets,
+  mangonels and both ballistas, it controls starts of volleys on their native
+  firing frame. Reload proceeds during the interval, then waits before release.
+  Short intervals cannot cut the native animation cycle short. The mangonel
+  retains seven projectiles when `count` is omitted.
+- These five engines use native animation timing by default. They finish movement
+  before starting an attack. `sync_to_animation: false` explicitly selects the
+  previous independent timer, including automatic fire while moving.
+  Other units currently retain that timer by default; native animation timing
+  for infantry, mounted archers and hunters remains unfinished.
+- `suppress_default` defaults true with an interval. False combines native and
+  automatic shots only with the independent timer; it cannot bypass a native
+  reload interval. True without an interval disarms regular native fire.
 - Intervals use simulation ticks, not milliseconds. Wall-clock timing depends
-  on game speed and pauses. The first eligible shot is immediately ready.
+  on game speed and pauses. Native timing starts the first windup immediately
+  when eligible; independent timers can release their first shot immediately.
 - Each moving/standing/docked interval can enable automatic fire independently.
   `interval` is only a fallback where no matching state override applies.
   With neither a state override nor a fallback, hold fire. Explicit zero also
@@ -163,7 +174,7 @@ completion and validation; Lua also checks cross-field comparisons.
 | `spread`, `inaccuracy` | 0–800 whole native coordinate units: **1 = ⅛ tile, 8 = 1 tile** |
 | `spread_tiles`, `inaccuracy_tiles` | Compatibility aliases, 0–100 whole tiles; use only one unit system per effect |
 | `wall_min_distance` | 0–100 tiles; default 3 |
-| `require_manned` | 0–4 engineers currently aboard; `true` means 1, `false` means 0 |
+| `require_manned` | 0–4 engineers currently aboard; `true` means 1, `false` means 0. Native reload defaults: trebuchet 3, other supported engines 2; independent timer default 0. |
 | `random_targets` | Boolean; picks a candidate per projectile; default false |
 | `shoot_height` | 0–500 added native height units; default 0 |
 | `stagger_min`, `stagger_max` | Minimum 1–60000, maximum 0–60000 ticks; maximum 0 disables staggering; requires any automatic-fire interval |
@@ -176,8 +187,8 @@ completion and validation; Lua also checks cross-field comparisons.
 | `ai_cow_vs_units` | Boolean; automatic unit-targeted shots use cows if the owner's AIC enables them; default false; does not enforce the AIC cow interval |
 | `preload` | Boolean; more frequent target searches after reload; default false |
 | `preload_poll` | 1–60000 ticks, default 5; ordinary retries take at most 20 ticks |
-| `sync_to_animation` | Boolean; waits for an animation cycle; default false |
-| `sync_max_wait` | 1–60000 ticks, default 40; fires when this wait expires |
+| `sync_to_animation` | Boolean; native reload timing defaults on for catapult/trebuchet/mangonel/both ballistas. False selects the independent timer. Other units default false; true uses their legacy bounded animation wait. |
+| `sync_max_wait` | 1–60000 ticks, default 40; only the legacy animation wait, never a bypass of a native firing frame |
 | `suppress_default` | Boolean; defaults true with any interval, false otherwise; unchanged native cow orders remain available |
 
 | Projectile name | Native ID |

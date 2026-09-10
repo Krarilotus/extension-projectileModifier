@@ -16,7 +16,7 @@ function M.new(blocks, config)
         core.writeInteger(self.blocks[1][2], 0x1D872B41)
     end
     function state:serialize(handle)
-        handle:put('format', '2')
+        handle:put('format', '3')
         handle:put('config', self.config)
         for _, block in ipairs(self.blocks) do
             handle:put(block[1] .. '.bin', core.readString(block[2], block[3]))
@@ -24,7 +24,7 @@ function M.new(blocks, config)
     end
     function state:deserialize(handle)
         if not handle:exists('format') then self:initialize(); return end
-        assert(handle:get('format') == '2', '[custom-projectiles] unsupported saved state format; start a new match with this version')
+        assert(handle:get('format') == '3', '[custom-projectiles] unsupported saved state format; start a new match with this version')
         assert(handle:get('config') == self.config, '[custom-projectiles] saved projectile settings differ; restore the settings used for this save')
         local pending = {}
         for i, block in ipairs(self.blocks) do

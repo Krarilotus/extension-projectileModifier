@@ -6,7 +6,7 @@ from harness import Harness, ROOT
 report=[]
 for extreme in [False,True]:
     h=Harness(extreme)
-    h.enable({'Catapult':{'projectile':'mangonel_pebble','count':3},
+    h.enable({'Catapult':{'projectile':'mangonel_pebble','count':3,'interval':400},
               'Siege tower':{'interval':50,'count':2}})
     report.append(dict(executable=h.path.name,sha256=hashlib.sha256(h.path.read_bytes()).hexdigest(),
         data_bytes=h.allocations[0][1],code_bytes=sum(len(v[1]) for v in h.blobs.values()),

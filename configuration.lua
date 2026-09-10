@@ -104,7 +104,12 @@ local function validate_flat(config)
             fail(path .. '.stagger_max', 'requires an automatic-fire interval: interval, interval_moving, interval_standing or attached_interval')
         end
         if out.interval then
-            -- A timer replaces the native schedule unless explicitly combined.
+            -- Native reload must not bypass the engine's normal crew gate.
+            -- Explicit 0/false still deliberately permits unmanned fire.
+            if out.require_manned == nil and out.sync_to_animation ~= false then
+                out.require_manned = constants.native_reload_crews[name]
+            end
+            -- Independent timers may be explicitly combined with native shots.
             if out.suppress_default == nil then out.suppress_default = true end
             if out.projectile == nil then
                 out.projectile = constants.native_projectiles[name] or constants.projectile_names.arrow

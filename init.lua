@@ -2,6 +2,7 @@ local addresses = require("addresses")
 local constants = require("constants")
 local templates = require("templates")
 local configuration = require('configuration')
+local cadence = require('cadence')
 
 local namespace = {}
 
@@ -11,7 +12,7 @@ local MAX_TYPES        = constants.MAX_UNIT_TYPES
 local MAX_PROFILES     = MAX_TYPES * 2
 local MAX_UNITS        = addresses.max_units
 
-local function resolve()
+local function resolve(native_cadence)
 local function locate(pattern)
     local ok, address = pcall(core.scanForAOB, pattern, 0x400000, 0x700000)
     assert(ok and type(address) == 'number' and address >= 0x400000 and address < 0x700000,
@@ -39,6 +40,12 @@ local aim_error_addr = locate("0F B7 86 CE 06 00 00 0F B7 8E D6 06 00 00 66 3B C
 
 -- Inside UnitsState::updateUnits, reached once per tick for every living unit.
 local unit_tick_addr = locate("83 C2 01 89 16 8B 15 ? ? ? ? 69 D2 90 04 00 00 33 C9 66 89 8C 32 AE 09 00 00")
+local animation_addr, release_cycles
+if native_cadence then
+    animation_addr = locate('A1 ? ? ? ? 69 C0 90 04 00 00 01 9C 30 54 06 00 00')
+    assert(core.readByte(animation_addr + 0xA1) == 0x69, 'unsupported animation continuation')
+    release_cycles = cadence.resolve(locate)
+end
 
 -- Tile layer bases, read out of the wall-validation code inside acquireShootTarget.
 local tile_rows_addr  = core.readInteger(locate("8D 14 40 8B 1C 95 ? ? ? ?") + 6)
@@ -71,6 +78,7 @@ local current_unit_id_addr = core.readInteger(unit_tick_addr + 7)
 assert(core.readInteger(unit_tick_addr + 0x3A4) == MAX_UNITS,
     '[custom-projectiles] unsupported unit-array capacity modification')
 return {fire=fire_projectile_addr, acquire=acquire_target_addr, tick=unit_tick_addr,
+    animation=animation_addr, releaseCycles=release_cycles,
     groundAim=ground_aim_addr, aimError=aim_error_addr,
     rows=tile_rows_addr, flags=tile_flags_addr, terrain=terrain_height_addr,
     teams=team_table_addr, buildings=building_base_addr, aic=aic_array_base,
@@ -129,13 +137,17 @@ local OFF_IDENTITY  = OFF_UID      + MAX_UNITS * 4
 local OFF_NATIVESEEN = OFF_IDENTITY + MAX_UNITS * 4
 local OFF_FORTIFIED = OFF_NATIVESEEN + MAX_UNITS * 4
 local OFF_PROFILESTATE = OFF_FORTIFIED + MAX_TYPES * 4
-local DATA_SIZE     = OFF_PROFILESTATE + MAX_UNITS * 4
+local OFF_NATIVECYCLE = OFF_PROFILESTATE + MAX_UNITS * 4
+local OFF_NATIVEINT = OFF_NATIVECYCLE + TABLE_BYTES
+local OFF_NATIVEBLOCK = OFF_NATIVEINT + MAX_UNITS * 4
+local DATA_SIZE     = OFF_NATIVEBLOCK + MAX_UNITS * 4
 
 local data_addr = nil
 local volley_addr = nil
 local apply_unit
 local installed = false
 local persistent
+local release_cycles
 
 local function unit_type_id(name)
     local index = table.find(unit_names, name)
@@ -207,7 +219,8 @@ local function assemble_blob(script, values)
 end
 
 local function install(config)
-    local native = resolve()
+    local native = resolve(cadence.required(config))
+    release_cycles = native.releaseCycles or {}
     local fire_projectile_addr, acquire_target_addr, unit_tick_addr = native.fire, native.acquire, native.tick
     local tile_rows_addr, tile_flags_addr, terrain_height_addr = native.rows, native.flags, native.terrain
     local team_table_addr, building_base_addr = native.teams, native.buildings
@@ -271,6 +284,9 @@ local function install(config)
         MAXPROFILES   = MAX_PROFILES,
         FORTIFIEDT    = data_addr + OFF_FORTIFIED,
         PROFILESTATET = data_addr + OFF_PROFILESTATE,
+        NATIVECYCLET  = data_addr + OFF_NATIVECYCLE,
+        NATIVEINTT    = data_addr + OFF_NATIVEINT,
+        NATIVEBLOCKT  = data_addr + OFF_NATIVEBLOCK,
         MAXUNITS      = MAX_UNITS,
         ORDERT        = data_addr + OFF_ORDER,
         RANGET        = data_addr + OFF_RANGE,
@@ -310,6 +326,7 @@ local function install(config)
         S_SAVECOW     = data_addr + OFF_SCRATCH + 0xB8,
         S_VOLLEYCOUNT = data_addr + OFF_SCRATCH + 0xBC,
         S_PROFILE     = data_addr + OFF_SCRATCH + 0xC0,
+        S_FIRED       = data_addr + OFF_SCRATCH + 0xC8,
         S_SELF        = data_addr + OFF_SCRATCH + 0x50,
         S_ID          = data_addr + OFF_SCRATCH + 0x54,
         S_INTV        = data_addr + OFF_SCRATCH + 0x58,
@@ -404,6 +421,11 @@ local function install(config)
     values.VOLLEY = volley_addr
     values.PICKTARGET = assemble_blob(templates.pick_code, values)
     values.RESTORETARGET = assemble_blob(templates.restore_code, values)
+    values.AUTOVOLLEY = assemble_blob(templates.automatic_code, values)
+    values.SHOULDHOLD = assemble_blob(cadence.hold_code, values)
+    values.NATIVERELEASE = assemble_blob(cadence.release_code, values)
+    values.NATIVETARGET = assemble_blob(cadence.target_code, values)
+    values.NATIVEIDLE = assemble_blob(cadence.idle_code, values)
 
     -- Fire hook: 5 byte jump plus 2 nops over the 7 byte prologue we replay.
     values.RESUME = fire_projectile_addr + 7
@@ -417,6 +439,12 @@ local function install(config)
     local ground_hook = assemble_blob(templates.ground_aim_hook_code, values)
     values.RESUME = native.aimError + 7
     local accuracy_hook = assemble_blob(templates.aim_error_hook_code, values)
+    local animation_hook
+    if native.animation then
+        values.RESUME = native.animation + 18
+        values.ANIMATIONDONE = native.animation + 0xA1
+        animation_hook = assemble_blob(cadence.configured_hook, values)
+    end
 
     -- Prepare persistence and all code before either entry point is redirected.
     persistent = require('state').new({
@@ -445,6 +473,12 @@ local function install(config)
     core.writeCode(native.aimError, {
         0xE9, core.itob(core.getRelativeAddress(native.aimError, accuracy_hook, -5)), 0x90, 0x90
     })
+    if native.animation then
+        local animation_site = native.animation + 11
+        core.writeCode(animation_site, {
+            0xE9, core.itob(core.getRelativeAddress(animation_site, animation_hook, -5)), 0x90, 0x90
+        })
+    end
 
     log(INFO, string.format(
         "[custom-projectiles] fire=%X acquire=%X tick=%X teams=%X buildings=%X aic=%X data=%X volley=%X",
@@ -507,6 +541,10 @@ apply_unit = function(name, cfg, profile)
     end
 
     if cfg["interval"] ~= nil then
+        local native_cycle = release_cycles[unit_type_id(name)]
+        if native_cycle and cfg.sync_to_animation ~= false then
+            set_entry(OFF_NATIVECYCLE, id, native_cycle)
+        end
         local interval = math.max(1, math.floor(cfg["interval"]))
         set_entry(OFF_INTERVAL, id, interval)
         -- Both states inherit it until told otherwise.
@@ -679,7 +717,7 @@ namespace.disable = function(self, config)
     return true
 end
 
-namespace.simulationStateFormat = 2
+namespace.simulationStateFormat = 3
 namespace.serializeSimulationState = function(self, handle)
     if persistent then persistent:serialize(handle) end
 end

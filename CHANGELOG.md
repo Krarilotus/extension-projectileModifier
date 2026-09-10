@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.6.0 (unreleased test candidate)
+
+- Drive catapult, trebuchet, mangonel and both ballista intervals through their
+  native reload/release animations. Long intervals wait before the firing frame;
+  short intervals retain the full native cycle. No stone charges while waiting.
+- Integrate crew/state/target gating, staggered volleys, separate cow ammunition
+  and saved continuation. Keep seven mangonel shots when count is omitted.
+- Bound failed target scans with the configured preload polling policy.
+- Preserve normal crew requirements unless explicitly overridden. Prepare reload
+  during long staggered volleys without releasing before the previous one ends.
+- Keep `sync_to_animation: false` as the independent timer compatibility mode.
+  Only install the animation hook when a supported engine actually needs it.
+- Save format 3 rejects earlier timing state. Update setup hints in all nine
+  languages; the GUI remains a single file picker.
+
+Infantry/mounted/hunter native timing, custom GM1 projectiles and build-menu
+decorations remain unfinished. Live rendering and multiplayer checks are pending.
+
 ## 1.5.0 (unreleased, work in progress)
 
 - Rename the module identifier to `custom-projectiles`.

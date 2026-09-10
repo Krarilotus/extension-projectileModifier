@@ -548,6 +548,14 @@ h_checkcow:
     cmp word [ebx+UNITARRAY+0x3B0], 0
     jne h_cow
 h_regular:
+    cmp dword [NATIVECYCLET+eax*4], 0
+    je h_unscheduled
+    push eax
+    push dword [ebp+0x24]
+    call NATIVERELEASE
+    add esp, 8
+    jmp h_block
+h_unscheduled:
     cmp dword [SUPPRESST+eax*4], 0
     jne h_block
     mov ecx, [REMAPT+eax*4]
@@ -1076,6 +1084,16 @@ chooseAmmo:
     mov ecx, [FORCEDT+edx*4]
     mov [S_PROJ], ecx
     mov ecx, [COUNTT+edx*4]
+    test ecx, ecx
+    jnz ca_regularcount
+    cmp dword [NATIVECYCLET+edx*4], 0
+    je ca_regularcount
+    mov eax, [S_ID]
+    imul eax, eax, 0x490
+    cmp word [eax+UNITARRAY+0x8E], 41
+    jne ca_regularcount
+    mov ecx, 7                   ; native mangonel volley when count is omitted
+ca_regularcount:
     mov [S_VOLLEYCOUNT], ecx
     cmp dword [AICOWT+edx*4], 0
     je ca_done
@@ -1303,109 +1321,16 @@ t_identityok:
     ret
 ]],
 
-tick_hook_code = [[
-tickHook:
+-- Shared scheduled-volley driver. The tick loop or a native release event
+-- supplies S_ID, S_PROFILE, S_INTV and S_ONESHOT; all registers are preserved.
+automatic_code = [[
+automaticVolley:
     pushad
-    mov eax, [CURUNIT]
-    cmp eax, 1
-    jl t_done
-    cmp eax, MAXUNITS
-    jge t_done
-    mov dword [NATIVESEENT+eax*4], 0
-    mov edx, eax
-    imul edx, edx, 0x490
-    push eax
-    push eax
-    call PROFILE
-    add esp, 4
-    mov ecx, eax
-    mov [S_PROFILE], eax
-    pop eax
-    cmp ecx, MAXPROFILES
-    jae t_done
-    cmp dword [INTERVALT+ecx*4], 0
-    je t_done
-    cmp word [edx+UNITARRAY+0x8C], 2
-    jne t_done
-    cmp dword [edx+UNITARRAY+0x3C8], 0
-    jle t_done
-    cmp word [edx+UNITARRAY+0x2A0], 0
-    jne t_done
-    movzx ecx, word [edx+UNITARRAY+0x96]
-    test ecx, ecx
-    jz t_done
-    cmp ecx, 8
-    ja t_done
-    call RESETUNIT
-    mov edx, [S_PROFILE]
-    cmp edx, MAXPROFILES
-    jae t_done
-    cmp dword [AIONLYT+edx*4], 0
-    je t_notaionly
-    push edx
-    push eax
-    push eax
-    call ISAIOWNED
-    add esp, 4
-    mov ecx, eax
-    pop eax
-    pop edx
-    test ecx, ecx
-    jz t_done                     ; the player's own unit: leave it be
-t_notaionly:
-    mov ebx, [INTERVALT+edx*4]
-    test ebx, ebx
-    jz t_done
-    mov [S_ID], eax               ; the called game code is free to clobber
-                                  ; registers, so keep what we need in memory
-    push edx
-    push edx
-    push eax
-    call CHOOSEINTERVAL
-    add esp, 8
-    pop edx
-    mov ebx, eax
-    mov eax, [S_ID]
-    test ebx, ebx
-    jz t_done                     ; 0 means "do not shoot in this state"
-    mov [S_INTV], ebx
-    push edx
-    push edx
-    push eax
-    call CREWOK
-    add esp, 8
-    pop edx
-    test eax, eax
-    mov eax, [S_ID]
-    jz t_done
-t_crewed:
-    ; The interval measures time between volley starts. It also advances while
-    ; a staggered volley is pending; volleys themselves never overlap.
-    mov ecx, [COOLDOWNT+eax*4]
-    test ecx, ecx
-    jle t_cdelapsed
-    dec ecx
-    mov [COOLDOWNT+eax*4], ecx
-t_cdelapsed:
-    ; A staggered volley leaves one projectile at a time. If this unit still owes
-    ; some, they take priority over starting a new volley.
-    cmp dword [PENDINGT+eax*4], 0
-    je t_maincd
-    mov ecx, [PENDCDT+eax*4]
-    dec ecx
-    mov [PENDCDT+eax*4], ecx
-    cmp ecx, 0
-    jg t_done
-    mov dword [S_ONESHOT], 1
-    mov eax, [S_ID]
-    mov edx, [S_PROFILE]
-    jmp t_try
-t_maincd:
-    mov ecx, [COOLDOWNT+eax*4]
-    cmp ecx, 0
-    jg t_done
-    mov dword [S_ONESHOT], 0
+    mov dword [S_FIRED], 0
+
 t_try:
+    cmp dword [NATIVECYCLET+edx*4], 0
+    jne t_synced                 ; native release already supplies exact timing
     push edx
     push edx
     push dword [S_ID]
@@ -1414,6 +1339,7 @@ t_try:
     pop edx
     test eax, eax
     jz t_syncwait
+t_synced:
     mov eax, [S_ID]
     push edx
     push eax
@@ -1487,6 +1413,7 @@ t_count:
     push eax
     call VOLLEY
     add esp, 28
+    mov dword [S_FIRED], 1
     ; VOLLEY does not preserve eax/ecx/edx, so everything below reloads.
     cmp dword [S_ONESHOT], 0
     jne t_pendingfired
@@ -1555,7 +1482,136 @@ t_reset:
     ; called moved it along.
     mov eax, [S_ID]
     mov [CURUNIT], eax
+    jmp av_done
+av_done:
+    popad
+    ret
+]],
+
+tick_hook_code = [[
+tickHook:
+    pushad
+    mov eax, [CURUNIT]
+    cmp eax, 1
+    jl t_done
+    cmp eax, MAXUNITS
+    jge t_done
+    mov dword [NATIVEINTT+eax*4], -1
+    mov dword [NATIVEBLOCKT+eax*4], 1
+    mov dword [NATIVESEENT+eax*4], 0
+    mov edx, eax
+    imul edx, edx, 0x490
+    push eax
+    push eax
+    call PROFILE
+    add esp, 4
+    mov ecx, eax
+    mov [S_PROFILE], eax
+    pop eax
+    cmp ecx, MAXPROFILES
+    jae t_done
+    cmp dword [INTERVALT+ecx*4], 0
+    je t_done
+    cmp word [edx+UNITARRAY+0x8C], 2
+    jne t_done
+    cmp dword [edx+UNITARRAY+0x3C8], 0
+    jle t_done
+    cmp word [edx+UNITARRAY+0x2A0], 0
+    jne t_done
+    movzx ecx, word [edx+UNITARRAY+0x96]
+    test ecx, ecx
+    jz t_done
+    cmp ecx, 8
+    ja t_done
+    call RESETUNIT
+    mov edx, [S_PROFILE]
+    cmp edx, MAXPROFILES
+    jae t_done
+    cmp dword [AIONLYT+edx*4], 0
+    je t_notaionly
+    push edx
+    push eax
+    push eax
+    call ISAIOWNED
+    add esp, 4
+    mov ecx, eax
+    pop eax
+    pop edx
+    test ecx, ecx
+    jz t_done                     ; the player's own unit: leave it be
+t_notaionly:
+    mov ebx, [INTERVALT+edx*4]
+    test ebx, ebx
+    jz t_done
+    mov [S_ID], eax               ; the called game code is free to clobber
+                                  ; registers, so keep what we need in memory
+    push edx
+    push edx
+    push eax
+    call CHOOSEINTERVAL
+    add esp, 8
+    pop edx
+    mov ebx, eax
+    mov eax, [S_ID]
+    mov [NATIVEINTT+eax*4], ebx
+    test ebx, ebx
+    jz t_done                     ; 0 means "do not shoot in this state"
+    mov [S_INTV], ebx
+    push edx
+    push edx
+    push eax
+    call CREWOK
+    add esp, 8
+    pop edx
+    test eax, eax
+    mov eax, [S_ID]
+    jz t_done
+t_crewed:
+    mov dword [NATIVEBLOCKT+eax*4], 0
+    cmp dword [NATIVECYCLET+edx*4], 0
+    je t_cooldown
+    cmp dword [SYNCWAITT+eax*4], 0
+    jle t_cooldown
+    dec dword [SYNCWAITT+eax*4]
+t_cooldown:
+    ; The interval measures time between volley starts. It also advances while
+    ; a staggered volley is pending; volleys themselves never overlap.
+    mov ecx, [COOLDOWNT+eax*4]
+    test ecx, ecx
+    jle t_cdelapsed
+    dec ecx
+    mov [COOLDOWNT+eax*4], ecx
+t_cdelapsed:
+    ; Prepare the next reload even during a long staggered volley. The release
+    ; gate still waits for both the interval and all queued projectiles.
+    cmp dword [NATIVECYCLET+edx*4], 0
+    je t_pendingcheck
+    call NATIVEIDLE
+t_pendingcheck:
+    ; A staggered volley leaves one projectile at a time. If this unit still owes
+    ; some, they take priority over starting a new volley.
+    cmp dword [PENDINGT+eax*4], 0
+    je t_maincd
+    mov ecx, [PENDCDT+eax*4]
+    dec ecx
+    mov [PENDCDT+eax*4], ecx
+    cmp ecx, 0
+    jg t_done
+    mov dword [S_ONESHOT], 1
+    mov eax, [S_ID]
+    mov edx, [S_PROFILE]
+    jmp t_try
+t_maincd:
+    cmp dword [NATIVECYCLET+edx*4], 0
+    jne t_done
+    mov ecx, [COOLDOWNT+eax*4]
+    cmp ecx, 0
+    jg t_done
+    mov dword [S_ONESHOT], 0
+t_try:
+    call AUTOVOLLEY
     jmp t_done
+
 t_done:
     popad
     add edx, 1

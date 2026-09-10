@@ -16,8 +16,8 @@ generate_vanilla()
 (ROOT/'projectile-config.schema.json').write_text(
     json.dumps(build_schema(), ensure_ascii=False, indent=2)+'\n', encoding='utf-8', newline='\n')
 files=['definition.yml','options.yml','init.lua','addresses.lua','constants.lua',
-       'templates.lua','configuration.lua','state.lua','example-projectiles.yml',
-       'all-settings-reference.yml','README.md','CHANGELOG.md','VALIDATION.md',
+       'templates.lua','cadence.lua','configuration.lua','state.lua','example-projectiles.yml',
+       'all-settings-reference.yml','README.md','CHANGELOG.md','VALIDATION.md','IMPLEMENTATION-TODO.md',
        'projectile-config.schema.json','GUI-AUDIT.md','vanilla-projectiles.yml',
        'examples/ucp-plugin-required.yml','examples/ucp-plugin-suggested.yml',
        'examples/ucp-plugin-unspecified.yml']

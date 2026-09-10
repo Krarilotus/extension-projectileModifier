@@ -1,4 +1,4 @@
-# Custom Projectiles 1.5.0
+# Custom Projectiles 1.6.0
 
 Geschosse, Salvenstärken und automatische Schussintervalle für alle 77 Einheitentypen einstellen. Katapulte können Mangonelsteine verschießen; Belagerungstürme und Nahkämpfer können einen automatischen Fernkampfangriff erhalten.
 
@@ -7,3 +7,5 @@ vanilla-projectiles.yml aus dem Modul-ZIP nach ucp/resources/custom-projectiles/
 Benötigt UCP 3.0.7+, map-extensions 1.x und Crusader/Extreme 1.41. Alle 33 Einstellungen und 77 Einheitennamen sind in vanilla-projectiles.yml und README.md dokumentiert. Lokale Testversion; die Abnahme im Spiel steht noch aus.
 
 Genauigkeit: inaccuracy nutzt ganze native Koordinateneinheiten: 1 = 1/8 Kachel, 8 = 1 Kachel. 0 entfernt zufällige Zielfehler; Weglassen erhält die ursprüngliche Genauigkeit. spread wirkt separat.
+
+Katapulte, Triböcke, Mangonellen und Ballisten: interval folgt der Schussanimation und kann sie nicht verkürzen. sync_to_animation: false stellt den unabhängigen Timer wieder her. Nach dem Update eine neue Partie starten.

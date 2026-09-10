@@ -329,7 +329,8 @@
             {
               "type": "boolean"
             }
-          ]
+          ],
+          "description": "Engineers currently aboard. Native reload defaults: trebuchet 3, other supported siege engines 2. Independent timer defaults 0. Explicit true means 1; false or 0 allows unmanned fire."
         },
         "shoot_height": {
           "type": "integer",
@@ -362,7 +363,8 @@
         "sync_max_wait": {
           "type": "integer",
           "minimum": 1,
-          "maximum": 60000
+          "maximum": 60000,
+          "description": "Legacy animation wait only; never bypasses a native reload firing frame."
         },
         "wall_min_distance": {
           "type": "integer",
@@ -388,10 +390,12 @@
           "type": "boolean"
         },
         "suppress_default": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Defaults true with an interval. False combines native and automatic shots only in independent timer mode; it cannot bypass native reload timing. Unchanged cow orders remain available."
         },
         "sync_to_animation": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Defaults to native firing-frame timing for catapult, trebuchet, mangonel and both ballistas: reload while waiting and never truncate the animation. False selects the independent timer. Other units default false; true uses the legacy bounded animation wait."
         },
         "projectile": {
           "enum": [
@@ -637,7 +641,8 @@
             {
               "type": "boolean"
             }
-          ]
+          ],
+          "description": "Engineers currently aboard. Native reload defaults: trebuchet 3, other supported siege engines 2. Independent timer defaults 0. Explicit true means 1; false or 0 allows unmanned fire."
         },
         "shoot_height": {
           "type": "integer",
@@ -670,7 +675,8 @@
         "sync_max_wait": {
           "type": "integer",
           "minimum": 1,
-          "maximum": 60000
+          "maximum": 60000,
+          "description": "Legacy animation wait only; never bypasses a native reload firing frame."
         },
         "wall_min_distance": {
           "type": "integer",
@@ -696,10 +702,12 @@
           "type": "boolean"
         },
         "suppress_default": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Defaults true with an interval. False combines native and automatic shots only in independent timer mode; it cannot bypass native reload timing. Unchanged cow orders remain available."
         },
         "sync_to_animation": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Defaults to native firing-frame timing for catapult, trebuchet, mangonel and both ballistas: reload while waiting and never truncate the animation. False selects the independent timer. Other units default false; true uses the legacy bounded animation wait."
         },
         "projectile": {
           "enum": [

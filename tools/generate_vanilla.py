@@ -22,7 +22,7 @@ HEADER='''# yaml-language-server: $schema=./projectile-config.schema.json
 #   count: 3                     # 1..64; omitted keeps native volley count.
 #   cow_projectile: cow          # Optional separate replacement for cow ammunition.
 #   cow_count: 1                 # 1..64; independent of regular count; default 1.
-#   suppress_default: false      # Keep normal shots alongside automatic fire.
+#   suppress_default: false      # Add native shots only in independent timer mode.
 # Automatic attacks:
 #   interval: 100                # Optional fallback; 1..60000 ticks, not ms.
 #                                # Applies only without a matching state rate.
@@ -61,8 +61,13 @@ HEADER='''# yaml-language-server: $schema=./projectile-config.schema.json
 #   ai_cow_vs_units: false       # Automatic unit shots; checks owner's AIC cow flag.
 #   preload: false               # Check targets more often when already loaded.
 #   preload_poll: 5              # 1..60000 ticks between loaded target checks.
-#   sync_to_animation: false     # Wait for a cycle; does not add new animations.
-#   sync_max_wait: 40            # 1..60000 ticks before firing without a cycle.
+#   sync_to_animation: true      # Default for catapult/trebuchet/mangonel/ballistas:
+#                               # native release frame; interval cannot cut the cycle.
+#                               # false restores their old independent timer.
+#                               # Other units default false; true uses legacy wait.
+#   sync_max_wait: 40            # 1..60000; legacy wait only, not native reload.
+#                               # Native crew defaults: trebuchet 3, other engines 2;
+#                               # require_manned overrides them, including 0.
 # Conditional override (a mapping, not a checkbox):
 #   on_fortification:            # Only when standing ON a wall/fortification.
 #     projectile: crossbow_bolt # Other fields inherit this unit's base settings.
@@ -71,8 +76,10 @@ HEADER='''# yaml-language-server: $schema=./projectile-config.schema.json
 #
 # Any interval setting enables automatic fire; no base interval is required.
 # With automatic fire, suppress_default defaults to true and projectile defaults
-# to the native type (or arrow for units without one). Set suppression explicitly
-# to false when automatic fire should supplement original attacks.
+# to the native type (or arrow for units without one). In independent timer mode,
+# set suppression false to supplement original attacks. In native reload mode,
+# it cannot bypass the interval. Native engines finish moving before firing;
+# use sync_to_animation: false for independent automatic fire while moving.
 # Missing moving/standing intervals inherit interval, or hold fire without it.
 # Docked towers keep that state rate unless attached_interval is set.
 # Explicit zero in a state means hold fire, even when interval is present.

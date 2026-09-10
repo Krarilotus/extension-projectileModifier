@@ -8,6 +8,7 @@
     <file src="addresses.lua" />
     <file src="constants.lua" />
     <file src="templates.lua" />
+    <file src="cadence.lua" />
     <file src="configuration.lua" />
     <file src="state.lua" />
     <file src="example-projectiles.yml" />
@@ -18,6 +19,7 @@
     <file src="README.md" />
     <file src="CHANGELOG.md" />
     <file src="VALIDATION.md" />
+    <file src="IMPLEMENTATION-TODO.md" />
     <file src="GUI-AUDIT.md" />
     <file src="locale" />
   </files>
