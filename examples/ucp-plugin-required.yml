@@ -1,0 +1,12 @@
+# UCP plugin config.yml example. This is NOT a projectile preset.
+# Replace MyBalancePreset with your plugin name; put projectiles.yml in it.
+meta:
+  version: 1.0.0
+config-sparse:
+  modules:
+    projectileModifier:
+      config:
+        projectile_config_file_selector:
+          contents:
+            required-value: ucp/plugins/MyBalancePreset-*/projectiles.yml
+  plugins: {}

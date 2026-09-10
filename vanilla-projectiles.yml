@@ -1,0 +1,146 @@
+# yaml-language-server: $schema=./projectile-config.schema.json
+# VANILLA / NO CHANGES
+# Empty unit mappings are intentional: this file installs no projectile hooks.
+# It preserves the game and other modules; it does not undo their balance changes.
+# Copy this file and the schema into ucp/resources/projectileModifier/ and select
+# your edited copy in the launcher. Restart the game after changing a file.
+#
+# Replace a unit's {} with indented settings, for example:
+#   Catapult:
+#     projectile: mangonel_pebble
+#     count: 3
+# Missing units and missing keys are allowed. Do not write null/undefined for
+# an omitted value. Unknown names and invalid values are errors, not defaults.
+#
+# FIELD REFERENCE (all fields optional; do not uncomment everything at once)
+# Original attacks:
+#   projectile: mangonel_pebble  # Replace the native projectile; no timer added.
+#   count: 3                     # 1..64; omitted keeps native volley count.
+#   suppress_default: false      # Keep normal shots alongside automatic fire.
+# Automatic attacks:
+#   interval: 100                # 1..60000 simulation ticks, not milliseconds.
+#   interval_moving: 200          # Requires interval; 0 holds fire while moving.
+#   interval_standing: 100        # Requires interval; 0 holds fire while still.
+#   targets: [units, buildings]   # 1..4 distinct kinds, in priority order.
+#   range: 20                    # 1..100 tiles; automatic targeting only.
+#   require_manned: 1            # 0..4 engineers aboard; true=1, false=0.
+#   random_targets: false        # Pick per projectile; targets can repeat.
+#   shoot_height: 0              # 0..500 extra native height units.
+#   ai_only: false               # Restrict all this unit's changes to AI owners.
+# Accuracy (choose ONE unit system per effect):
+#   spread_tiles: 0              # 0..100 tiles, additional simultaneous shots.
+#   spread: 0                    # Alternative: 0..800 micro units (8 per tile).
+#   inaccuracy_tiles: 0          # 0..100 tiles, applies to every projectile.
+#   inaccuracy: 0                # Alternative: 0..800 micro units (8 per tile).
+# Staggered volleys:
+#   stagger_min: 1               # 1..60000; requires stagger_max.
+#   stagger_max: 0               # 0..60000; requires interval; 0 disables.
+#                                # When enabled, min must not exceed max.
+# Cluster targeting:
+#   density_min: 1               # 1..256 enemies; used by targets: cluster.
+#   density_radius: 5            # 1..100 tiles around each candidate.
+# Wall targeting:
+#   wall_min_distance: 3         # 0..100 tiles; does NOT exclude your own walls.
+# Attached siege towers:
+#   attached_interval: 100       # Requires interval; 0 holds fire; else inherits.
+#   attached_ignore_crew: true   # Continue after engineers leave when attached.
+#   attached_stop_when_boarded: true # Pause for nearby enemies (proximity test).
+#   attached_board_radius: 2     # 0..100 tiles for that proximity test.
+# Optional AI/timing behavior:
+#   ai_cow_vs_units: false       # Automatic unit shots; checks owner's AIC cow flag.
+#   preload: false               # Check targets more often when already loaded.
+#   preload_poll: 5              # 1..60000 ticks between loaded target checks.
+#   sync_to_animation: false     # Wait for a cycle; does not add new animations.
+#   sync_max_wait: 40            # 1..60000 ticks before firing without a cycle.
+#
+# With interval set, suppress_default defaults to true and projectile defaults
+# to the native type (or arrow for units without one). Set suppression explicitly
+# to false when automatic fire should supplement original attacks.
+# Moving, standing and attached intervals inherit interval when omitted.
+# Other automatic-fire defaults and exact bounds are in README.md.
+# These are module settings, not UCP config.yml: do not put required-value or
+# suggested-value wrappers here. UCP qualifiers apply to the FILE SELECTION.
+# A required file path locks selection, not editing of the file's contents.
+# Multiplayer peers must have identical files as well as identical paths.
+#
+# Projectile names: arrow, ballista_bolt, catapult_rock, cow, crossbow_bolt, fire_ballista_bolt, firethrower_pot, firethrower_pot_untargeted, mangonel_pebble, slinger_stone, trebuchet_rock
+# Target kinds: buildings, cluster, fortifications, siege_towers, units, walls
+
+units:
+  Peasant: {}
+  Burning man: {}
+  Woodcutter: {}
+  Fletcher: {}
+  Tunneler: {}
+  Hunter: {}
+  Quarry mason: {}
+  Quarry grunt: {}
+  Quarry ox: {}
+  Pitch worker: {}
+  Wheat farmer: {}
+  Hops farmer: {}
+  Apple farmer: {}
+  Dairy farmer: {}
+  Miller: {}
+  Baker: {}
+  Brewer: {}
+  Poleturner: {}
+  Blacksmith: {}
+  Armourer: {}
+  Tanner: {}
+  European archer: {}
+  European crossbowman: {}
+  European spearman: {}
+  European pikeman: {}
+  European maceman: {}
+  European swordsman: {}
+  European knight: {}
+  Ladderman: {}
+  Engineer: {}
+  Iron miner1: {}
+  Iron miner2: {}
+  Priest: {}
+  Healer: {}
+  Drunkard: {}
+  Innkeeper: {}
+  Monk: {}
+  unknown1: {}
+  Catapult: {}
+  Trebuchet: {}
+  Mangonel: {}
+  Trader: {}
+  Trader horse: {}
+  Deer: {}
+  Lion: {}
+  Rabbit: {}
+  Camel: {}
+  Crow: {}
+  Seagull: {}
+  Siege tent: {}
+  Cow: {}
+  Hunter dog: {}
+  Fireman: {}
+  Ghost: {}
+  Lord: {}
+  Lady: {}
+  Jester: {}
+  Siege tower: {}
+  Battering ram: {}
+  Portable shield: {}
+  Tower ballista: {}
+  Chicken: {}
+  Mother: {}
+  Child: {}
+  Juggler: {}
+  Fireeater: {}
+  Dog: {}
+  unknown2: {}
+  unknown3: {}
+  Arabian archer: {}
+  Arabian slave: {}
+  Arabian slinger: {}
+  Arabian assassin: {}
+  Arabian horse archer: {}
+  Arabian swordsman: {}
+  Arabian firethrower: {}
+  Fire ballista: {}

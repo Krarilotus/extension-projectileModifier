@@ -1,0 +1,9 @@
+# UCP plugin config.yml example. No opinion about the selected projectile file.
+# Omitting this module entry entirely is also valid.
+meta:
+  version: 1.0.0
+config-sparse:
+  modules:
+    projectileModifier:
+      config: {}
+  plugins: {}

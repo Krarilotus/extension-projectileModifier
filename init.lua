@@ -607,23 +607,23 @@ namespace.enable = function(self, config)
     assert(not installed, '[projectileModifier] already enabled; relaunch to change settings')
     assert(type(config) == 'table', '[projectileModifier] expected module options')
     for key in pairs(config) do
-        assert(key == 'projectile_config_file_selector' or key == 'customizations' or key == 'units',
+        assert(key ~= 'customizations' and key ~= 'units',
+            '[projectileModifier] old per-unit UCP settings are no longer supported; move them into a projectile YAML file and reset the old module overrides')
+        assert(key == 'projectile_config_file_selector',
             '[projectileModifier] unknown module option: ' .. tostring(key))
     end
     local path = config["projectile_config_file_selector"]
-    local cfg = {units = config.units or {}}
+    local cfg = {units = {}}
+    assert(path == nil or type(path) == 'string', '[projectileModifier] config path must be a resolved string; required/suggested qualifiers belong in UCP config.yml, not the projectile file')
     if path ~= nil and path ~= '' then
-    assert(type(path) == 'string', '[projectileModifier] config path must be a string')
-    assert(config.units == nil, '[projectileModifier] use either a file or inline units')
-    local file = io.open(path, "rb")
-    assert(file, '[projectileModifier] cannot open config file: ' .. tostring(path))
-    local spec = file:read("*all")
-    file:close()
-
----@diagnostic disable-next-line: undefined-global
-    cfg = yaml.parse(spec)
+        local file = io.open(path, "rb")
+        assert(file, '[projectileModifier] cannot open config file: ' .. tostring(path))
+        local spec = file:read("*all")
+        file:close()
+        assert(spec, '[projectileModifier] cannot read config file: ' .. tostring(path))
+        cfg = yaml.parse(spec)
     end
-    namespace.apply(configuration.merge(cfg, config.customizations))
+    namespace.apply(cfg)
 end
 
 namespace.disable = function(self, config)

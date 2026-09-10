@@ -1,53 +1,103 @@
-# Projectile Modifier 1.3.2
+# Projectile Modifier 1.4.0
 
-Configure projectiles, volley sizes and automatic firing intervals, including
-for units without an original ranged attack. Based on the supplied Projectile
-Modifier 1.2.0 by Monsterfish.
+Configure projectile types, volley sizes and automatic firing for all 77 unit
+types using one readable YAML file. Based on Monsterfish's supplied 1.2.0 module.
+Requires UCP 3.0.7+, map-extensions 1.x and Crusader/Extreme 1.41.
 
-Requires **UCP 3.0.7+**, **map-extensions 1.x**, and **Crusader / Extreme 1.41**.
-This is a local test candidate; [VALIDATION.md](VALIDATION.md) records automated
-evidence and the remaining live-game acceptance cases.
+## Installation and use
 
-## Installation and GUI
+Import `projectileModifier-1.4.0.zip` into the launcher and enable the module and
+map-extensions. This unsigned local test candidate requires development module
+loading. It is not a signed store release; see VALIDATION.md for test limits.
 
-Import `projectileModifier-1.3.2.zip` through the launcher's local extension import,
-or extract it into `ucp/modules/projectileModifier-1.3.2/`. Enable the module and
-its dependency. This unsigned development archive requires UCP's development
-module-loading mode; it is not a store-signed release.
+There is **one file picker** under **Customizations → Balance Changes**. There
+are no per-unit sliders, dropdowns, checkboxes or hidden override controls.
+The picker and short module-preview instructions are localized in all nine GUI
+languages: de, en, fr, ru, hu, tr, ch, es and fa. The shared category matches
+Legacy's displayed category name, including its English fallback.
 
-Open **Balance Changes → Projectiles**. Expand a family, then a unit. All 77
-unit IDs remain available in five collapsed families. Each unit exposes projectile,
-count, automatic interval, range, targets and spread; crew-operated siege engines
-also expose the required engineer count. Sword checkboxes enable numeric
-overrides, dropdowns select projectile/target enums, and help stays collapsed or
-in native tooltips. The module uses stock `GroupBox`, `Choice`, `UCP2Slider` and
-`FileInput` views; no custom menu styling is required.
+1. Extract `vanilla-projectiles.yml` and `projectile-config.schema.json` from the
+   module ZIP. Copy them into your game's `ucp/resources/projectileModifier/`
+   directory, creating it if needed. Keep your editable file outside the module
+   archive so replacing the module does not overwrite your settings.
+2. Edit the copy, then select it with the file picker. The vanilla file lists all
+   77 units with empty `{}` mappings and documents all 30 settings in comments.
+   It makes no changes until you add settings. To edit a unit, replace its `{}`
+   with indented fields.
+3. Restart the game after changing the selected file or its contents. No live
+   reconfiguration is supported. An empty file path means this module makes no
+   changes, unless another UCP preset supplies a path through normal resolution.
 
-Version 1.3.2 fixes locale loading from ZIP archives. Replace the 1.3.1 module
-with this version, refresh the extension list (or restart the launcher), and
-ensure only 1.3.2 is active. No manual editing of translation files is needed.
+For example, this complete file makes catapults fire three mangonel stones while
+keeping their original firing schedule:
 
-All nine GUI languages are included: English, German, French, Russian, Hungarian,
-Turkish, Chinese (`ch`), Spanish and Persian (`fa`). Every visible customization
-string, unit name, choice, tooltip and module description is localized. The
-category name intentionally matches Legacy's English fallback in this checkout,
-so the settings merge into its existing Balance Changes category.
+```yaml
+units:
+  Catapult:
+    projectile: mangonel_pebble
+    count: 3
+```
 
-For a catapult firing three mangonel stones, select **Catapult → Projectile →
-Mangonel stone**, enable **Projectiles per volley**, and enter **3**. Leave the
-interval disabled to keep the original attack timing.
+`example-projectiles.yml` also arms a siege tower. `all-settings-reference.yml`
+is an active advanced example. The vanilla template is the no-change starting
+point; it preserves other modules rather than reverting their balance changes.
 
-For an armed siege tower, select a projectile and enable **Automatic firing
-interval**. Set its volley count and range. Set
-**Required engineers** to **4** to require a full crew. Without that setting,
-custom fire is allowed on an uncrewed engine.
+Missing units and missing fields are allowed. Empty unit mappings are ignored.
+Omission preserves native behavior, except that explicitly enabling an automatic
+interval activates the documented automatic-fire defaults. Do not use null,
+`undefined`, required-value or suggested-value inside projectile settings.
+Wrong names, types, bounds and contradictory settings fail before native hooks.
+Negative scatter radii are invalid; zero means no added scatter.
 
-An optional YAML picker accepts the original `units: {Unit name: settings}`
-format. [example-projectiles.yml](example-projectiles.yml) demonstrates both
-cases. Enabled GUI controls override the file. Disabled sliders and “Unchanged /
-use file setting” preserve file values. With no file and no overrides the module
-does not scan, allocate memory or install hooks. Change settings by relaunching
-the game; hot reconfiguration is not supported.
+## UCP required, suggested and unspecified settings
+
+The file picker uses the standard Rebalancer-style UCP option:
+`projectileModifier.projectile_config_file_selector`. UCP resolves its qualifiers
+before passing a plain path to the module. The projectile file is one preset;
+UCP does not merge or lock its individual numeric fields.
+
+| UCP configuration | Meaning |
+|---|---|
+| `contents.required-value: path` | Require this path; native GUI locks apply. Conflicting required paths are handled by UCP. |
+| `contents.suggested-value: path` | Suggest this path; normal user/preset overrides remain possible. |
+| Option omitted from `config-sparse` | Unspecified: inherit other active presets or the empty default. There is no invented `undefined-value` syntax. |
+| `contents.value: path` in `config-full` | The launcher's resolved value passed to the module. |
+| Explicit empty string | Select no projectile changes; may itself be required or suggested. This is different from omitting a sparse setting. |
+
+For a balance plugin's standard `config.yml`:
+
+```yaml
+meta:
+  version: 1.0.0
+config-sparse:
+  modules:
+    projectileModifier:
+      config:
+        projectile_config_file_selector:
+          contents:
+            suggested-value: ucp/plugins/MyBalancePreset-*/projectiles.yml
+  plugins: {}
+```
+
+Use your actual plugin name, ship `projectiles.yml` in that plugin and declare a
+dependency on projectileModifier in its definition. Full required, suggested and
+unspecified examples are supplied in `examples/ucp-plugin-*.yml`. These are UCP
+configuration examples, **not projectile files to select in the picker**.
+
+The GUI's normal qualifier/reset controls remain available in creator mode.
+Reset removes the local sparse choice and returns to resolved preset defaults.
+A required path locks selection, not edits to an external file. Distribute the
+same preset contents to every multiplayer tester, preferably as a versioned
+balance plugin; identical path strings alone are insufficient.
+
+## Upgrade from 1.3.x
+
+Move any enabled per-unit GUI values to the YAML file. Then remove obsolete
+`customizations` or inline `units` entries from projectileModifier in your UCP
+`config-sparse` and `config-full` sections, or recreate that module's settings.
+Only keep `projectile_config_file_selector`. The runtime rejects old overrides
+with a migration message rather than silently applying invisible settings.
+The original projectile YAML format (`units: ...`) remains supported.
 
 ## Behavior
 
@@ -70,28 +120,10 @@ the game; hot reconfiguration is not supported.
   manual attack commands. Native collision, damage and entity allocation remain
   owned by the game.
 
-## Settings reference
+## Complete settings reference
 
-The GUI exposes the common settings. **Advanced configuration file (optional)**
-accepts all specialist settings below, including movement intervals, staggered
-volleys, animation timing and booleans. This follows Rebalancer's file-based
-preset approach while retaining this module's native scheduler. The complete
-reference is a table; it is not duplicated into a long panel for every unit.
-`spread` and `inaccuracy` use eight micro units per tile. Numeric values must be integers.
-Invalid values, unknown names and contradictory settings fail before hooks are
-installed. [all-settings-reference.yml](all-settings-reference.yml) is a valid
-advanced example. Copy only the fields needed for your configuration. The included
-[projectile-config.schema.json](projectile-config.schema.json) supplies editor
-completion, field bounds, known unit names and dependency checks. The examples
-include a YAML language-server schema comment; keep the schema beside your file
-or update that relative path. Lua additionally checks cross-field comparisons.
-GUI overrides apply before runtime validation, so the editor validates the file
-as a standalone preset; keep required companion values in the file for clarity.
-
-The native runtime also still accepts advanced GUI values saved by 1.3.0. If
-migrating such a configuration, move the enabled specialist values into your
-preset and reset those old overrides before editing through the file. See
-[GUI-AUDIT.md](GUI-AUDIT.md) for the layout and compatibility decisions.
+All settings are optional. Keep the schema next to the YAML file for editor
+completion and validation; Lua also checks cross-field comparisons.
 
 | Setting | Values and defaults |
 |---|---|
@@ -154,27 +186,26 @@ edge cases and long sessions still need the tests listed in VALIDATION.md.
 
 ## Development
 
-Maintain translations in `locale/*.yml`. Generate and validate options with
-`python tools/generate_options.py` (lupa, PyYAML); incomplete or obsolete catalogs
-fail the build. Generate the editor schema with `python tools/generate_schema.py`.
-Test: `python -m unittest discover -s tests -p "test_*.py" -v` (lupa, pefile,
-unicorn, capstone, PyYAML, jsonschema). `SHC_REFERENCE_DIR` selects licensed 1.41 executables;
-`FASM` selects FASM.EXE. Tests use production Lua/FASM and the original native
-dispatcher/acquisition code with an observed entity-spawner stand-in. The 62 KiB
-assembler test budget is below UCP's 64000 bytes.
+Maintain translations in `locale/*.yml`. `python tools/generate_options.py`
+validates all nine catalogs and emits the single native file picker.
+`python tools/generate_vanilla.py` builds the inert template from the runtime's
+unit list; `python tools/generate_schema.py` builds editor bounds/completions.
+The complete settings table above remains the behavioral reference.
 
-GUI tests use the adjacent UCP3-GUI-extension-dependents checkout. Point this
-module's development node_modules at that checkout's installed dependencies and
-run `node ../UCP3-GUI-extension-dependents/node_modules/vitest/vitest.mjs run --config tests/gui.config.mjs`.
-Selectors, sliders and localization are real GUI components; application state
-and host integrations are test substitutes.
+Build an unsigned ZIP with `python tools/package.py` (lupa and PyYAML required).
+The standard UCP `files.xml` manifest and development package are checked for
+agreement. Explicit ZIP directory entries are retained for locale discovery.
 
-Build: `python tools/package.py`. Only explicitly listed runtime/docs files are
-archived, including explicit parent directory entries required by UCP locale
-discovery. The script records SHA-256; it does not sign, publish or install.
+Run `python -m unittest discover -s tests -p "test_*.py" -v` with lupa, pefile,
+unicorn, capstone, PyYAML and jsonschema installed. `SHC_REFERENCE_DIR` selects
+licensed 1.41 executables and `FASM` selects FASM.EXE. Native tests execute
+production Lua/FASM and original dispatcher/acquisition code in an emulator;
+the projectile spawner is an observed stand-in, not a rendered game session.
 
-The archive integration suite uses the real UCP ZIP handle and locale discovery
-code with a native-bridge substitute that reads actual ZIP entries. It reproduces
-the missing-directory failure and checks the repaired ZIP in every language
-against a packaged Legacy module. `UCP_TEST_PYTHON` selects Python and
-`UCP_TEST_LEGACY_ZIP` selects the reference Legacy archive.
+GUI tests use the adjacent UCP3-GUI-extension-dependents checkout and its installed
+dependencies (point this module's development node_modules there). Run:
+`node ../UCP3-GUI-extension-dependents/node_modules/vitest/vitest.mjs run --config tests/gui.config.mjs`.
+They use real FileInput, qualifier/reset controls, UCP serialization and merge
+rules. Host services/state storage are test substitutes. Archive tests use the
+real ZIP handle/discovery TypeScript with an exact-entry native-bridge substitute.
+`UCP_TEST_PYTHON` selects Python; `UCP_TEST_LEGACY_ZIP` selects packaged Legacy.

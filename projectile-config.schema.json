@@ -3,7 +3,7 @@
   "title": "Projectile Modifier preset",
   "type": "object",
   "additionalProperties": false,
-  "description": "Optional advanced preset. Enabled GUI overrides are applied before runtime validation. See README.md for the full settings table.",
+  "description": "Projectile preset. All unit entries and settings are optional; omitted settings preserve native behavior or documented automatic-fire defaults. UCP required/suggested qualifiers apply to the file selector, not fields inside this file. See README.md.",
   "properties": {
     "units": {
       "type": "object",

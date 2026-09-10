@@ -1,5 +1,18 @@
 # 1.3.0 (local test candidate)
 
+## 1.4.0
+
+- Replace every per-unit customization control with one standard FileInput.
+- Make the selected YAML file authoritative; remove the legacy GUI merge code.
+  Reject old hidden customizations/inline UCP unit settings with a migration error.
+- Ship an inert vanilla template containing all 77 units and a commented reference
+  to every one of the 30 supported settings. Omitted units/fields remain valid.
+- Follow UCP's normal required-value/suggested-value and omitted sparse-setting
+  semantics on the file selection; include standard plugin configuration examples.
+- Replace long preview text with short localized instructions in all nine languages.
+- Retain native hooks, scheduling, save-state format and projectile settings syntax.
+
+
 ## 1.3.2
 
 - Fix untranslated `{{...}}` labels in installed ZIP modules: include the explicit

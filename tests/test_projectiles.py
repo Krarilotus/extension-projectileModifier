@@ -1,6 +1,7 @@
 import unittest
 import yaml
 import re
+from pathlib import Path
 from harness import Harness, ROOT, r
 
 class NativeTests(unittest.TestCase):
@@ -236,15 +237,13 @@ class ConfigTests(unittest.TestCase):
             with self.subTest(config=cfg), self.assertRaises(Exception): h.enable(cfg)
             self.assertEqual(h.scans,[]); self.assertEqual(h.writes,[])
 
-    def test_disabled_gui_controls_preserve_file_and_enabled_override(self):
-        h=Harness()
-        c=h.lua.execute(b"return (require('configuration'))")
-        value=c.merge(h.config({'units':{'Catapult':{'count':3,'spread':8}}}),
-            h.config({'catapult':{'projectile':'inherit','count':{'enabled':False,'sliderValue':10},
-            'spread_tiles':{'enabled':True,'sliderValue':2}}}))
-        self.assertEqual(value[b'units'][b'Catapult'][b'count'],3)
-        self.assertIsNone(value[b'units'][b'Catapult'][b'spread'])
-        self.assertEqual(value[b'units'][b'Catapult'][b'spread_tiles'],2)
+    def test_old_hidden_overrides_and_unresolved_qualifiers_fail_before_patching(self):
+        for config in [{'customizations':{}},{'units':{}},
+                       {'projectile_config_file_selector':{'required-value':'file.yml'}},
+                       {'projectile_config_file_selector':False}]:
+            h=Harness()
+            with self.assertRaises(Exception): h.module.enable(h.module,h.config(config))
+            self.assertEqual(h.scans,[]); self.assertEqual(h.writes,[])
 
     def test_second_enable_rejected_without_second_patch(self):
         h=Harness(); h.enable({'Catapult':{'count':2}}); writes=list(h.writes)
@@ -270,7 +269,7 @@ class ConfigTests(unittest.TestCase):
         for option in options['options']: visit(option)
         h.module.enable(h.module,h.config(config))
         self.assertEqual(h.writes,[]); self.assertEqual(h.scans,[])
-        self.assertEqual(len(config['customizations']),77)
+        self.assertEqual(config,{'projectile_config_file_selector':''})
 
     def test_every_gui_string_is_localized_and_categories_match_legacy(self):
         options=(ROOT/'options.yml').read_text(encoding='utf-8')
@@ -287,20 +286,13 @@ class ConfigTests(unittest.TestCase):
             legacy=yaml.safe_load(legacy_path.read_text(encoding='utf-8')) if legacy_path.exists() else {}
             self.assertEqual(locale['balance_changes'],legacy.get('balance_changes','Balance Changes'))
 
-    def test_compact_layout_preserves_all_units_and_stock_views(self):
+    def test_only_one_standard_file_option_is_exposed(self):
         options=yaml.safe_load((ROOT/'options.yml').read_text(encoding='utf-8'))['options']
         self.assertEqual(len(options),1)
         self.assertEqual(options[0]['category'],['{{balance_changes}}'])
-        families=options[0]['children'][1:]
-        self.assertEqual([x['name'] for x in families],['projectile_'+x for x in ['siege','european','arabian','civilian','wildlife']])
-        units=[u for f in families for u in f['children']]
-        self.assertEqual(len({u['name'] for u in units}),77)
-        self.assertTrue(all(6<=len(u['children'])<=7 for u in units))
-        def visit(node):
-            self.assertIn(node['display'],['GroupBox','UCP2Slider','Choice','FileInput'])
-            if node['display']=='GroupBox': self.assertEqual(node['accordion'],{'enabled':True})
-            for child in node.get('children',[]): visit(child)
-        visit(options[0])
+        self.assertEqual(options[0]['display'],'FileInput')
+        self.assertNotIn('children',options[0])
+        self.assertEqual(options[0]['contents']['value'],'')
 
     def test_editor_schema_accepts_presets_and_rejects_common_mistakes(self):
         import json
@@ -308,7 +300,7 @@ class ConfigTests(unittest.TestCase):
         schema=json.loads((ROOT/'projectile-config.schema.json').read_text(encoding='utf-8'))
         Draft202012Validator.check_schema(schema)
         validator=Draft202012Validator(schema)
-        for name in ['example-projectiles.yml','all-settings-reference.yml']:
+        for name in ['example-projectiles.yml','all-settings-reference.yml','vanilla-projectiles.yml']:
             validator.validate(yaml.safe_load((ROOT/name).read_text(encoding='utf-8')))
         for unit in ['Catapult','Siege tower']:
             for field,value in [('count',65),('interval_moving',5),('projectile',99),('typo',True),('targets',['units','units'])]:
@@ -317,18 +309,44 @@ class ConfigTests(unittest.TestCase):
         self.assertFalse(validator.is_valid({'units':{'Catapult':{'spread':1,'spread_tiles':1}}}))
         self.assertTrue(validator.is_valid({'units':{'Siege tower':{'interval':40,'require_manned':True,'preload':False}}}))
 
-    def test_advanced_preset_and_old_gui_overrides_remain_compatible(self):
-        h=Harness(); c=h.lua.execute(b"return (require('configuration'))")
-        value=c.merge(h.config({'units':{'Siege tower':{'interval':40,'interval_moving':0,
-            'preload':True,'sync_to_animation':True,'stagger_max':3}}}),
-            h.config({'siege_tower':{'projectile':'crossbow_bolt','count':{'enabled':True,'sliderValue':3},
-                'interval':{'enabled':False,'sliderValue':100},'preload':'no'}}))
-        tower=value[b'units'][b'Siege tower']
-        self.assertEqual(tower[b'interval'],40)
-        self.assertEqual(tower[b'interval_moving'],0)
-        self.assertEqual(tower[b'count'],3)
-        self.assertFalse(tower[b'preload'])
-        self.assertTrue(tower[b'sync_to_animation'])
+    def load_file(self,h,path):
+        h.lua.globals().yaml.parse=lambda source:h.config(yaml.safe_load(source.decode('utf-8-sig')))
+        h.module.enable(h.module,h.config({'projectile_config_file_selector':str(path)}))
+
+    def test_vanilla_file_is_inert_and_documents_all_settings_and_units(self):
+        path=ROOT/'vanilla-projectiles.yml'; text=path.read_text(encoding='utf-8')
+        parsed=yaml.safe_load(text)
+        self.assertEqual(len(parsed['units']),77)
+        self.assertTrue(all(value=={} for value in parsed['units'].values()))
+        h=Harness(); before=h.cursor
+        self.load_file(h,path)
+        self.assertEqual(h.scans,[]); self.assertEqual(h.writes,[]); self.assertEqual(h.cursor,before)
+        c=h.lua.execute(b"return (require('configuration'))")
+        for key in list(c.numbers.keys())+list(c.booleans.keys())+[b'projectile',b'targets']:
+            self.assertIn('#   '+key.decode()+':',text)
+
+    def test_real_file_loading_applies_sparse_settings_and_rejects_missing_file(self):
+        import tempfile
+        h=Harness()
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'preset.yml'
+            path.write_text('units:\n  Catapult:\n    projectile: mangonel_pebble\n    count: 3\n',encoding='utf-8')
+            self.load_file(h,path)
+            self.assertTrue(h.writes)
+        failed=Harness()
+        with self.assertRaises(Exception): self.load_file(failed,ROOT/'not-a-preset.yml')
+        self.assertEqual(failed.scans,[]); self.assertEqual(failed.writes,[])
+
+    def test_invalid_preset_file_and_ucp_wrappers_fail_before_patching(self):
+        import tempfile
+        for text in ['units: false\n', 'units:\n  Catapult:\n    count: 65\n',
+                     'units:\n  Catapult:\n    count: {required-value: 3}\n',
+                     'config-sparse: {modules: {}}\n']:
+            h=Harness()
+            with tempfile.TemporaryDirectory() as directory:
+                path=Path(directory)/'bad.yml'; path.write_text(text,encoding='utf-8')
+                with self.assertRaises(Exception): self.load_file(h,path)
+            self.assertEqual(h.scans,[]); self.assertEqual(h.writes,[])
 
     def test_shipped_yaml_presets_validate(self):
         h=Harness(); config=h.lua.execute(b"return (require('configuration'))")

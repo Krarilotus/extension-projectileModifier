@@ -1,40 +1,35 @@
-# Validation — local 1.3.2 candidate
+# Validation — local 1.4.0 candidate
 
-Work date: 10 September 2026. No active game installation or reference checkout
-was modified. The supplied ZIP remains unchanged. This directory contains the
-implementation, tests and build tools; `dist/` contains the unsigned module ZIP.
+Work date: 10 September 2026. The original attachments and reference checkouts
+remain unchanged. The source and store PR are separate from a signed release.
 
-## Evidence and scope
+## Current validation scope
 
-The automated suites contain **32 Python/Lua/x86 tests**, **18 launcher component
-tests** and **10 archive localization integration tests**. Production Lua builds production FASM routines, which run in Unicorn
-against mapped sections of the licensed executable. Native unit firing and
-building-target acquisition execute their original machine code. The entity
-spawner is an observed stand-in: these tests verify call arguments, counts, timing,
-stack/register boundaries and state changes, not rendered projectile trajectories
-or final damage. No complete Windows game session was exercised.
+The suite contains 34 Python/Lua/x86 tests, 13 launcher component/qualifier tests
+and 10 archive localization tests. Native tests use production Lua/FASM and mapped
+licensed PE sections. They execute original dispatcher/acquisition code with an
+observed projectile-spawner stand-in; they do not prove rendered effects/damage.
 
-Coverage includes:
+The file-only update tests the real file-loading path with parsed YAML, the inert
+77-unit vanilla template, omitted fields, invalid files and rejection of old
+hidden GUI overrides before native changes. Native scheduling and save-state
+tests remain in the suite; assembly templates and save format are unchanged.
 
-- catapult → mangonel remapping, explicit count and preserved native shots;
-- exact automatic siege-tower counts and intervals on both executable variants;
-- the native seven-shot mangonel replaced by the configured volley count;
-- current crew versus dispatched engineers/stale references;
-- allied, neutral, dead and transitioning target exclusion;
-- array boundaries at 2500 (Crusader) and 10000 (Extreme);
-- slot reuse, stationary/moving transitions, AI-only behavior and cow selection;
-- animation waits and staggered volleys without dropped projectiles;
-- random/cluster candidates without scratch overlap;
-- native building-target acquisition and restoration of unit targeting fields;
-- attached-tower type/UID validation;
-- saved continuation reproducing staggered/scattered shots, fresh-world reset,
-  and rejection of malformed saved blocks before writes;
-- inert defaults, invalid-input rejection, safe assembler failure, repeat-enable
-  rejection, YAML examples and complete GUI localization;
-- actual UCP Choice/UCP2Slider selection, checkbox and numeric-value interaction
-  in all nine GUI languages; actual nested GroupBox collapse and category merging
-  with Legacy. Host services/application state are mocked. This is a
-  component test, not a full launcher import/publish test.
+Actual launcher FileInput, QualifierControl and ResetSettingButton components
+are exercised, including all nine languages, plugin-path generalization,
+required/suggested toggles, required locks, reset/omission and config-full output.
+Shipped UCP examples are checked using the real extension merge logic, including
+conflicting required paths. Application state and host services are substitutes.
+
+Archive tests use real RustZipExtensionHandle, ZipReader, readLocales, readUISpec
+and applyLocale TypeScript functions with an exact-entry native ZIP bridge
+substitute. They recreate the absent locale/ entry failure and verify the repaired
+archive against Legacy 2.15.1 in every language. Catalog checks read the archive,
+not just loose source files. No full native launcher session is claimed.
+
+The module contains one configuration option, three localization keys per
+language, nine short localized previews, all 30 supported settings in the vanilla
+template/reference, and standard required/suggested/unspecified UCP examples.
 
 All 20 routines assemble under **FASM 1.73.35 with 63488 bytes**, slightly below
 the framework's 64000-byte budget. They total **4595 executable bytes**. Module
@@ -72,53 +67,13 @@ the cited original assembly supplied capacity, dispatch and hook evidence.
 Roadmap R077 (terrain aiming) and R112 (cow impact/carcass behavior) were consulted
 as adjacent scopes, not folded into this module or claimed fixed.
 
-## 1.3.1 GUI audit and checks
-
-All 32 Python/Lua/x86 tests and 18 actual launcher component tests passed after
-this update. The native/runtime Lua files are byte-for-byte identical to the
-previous 1.3.0 artifact. The additional checks cover compact layout, all nine
-complete catalogs, preset schema validation and advanced preset/old GUI override
-compatibility. The component suite checks dropdown editing, numeric overrides,
-sword checkbox styling hooks, initially collapsed help, recursive accordion
-expansion and merging with Legacy's existing localized categories in every
-language. When catalogs are supplied directly to the component tests, every referenced
-localization token resolves without English catalog fallback; the shared Balance Changes category deliberately matches Legacy.
-
-There are 121 strings per language and nine localized module descriptions.
-The editor uses one top-level category entry, five unit families and 467 unit
-controls plus one optional file picker. The complete settings reference remains
-a Markdown table. See GUI-AUDIT.md for the Rebalancer ownership decision and
-advanced configuration migration notes. Native-window visual validation and
-native-speaker review of translations have not been performed.
-
-## 1.3.2 archive regression
-
-The 1.3.1 source/component checks passed but missed that its ZIP lacked an explicit
-`locale/` entry. The user's screenshot showed the consequence: UCP skipped all
-catalogs and rendered raw placeholders. This was a packaging bug, not missing
-translation text. The corrected packager emits and validates directory entries.
-
-The archive suite exercises the actual RustZipExtensionHandle, ZipReader,
-readLocales, readUISpec and applyLocale TypeScript code. Only the native ZIP IPC
-bridge is replaced, using actual ZIP entries with the exact-name lookup semantics
-of `src-tauri/src/zip_support.rs`. One test recreates the old missing-directory
-archive and confirms that discovery returns no locales. Nine tests read the
-repaired archive and verify complete catalogs, resolved placeholders, localized
-descriptions and shared categories against the packaged Legacy 2.15.1 reference.
-This is archive integration testing, not a complete Tauri installation session.
-
-The native/runtime Lua files and option definitions are unchanged from 1.3.1;
-its 32 passing native/configuration tests remain the runtime baseline. The GUI
-component and archive suites are rerun for this packaging fix. No new live-game
-acceptance result is claimed.
-
 ## Remaining live acceptance
 
 Before a public release, run both executables with this module in a supported
 UCP installation and record the exact module list and settings:
 
-1. Import the archive in the native GUI, verify all nine languages and category
-   navigation at normal/small window sizes, including Persian mixed-direction
+1. Import the archive in the native GUI, verify all nine languages and the single
+   file selection at normal/small window sizes, including Persian mixed-direction
    text and wrapping; export settings and launch.
 2. Exercise each projectile type against troops, structures and terrain; inspect
    actual trajectories, collision, damage, fire, cow effects and sounds.

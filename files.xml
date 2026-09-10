@@ -11,6 +11,8 @@
     <file src="configuration.lua" />
     <file src="state.lua" />
     <file src="example-projectiles.yml" />
+    <file src="vanilla-projectiles.yml" />
+    <file src="examples" />
     <file src="all-settings-reference.yml" />
     <file src="projectile-config.schema.json" />
     <file src="README.md" />

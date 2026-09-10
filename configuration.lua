@@ -18,10 +18,9 @@ M.booleans = {
     attached_stop_when_boarded = true, ai_cow_vs_units = true, ai_only = true,
     preload = true, sync_to_animation = true,
 }
-M.units, M.ids = {}, {}
+M.units = {}
 for id, name in ipairs(constants.unit_names) do
     M.units[name] = id
-    M.ids[name:lower():gsub('[^a-z0-9]+', '_')] = name
 end
 local projectile_ids = {}
 for _, id in pairs(constants.projectile_names) do projectile_ids[id] = true end
@@ -38,7 +37,8 @@ function M.validate(config)
     for key in pairs(config) do
         if key ~= 'units' then fail(tostring(key), 'unknown section; expected units') end
     end
-    local units = config.units or {}
+    local units = config.units
+    if units == nil then units = {} end
     object(units, 'units')
     local result = {units = {}}
     for name, cfg in pairs(units) do
@@ -106,62 +106,6 @@ function M.validate(config)
         if next(out) ~= nil then result.units[name] = out end
     end
     return result
-end
-
--- GUI controls are optional overrides. Disabled controls preserve file values.
-function M.merge(file, gui)
-    local result = {units = {}}
-    file = file or {units = {}}
-    object(file, 'file')
-    -- Check unknown sections without normalizing (normalization adds defaults).
-    for key in pairs(file) do if key ~= 'units' then fail(tostring(key), 'unknown section') end end
-    object(file.units or {}, 'file.units')
-    for name, cfg in pairs(file.units or {}) do
-        object(cfg, 'units.' .. tostring(name))
-        result.units[name] = {}
-        for key, value in pairs(cfg) do result.units[name][key] = value end
-    end
-    object(gui or {}, 'customizations')
-    for slug, settings in pairs(gui or {}) do
-        local name = M.ids[slug]
-        if not name then fail(tostring(slug), 'unknown GUI unit') end
-        object(settings, slug)
-        for key, control in pairs(settings) do
-            if not M.numbers[key] and not M.booleans[key] and key ~= 'projectile' and key ~= 'targets' then
-                fail(slug .. '.' .. tostring(key), 'unknown GUI setting')
-            end
-            local value
-            if key == 'projectile' or key == 'targets' or M.booleans[key] then
-                if control ~= 'inherit' then
-                    value = control
-                    if M.booleans[key] then
-                        if control ~= 'yes' and control ~= 'no' then fail(slug .. '.' .. key, 'invalid choice') end
-                        value = control == 'yes'
-                    elseif key == 'targets' then
-                        local presets = {
-                            units = {'units'}, buildings = {'buildings'}, fortifications = {'fortifications'},
-                            siege_towers = {'siege_towers'}, cluster = {'cluster'}, walls = {'walls'},
-                            units_buildings = {'units', 'fortifications', 'buildings'},
-                        }
-                        value = presets[control]
-                        if not value then fail(slug .. '.targets', 'invalid target preset') end
-                    end
-                end
-            else
-                object(control, slug .. '.' .. key)
-                if type(control.enabled) ~= 'boolean' then fail(slug .. '.' .. key, 'missing enabled flag') end
-                if control.enabled then value = control.sliderValue; if value == nil then fail(slug .. '.' .. key, 'missing value') end end
-            end
-            if value ~= nil then
-                result.units[name] = result.units[name] or {}
-                local cfg = result.units[name]
-                if key == 'spread_tiles' then cfg.spread = nil end
-                if key == 'inaccuracy_tiles' then cfg.inaccuracy = nil end
-                cfg[key] = value
-            end
-        end
-    end
-    return M.validate(result)
 end
 
 return M

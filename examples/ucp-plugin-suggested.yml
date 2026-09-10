@@ -1,0 +1,11 @@
+# UCP plugin config.yml example. The user may select another projectile file.
+meta:
+  version: 1.0.0
+config-sparse:
+  modules:
+    projectileModifier:
+      config:
+        projectile_config_file_selector:
+          contents:
+            suggested-value: ucp/plugins/MyBalancePreset-*/projectiles.yml
+  plugins: {}

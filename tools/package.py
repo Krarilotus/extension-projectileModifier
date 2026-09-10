@@ -7,16 +7,20 @@ import xml.etree.ElementTree as ET
 import yaml
 from generate_options import LANGUAGES, generate
 from generate_schema import build_schema
+from generate_vanilla import generate as generate_vanilla
 
 ROOT=Path(__file__).resolve().parents[1]
 definition=yaml.safe_load((ROOT/'definition.yml').read_text(encoding='utf-8'))
 generate()  # Reject missing/stale localization before building.
+generate_vanilla()
 (ROOT/'projectile-config.schema.json').write_text(
-    json.dumps(build_schema(), ensure_ascii=False, indent=2)+'\n', encoding='utf-8')
+    json.dumps(build_schema(), ensure_ascii=False, indent=2)+'\n', encoding='utf-8', newline='\n')
 files=['definition.yml','options.yml','init.lua','addresses.lua','constants.lua',
        'templates.lua','configuration.lua','state.lua','example-projectiles.yml',
        'all-settings-reference.yml','README.md','CHANGELOG.md','VALIDATION.md',
-       'projectile-config.schema.json','GUI-AUDIT.md']
+       'projectile-config.schema.json','GUI-AUDIT.md','vanilla-projectiles.yml',
+       'examples/ucp-plugin-required.yml','examples/ucp-plugin-suggested.yml',
+       'examples/ucp-plugin-unspecified.yml']
 for lang in LANGUAGES:
     files.extend([f'locale/{lang}.yml', f'locale/description-{lang}.md'])
 

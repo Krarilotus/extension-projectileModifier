@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=./projectile-config.schema.json
-# Optional preset. Enabled GUI controls override this file.
+# Active example preset. All projectile changes come from this selected file.
 # Intervals are simulation ticks, not milliseconds.
 units:
   Catapult:

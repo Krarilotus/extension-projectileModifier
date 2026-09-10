@@ -20,11 +20,11 @@ def build_schema():
     unit['dependentRequired']['stagger_min'] = ['stagger_max']
     return {'$schema': 'https://json-schema.org/draft/2020-12/schema',
             'title': 'Projectile Modifier preset', 'type': 'object', 'additionalProperties': False,
-            'description': 'Optional advanced preset. Enabled GUI overrides are applied before runtime validation. See README.md for the full settings table.',
+            'description': 'Projectile preset. All unit entries and settings are optional; omitted settings preserve native behavior or documented automatic-fire defaults. UCP required/suggested qualifiers apply to the file selector, not fields inside this file. See README.md.',
             'properties': {'units': {'type': 'object', 'additionalProperties': False,
                           'properties': {name: {'$ref': '#/$defs/unit'} for _, name in sorted(constants.unit_names.items())}}},
             '$defs': {'unit': unit}}
 
 if __name__ == '__main__':
     (ROOT/'projectile-config.schema.json').write_text(
-        json.dumps(build_schema(), ensure_ascii=False, indent=2)+'\n', encoding='utf-8')
+        json.dumps(build_schema(), ensure_ascii=False, indent=2)+'\n', encoding='utf-8', newline='\n')

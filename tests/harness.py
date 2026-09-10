@@ -105,7 +105,9 @@ class Harness:
         return obj
 
     def enable(self, units):
-        self.module.enable(self.module,self.config({'units':units}))
+        # Native behavior tests use the programmatic API. File-loading tests
+        # exercise namespace.enable separately with the real preset contents.
+        self.module.apply(self.config({'units':units}))
 
     def call(self,address,args=(),registers=None,stop=None,callbacks=None):
         stack=0x53f0000
