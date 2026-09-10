@@ -1,4 +1,39 @@
-# Validation — local 1.4.0 candidate
+# Validation — unreleased work
+
+## Accuracy correction, 10 September 2026
+
+Follow-up native-unit check: `inaccuracy: 1` produces only the five integer points
+within an eighth-tile radius (center and four axial neighbors), verified in both
+executables. Examples now use whole native units, with 8 equal to one tile.
+
+All 48 Python/Lua/x86 tests passed, including accuracy granularity and
+fortification/AI scope on both EXEs. All 13 launcher component/qualifier tests
+and 10 ZIP localization tests passed. The ZIP test builds an unsigned
+`custom-projectiles-1.5.0.zip` from the working tree.
+
+Accuracy tests execute the original ground-target preparation and subsequent
+height-dependent error stage in Crusader and Extreme 1.41. Explicit zero preserves
+the exact input aim point across repeated preparation calls and consumes no
+module scatter RNG. Omitted accuracy and unchanged cow ammunition retain native
+scatter. Positive tile and micro-unit settings produce identical shot coordinates
+for equivalent values; tested radii are 1, 2 and 100 tiles, with every sample
+inside the stated circular radius. The extra regression verifies transitions onto
+and off fortifications and the AI-only gate.
+
+The projectile matrix also executes actual native allocation, velocity setup and
+first update for 77 unit types × 16 projectiles × both executables. These checks
+do not render the game or establish full-flight collision/damage behavior.
+
+For live accuracy acceptance: issue repeated shots at a stationary ground point
+with accuracy 0 and spread 0; compare with omitted accuracy; then compare tile
+radius 1 with micro radius 8. Repeat on raised terrain and with siege cow orders.
+Moving targets may move away after release. Nonzero spread remains independent.
+
+Source is proposed through extension-store PR #31 targeting 3.0.7. Reload timing,
+custom graphics and build-menu decoration work is unfinished; this is not a
+signed release or a live acceptance report.
+
+## Historical 1.4.0 validation (figures below describe that version)
 
 Work date: 10 September 2026. The original attachments and reference checkouts
 remain unchanged. The source and store PR are separate from a signed release.

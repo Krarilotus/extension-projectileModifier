@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Projectile Modifier preset",
+  "title": "Custom Projectiles preset",
   "type": "object",
   "additionalProperties": false,
   "description": "Projectile preset. All unit entries and settings are optional; omitted settings preserve native behavior or documented automatic-fire defaults. UCP required/suggested qualifiers apply to the file selector, not fields inside this file. See README.md.",
@@ -256,9 +256,15 @@
         "attached_interval": {
           "type": "integer",
           "minimum": 0,
-          "maximum": 60000
+          "maximum": 60000,
+          "description": "Enables firing for a siege tower docked to a wall, overriding moving/standing intervals; 0 holds fire. Omission keeps the current moving/standing rate or fallback."
         },
         "count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64
+        },
+        "cow_count": {
           "type": "integer",
           "minimum": 1,
           "maximum": 64
@@ -276,27 +282,32 @@
         "inaccuracy": {
           "type": "integer",
           "minimum": 0,
-          "maximum": 800
+          "maximum": 800,
+          "description": "Maximum random aim-error radius in whole native coordinate units: 1 = 1/8 tile, 8 = 1 tile. Explicit 0 removes native random error; omission preserves it. Separate spread still applies. Do not combine with inaccuracy_tiles."
         },
         "inaccuracy_tiles": {
           "type": "integer",
           "minimum": 0,
-          "maximum": 100
+          "maximum": 100,
+          "description": "Compatibility alias in whole tiles, converted by multiplying by 8. Prefer inaccuracy for native 1/8-tile steps. Do not combine both fields."
         },
         "interval": {
           "type": "integer",
           "minimum": 1,
-          "maximum": 60000
+          "maximum": 60000,
+          "description": "Optional fallback automatic-fire interval in simulation ticks. Applies only where no state interval overrides it."
         },
         "interval_moving": {
           "type": "integer",
           "minimum": 0,
-          "maximum": 60000
+          "maximum": 60000,
+          "description": "Enables firing while moving; 0 holds fire. If omitted, use interval, or hold fire if neither is set."
         },
         "interval_standing": {
           "type": "integer",
           "minimum": 0,
-          "maximum": 60000
+          "maximum": 60000,
+          "description": "Enables firing while stopped, not specifically docked; 0 holds fire. If omitted, use interval, or hold fire if neither is set."
         },
         "preload_poll": {
           "type": "integer",
@@ -328,12 +339,14 @@
         "spread": {
           "type": "integer",
           "minimum": 0,
-          "maximum": 800
+          "maximum": 800,
+          "description": "Additional simultaneous-shot spread per axis, in whole native coordinate units: 1 = 1/8 tile, 8 = 1 tile. Zero adds no spread. Independent of inaccuracy."
         },
         "spread_tiles": {
           "type": "integer",
           "minimum": 0,
-          "maximum": 100
+          "maximum": 100,
+          "description": "Compatibility alias in whole tiles, converted by multiplying by 8. Prefer spread for native 1/8-tile steps. Do not combine both fields."
         },
         "stagger_max": {
           "type": "integer",
@@ -383,15 +396,20 @@
         "projectile": {
           "enum": [
             "arrow",
+            "arrow_untargeted",
             "ballista_bolt",
             "catapult_rock",
             "cow",
             "crossbow_bolt",
+            "crossbow_bolt_untargeted",
+            "fire_arrow",
+            "fire_arrow_untargeted",
             "fire_ballista_bolt",
             "firethrower_pot",
             "firethrower_pot_untargeted",
             "mangonel_pebble",
             "slinger_stone",
+            "slinger_stone_untargeted",
             "trebuchet_rock",
             1,
             2,
@@ -400,11 +418,361 @@
             7,
             20,
             23,
+            24,
+            25,
             33,
+            34,
             35,
             36,
-            37
+            37,
+            91,
+            92
           ]
+        },
+        "cow_projectile": {
+          "enum": [
+            "arrow",
+            "arrow_untargeted",
+            "ballista_bolt",
+            "catapult_rock",
+            "cow",
+            "crossbow_bolt",
+            "crossbow_bolt_untargeted",
+            "fire_arrow",
+            "fire_arrow_untargeted",
+            "fire_ballista_bolt",
+            "firethrower_pot",
+            "firethrower_pot_untargeted",
+            "mangonel_pebble",
+            "slinger_stone",
+            "slinger_stone_untargeted",
+            "trebuchet_rock",
+            1,
+            2,
+            3,
+            4,
+            7,
+            20,
+            23,
+            24,
+            25,
+            33,
+            34,
+            35,
+            36,
+            37,
+            91,
+            92
+          ],
+          "description": "Separate replacement for native siege cow ammunition and automatic AI cow shots. Omission preserves cows."
+        },
+        "targets": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "buildings",
+                "cluster",
+                "fortifications",
+                "siege_towers",
+                "units",
+                "walls"
+              ]
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "buildings",
+                  "cluster",
+                  "fortifications",
+                  "siege_towers",
+                  "units",
+                  "walls"
+                ]
+              },
+              "minItems": 1,
+              "maxItems": 4,
+              "uniqueItems": true
+            }
+          ]
+        },
+        "on_fortification": {
+          "$ref": "#/$defs/override"
+        }
+      },
+      "dependentSchemas": {
+        "stagger_max": {
+          "anyOf": [
+            {
+              "required": [
+                "interval"
+              ]
+            },
+            {
+              "required": [
+                "interval_moving"
+              ]
+            },
+            {
+              "required": [
+                "interval_standing"
+              ]
+            },
+            {
+              "required": [
+                "attached_interval"
+              ]
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "not": {
+            "required": [
+              "spread",
+              "spread_tiles"
+            ]
+          }
+        },
+        {
+          "not": {
+            "required": [
+              "inaccuracy",
+              "inaccuracy_tiles"
+            ]
+          }
+        }
+      ],
+      "dependentRequired": {
+        "stagger_min": [
+          "stagger_max"
+        ]
+      }
+    },
+    "override": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "attached_board_radius": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "attached_interval": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 60000,
+          "description": "Enables firing for a siege tower docked to a wall, overriding moving/standing intervals; 0 holds fire. Omission keeps the current moving/standing rate or fallback."
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64
+        },
+        "cow_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64
+        },
+        "density_min": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 256
+        },
+        "density_radius": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "inaccuracy": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 800,
+          "description": "Maximum random aim-error radius in whole native coordinate units: 1 = 1/8 tile, 8 = 1 tile. Explicit 0 removes native random error; omission preserves it. Separate spread still applies. Do not combine with inaccuracy_tiles."
+        },
+        "inaccuracy_tiles": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Compatibility alias in whole tiles, converted by multiplying by 8. Prefer inaccuracy for native 1/8-tile steps. Do not combine both fields."
+        },
+        "interval": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 60000,
+          "description": "Optional fallback automatic-fire interval in simulation ticks. Applies only where no state interval overrides it."
+        },
+        "interval_moving": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 60000,
+          "description": "Enables firing while moving; 0 holds fire. If omitted, use interval, or hold fire if neither is set."
+        },
+        "interval_standing": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 60000,
+          "description": "Enables firing while stopped, not specifically docked; 0 holds fire. If omitted, use interval, or hold fire if neither is set."
+        },
+        "preload_poll": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 60000
+        },
+        "range": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "require_manned": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4
+            },
+            {
+              "type": "boolean"
+            }
+          ]
+        },
+        "shoot_height": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 500
+        },
+        "spread": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 800,
+          "description": "Additional simultaneous-shot spread per axis, in whole native coordinate units: 1 = 1/8 tile, 8 = 1 tile. Zero adds no spread. Independent of inaccuracy."
+        },
+        "spread_tiles": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Compatibility alias in whole tiles, converted by multiplying by 8. Prefer spread for native 1/8-tile steps. Do not combine both fields."
+        },
+        "stagger_max": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 60000
+        },
+        "stagger_min": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 60000,
+          "description": "Requires stagger_max; must not exceed it when staggering is enabled. Checked by the game loader."
+        },
+        "sync_max_wait": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 60000
+        },
+        "wall_min_distance": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "ai_cow_vs_units": {
+          "type": "boolean"
+        },
+        "ai_only": {
+          "type": "boolean"
+        },
+        "attached_ignore_crew": {
+          "type": "boolean"
+        },
+        "attached_stop_when_boarded": {
+          "type": "boolean"
+        },
+        "preload": {
+          "type": "boolean"
+        },
+        "random_targets": {
+          "type": "boolean"
+        },
+        "suppress_default": {
+          "type": "boolean"
+        },
+        "sync_to_animation": {
+          "type": "boolean"
+        },
+        "projectile": {
+          "enum": [
+            "arrow",
+            "arrow_untargeted",
+            "ballista_bolt",
+            "catapult_rock",
+            "cow",
+            "crossbow_bolt",
+            "crossbow_bolt_untargeted",
+            "fire_arrow",
+            "fire_arrow_untargeted",
+            "fire_ballista_bolt",
+            "firethrower_pot",
+            "firethrower_pot_untargeted",
+            "mangonel_pebble",
+            "slinger_stone",
+            "slinger_stone_untargeted",
+            "trebuchet_rock",
+            1,
+            2,
+            3,
+            4,
+            7,
+            20,
+            23,
+            24,
+            25,
+            33,
+            34,
+            35,
+            36,
+            37,
+            91,
+            92
+          ]
+        },
+        "cow_projectile": {
+          "enum": [
+            "arrow",
+            "arrow_untargeted",
+            "ballista_bolt",
+            "catapult_rock",
+            "cow",
+            "crossbow_bolt",
+            "crossbow_bolt_untargeted",
+            "fire_arrow",
+            "fire_arrow_untargeted",
+            "fire_ballista_bolt",
+            "firethrower_pot",
+            "firethrower_pot_untargeted",
+            "mangonel_pebble",
+            "slinger_stone",
+            "slinger_stone_untargeted",
+            "trebuchet_rock",
+            1,
+            2,
+            3,
+            4,
+            7,
+            20,
+            23,
+            24,
+            25,
+            33,
+            34,
+            35,
+            36,
+            37,
+            91,
+            92
+          ],
+          "description": "Separate replacement for native siege cow ammunition and automatic AI cow shots. Omission preserves cows."
         },
         "targets": {
           "oneOf": [
@@ -439,23 +807,7 @@
           ]
         }
       },
-      "dependentRequired": {
-        "interval_moving": [
-          "interval"
-        ],
-        "interval_standing": [
-          "interval"
-        ],
-        "attached_interval": [
-          "interval"
-        ],
-        "stagger_max": [
-          "interval"
-        ],
-        "stagger_min": [
-          "stagger_max"
-        ]
-      },
+      "description": "Sparse overrides while on a wall or fortification. Missing fields inherit the ground settings. Runtime validates the merged settings.",
       "allOf": [
         {
           "not": {

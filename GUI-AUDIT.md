@@ -1,4 +1,4 @@
-# File-only customization audit — 1.4.0
+# File-only customization audit — 1.5.0
 
 The user requested removing the unit editor after trying the earlier layout.
 The module now exposes one standard FileInput, following Rebalancer's option
@@ -9,7 +9,7 @@ icons remain owned by the launcher.
 
 The selected YAML file owns every projectile value. Its `units` mapping remains
 sparse: missing units/fields and empty unit mappings are valid. The vanilla
-template is inert and includes all 77 unit names plus comments for all 30 fields.
+template is inert and includes all 77 unit names plus comments for all 33 fields.
 The complete setting/value table and UCP qualifier examples are in README.md.
 
 UCP qualifiers belong on the file selector in config-sparse, as in Rebalancer
@@ -34,5 +34,6 @@ ZipArchive.by_name. Files merely sharing the prefix do not satisfy that lookup.
 
 Rebalancer still owns its balance tables. This module owns its native firing
 hooks, scheduler and saved state; there is no Rebalancer registration API for
-those features. Runtime native code and save format are unchanged by the UI
-redesign. Live-game, multiplayer and native-window acceptance remain outstanding.
+those features. The 1.4.0 UI redesign preserved runtime/save behavior; this 1.5.0
+candidate adds native accuracy hooks and fortification profiles with save format2.
+Live-game, multiplayer and native-window acceptance remain outstanding.

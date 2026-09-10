@@ -1,7 +1,7 @@
-name: projectileModifier
-display-name: Projectile Modifier
+name: custom-projectiles
+display-name: Custom Projectiles
 type: module
-version: 1.4.0
+version: 1.5.0
 author: Monsterfish
 game: [SHC==1.41, SHCE==1.41]
 dependencies:

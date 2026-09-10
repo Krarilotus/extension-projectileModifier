@@ -3,6 +3,153 @@
 
 return {
 
+-- accuracySet(unitID): explicit regular-ammunition accuracy, respecting AI-only
+-- and fortification overrides. Native cow orders keep their original accuracy.
+accuracy_set_code = [[
+accuracySet:
+    push ebx
+    mov ebx, [esp+8]
+    push ebx
+    call PROFILE
+    add esp, 4
+    cmp eax, MAXPROFILES
+    jae ac_no
+    cmp dword [INACCSETT+eax*4], 0
+    je ac_no
+    cmp dword [AIONLYT+eax*4], 0
+    je ac_ownerok
+    push ebx
+    call ISAIOWNED
+    add esp, 4
+    test eax, eax
+    jz ac_no
+ac_ownerok:
+    imul ebx, ebx, 0x490
+    cmp word [ebx+UNITARRAY+0x3B0], 0
+    jne ac_no
+    mov eax, 1
+    pop ebx
+    ret
+ac_no:
+    xor eax, eax
+    pop ebx
+    ret
+]],
+
+-- Replace the native ground scatter with its exact input point. Applying the
+-- configured radius later, once per projectile, avoids repeated native drift.
+ground_aim_hook_code = [[
+groundAimHook:
+    pushad
+    mov ebp, esp
+    push dword [ebp+0x24]
+    call ACCURACYSET
+    add esp, 4
+    test eax, eax
+    jz ga_pass
+    mov eax, [ebp+0x24]
+    imul eax, eax, 0x490
+    add eax, UNITARRAY
+    mov ecx, [ebp+0x28]
+    mov word [eax+0xBE], cx
+    mov ecx, [ebp+0x2C]
+    mov word [eax+0xC0], cx
+    mov ecx, [ebp+0x30]
+    mov word [eax+0xC2], cx
+    popad
+    ret 0x10
+ga_pass:
+    popad
+    push ecx
+    mov eax, [esp+8]
+    jmp RESUME
+]],
+
+-- ESI = UnitState + unitID*stride here. Target prediction is complete; only
+-- the native random error remains. Return with the original function's ABI.
+aim_error_hook_code = [[
+aimErrorHook:
+    pushad
+    mov eax, esi
+    sub eax, UNITSTATE
+    xor edx, edx
+    mov ecx, 0x490
+    div ecx
+    push eax
+    call ACCURACYSET
+    add esp, 4
+    test eax, eax
+    jz ae_pass
+    popad
+    pop edi
+    pop esi
+    pop ebp
+    ret 0xC
+ae_pass:
+    popad
+    movzx eax, word [esi+0x6CE]
+    jmp RESUME
+]],
+
+-- profile(unitID) -> table index. Preserve other registers. Positive structure
+-- height AND the native wall/fortification tile flags distinguish standing on
+-- the structure from terrain elevation or standing on the ground beside it.
+profile_code = [[
+profile:
+    push ebx
+    push ecx
+    push edx
+    mov eax, [esp+16]
+    cmp eax, 1
+    jl pf_invalid
+    cmp eax, MAXUNITS
+    jge pf_invalid
+    imul eax, eax, 0x490
+    add eax, UNITARRAY
+    mov ebx, eax
+    movzx eax, word [ebx+0x8E]
+    cmp eax, MAXTYPES
+    jae pf_invalid
+    cmp dword [FORTIFIEDT+eax*4], 0
+    je pf_done
+    cmp word [ebx+0xBC], 0
+    jle pf_done
+    movsx ecx, word [ebx+0xC4]
+    cmp ecx, 399
+    ja pf_done
+    movsx edx, word [ebx+0xC6]
+    cmp edx, 399
+    ja pf_done
+    lea edx, [edx+edx*2]
+    mov edx, [TILEROWS+edx*4]
+    add edx, ecx
+    cmp edx, 80400
+    jae pf_done
+    test dword [TILEFLAGS+edx*4], 0x10000100
+    jz pf_done
+    add eax, MAXTYPES
+    jmp pf_done
+pf_invalid:
+    mov eax, MAXPROFILES
+pf_done:
+    cmp eax, MAXPROFILES
+    jae pf_return
+    mov ecx, [esp+16]
+    cmp dword [PROFILESTATET+ecx*4], eax
+    je pf_return
+    mov [PROFILESTATET+ecx*4], eax
+    ; Do not release an old conditional volley after stepping off its trigger.
+    ; Keep the main cooldown so changing ground/wall state cannot bypass reload.
+    mov dword [PENDINGT+ecx*4], 0
+    mov dword [PENDCDT+ecx*4], 0
+    mov dword [SYNCWAITT+ecx*4], 0
+pf_return:
+    pop edx
+    pop ecx
+    pop ebx
+    ret
+]],
+
 -- Shared helpers plus the volley routine.
 --   volley(unitID, entityType, x, y, z, count, spread)  -- cdecl, caller cleans
 -- Sets REENTRY while it runs so the fire hook lets our own shots through.
@@ -82,10 +229,23 @@ v_scatter:
     mov ecx, [S_INACC]
     test ecx, ecx
     jz v_fan
+v_disk:
     call scat
-    add [S_SHOTX], eax
+    mov [SCATY], eax
     mov ecx, [S_INACC]
     call scat
+    mov ebx, eax
+    imul ebx, ebx
+    mov edx, [SCATY]
+    imul edx, edx
+    add ebx, edx
+    mov ecx, [S_INACC]
+    mov edx, ecx
+    imul edx, edx
+    cmp ebx, edx
+    ja v_disk
+    mov edx, [SCATY]
+    add [S_SHOTX], edx
     add [S_SHOTY], eax
     mov dword [S_MOVED], 1
 v_fan:
@@ -107,10 +267,23 @@ v_settle:
     je v_fire
     call FIXSCATTER
 v_fire:
+    ; Cow is an output entity type, not a native unit-dispatch mode. Route it
+    ; through the siege cow path for its launch height, muzzle and ground-target
+    ; metadata. The generic path would give it arrow-style target/height data.
+    mov eax, [ebp+0x0C]
+    cmp eax, 23
+    jne v_dispatch
+    mov edx, [S_SHOOTER]
+    mov word [edx+0x3B0], 1
+    mov eax, 2
+    cmp word [edx+0x8E], 40
+    jne v_dispatch
+    mov eax, 3
+v_dispatch:
     push dword [S_SHOTZ]
     push dword [S_SHOTY]
     push dword [S_SHOTX]
-    push dword [ebp+0x0C]
+    push eax
     push dword [ebp+0x08]
     mov ecx, UNITSTATE
     call FIREPROJ
@@ -345,9 +518,10 @@ fire_hook_code = [[
     jl h_pop
     cmp eax, MAXUNITS
     jge h_pop
-    imul eax, eax, 0x490
-    movzx eax, word [eax+UNITTYPEBASE]
-    cmp eax, MAXTYPES
+    push eax
+    call PROFILE
+    add esp, 4
+    cmp eax, MAXPROFILES
     jae h_pop
     cmp dword [AIONLYT+eax*4], 0
     je h_notaionly
@@ -360,13 +534,34 @@ fire_hook_code = [[
     test ecx, ecx
     jz h_pop                      ; the player's own unit: do not touch its shot
 h_notaionly:
+    ; Select the ammunition slot BEFORE remapping. A rock-to-mangonel change
+    ; must not replace a player's cow order or multiply its native single cow.
+    cmp dword [ebp+0x28], 23
+    je h_cow
+    cmp dword [ebp+0x28], 2
+    je h_checkcow
+    cmp dword [ebp+0x28], 3
+    jne h_regular
+h_checkcow:
+    mov ebx, [ebp+0x24]
+    imul ebx, ebx, 0x490
+    cmp word [ebx+UNITARRAY+0x3B0], 0
+    jne h_cow
+h_regular:
     cmp dword [SUPPRESST+eax*4], 0
     jne h_block
     mov ecx, [REMAPT+eax*4]
     mov edx, [COUNTT+eax*4]
-    ; `count` is projectiles per shot, whatever triggered the shot - a volley
-    ; the player orders looks the same as one the module schedules. Use
-    ; suppress_default if you want only one of those two happening.
+    jmp h_count
+h_cow:
+    mov ecx, [COWREMAPT+eax*4]
+    mov edx, [COWCOUNTT+eax*4]
+    test edx, edx
+    jnz h_count
+    cmp ecx, -1
+    je h_pop                      ; completely preserve unconfigured cow shots
+    mov edx, 1
+h_count:
     test edx, edx
     jz h_nocount
     ; The native mangonel dispatches seven projectiles in one update. A count
@@ -873,6 +1068,43 @@ wc_no:
     ret
 ]],
 
+-- Select automatic ammunition using the active profile in edx. Keep this in a
+-- separate blob so the tick hook stays within UCP's assembler memory budget.
+ammo_code = [[
+chooseAmmo:
+    pushad
+    mov ecx, [FORCEDT+edx*4]
+    mov [S_PROJ], ecx
+    mov ecx, [COUNTT+edx*4]
+    mov [S_VOLLEYCOUNT], ecx
+    cmp dword [AICOWT+edx*4], 0
+    je ca_done
+    cmp dword [S_MODE], 1
+    jne ca_done
+    push edx
+    push dword [S_ID]
+    call WANTSCOW
+    add esp, 4
+    pop edx
+    test eax, eax
+    jz ca_done
+    mov ecx, [COWREMAPT+edx*4]
+    cmp ecx, -1
+    jne ca_cowtype
+    mov ecx, 23
+ca_cowtype:
+    mov [S_PROJ], ecx
+    mov ecx, [COWCOUNTT+edx*4]
+    mov [S_VOLLEYCOUNT], ecx
+ca_done:
+    cmp dword [S_VOLLEYCOUNT], 1
+    jge ca_return
+    mov dword [S_VOLLEYCOUNT], 1
+ca_return:
+    popad
+    ret
+]],
+
 -- syncReady(unitID, unitType) -> eax = 1 when the shot may leave now.
 -- With sync on, a ready shot waits for the unit's animation to come round --
 -- the game raises animationCycleNumberHasJustIncremented (unit+0x50) on the
@@ -1082,8 +1314,14 @@ tickHook:
     mov dword [NATIVESEENT+eax*4], 0
     mov edx, eax
     imul edx, edx, 0x490
-    movzx ecx, word [edx+UNITTYPEBASE]
-    cmp ecx, MAXTYPES
+    push eax
+    push eax
+    call PROFILE
+    add esp, 4
+    mov ecx, eax
+    mov [S_PROFILE], eax
+    pop eax
+    cmp ecx, MAXPROFILES
     jae t_done
     cmp dword [INTERVALT+ecx*4], 0
     je t_done
@@ -1099,8 +1337,8 @@ tickHook:
     cmp ecx, 8
     ja t_done
     call RESETUNIT
-    movzx edx, word [edx+UNITTYPEBASE]
-    cmp edx, MAXTYPES
+    mov edx, [S_PROFILE]
+    cmp edx, MAXPROFILES
     jae t_done
     cmp dword [AIONLYT+edx*4], 0
     je t_notaionly
@@ -1160,9 +1398,7 @@ t_cdelapsed:
     jg t_done
     mov dword [S_ONESHOT], 1
     mov eax, [S_ID]
-    mov edx, eax
-    imul edx, edx, 0x490
-    movzx edx, word [edx+UNITTYPEBASE]
+    mov edx, [S_PROFILE]
     jmp t_try
 t_maincd:
     mov ecx, [COOLDOWNT+eax*4]
@@ -1187,9 +1423,7 @@ t_try:
     jz t_failed
     cmp dword [S_ATTACHED], 0
     je t_notboarded
-    mov edx, [S_ID]
-    imul edx, edx, 0x490
-    movzx edx, word [edx+UNITTYPEBASE]
+    mov edx, [S_PROFILE]
     cmp dword [ATTBOARDT+edx*4], 0
     je t_notboarded
     mov ecx, [ATTBR2T+edx*4]
@@ -1213,9 +1447,7 @@ t_notboarded:
 t_shoot:
     mov dword [S_EXPLICIT], 1
     mov eax, [S_ID]
-    mov edx, eax
-    imul edx, edx, 0x490
-    movzx edx, word [edx+UNITTYPEBASE]
+    mov edx, [S_PROFILE]
     mov esi, [S_UNITPTR]
     mov ecx, [HEIGHTT+edx*4]
     mov [S_HEIGHT], ecx
@@ -1227,12 +1459,13 @@ t_multiready:
     mov [S_MULTI], ecx
     mov ecx, [INACCT+edx*4]
     mov [S_INACC], ecx
+    call CHOOSEAMMO
     push dword [SPREADT+edx*4]
     ; how many projectiles leave right now
     mov ecx, 1
     cmp dword [S_ONESHOT], 0
     jne t_count                   ; a staggered one: exactly one
-    mov ecx, [COUNTT+edx*4]
+    mov ecx, [S_VOLLEYCOUNT]
     cmp ecx, 1
     jge t_cntok
     mov ecx, 1
@@ -1249,21 +1482,6 @@ t_count:
     push ecx
     movsx ecx, word [esi+0xBE]
     push ecx
-    mov ecx, [FORCEDT+edx*4]
-    mov [S_PROJ], ecx
-    cmp dword [AICOWT+edx*4], 0
-    je t_projdone
-    cmp dword [S_MODE], 1
-    jne t_projdone                ; only when the shot is aimed at troops
-    push edx
-    push dword [S_ID]
-    call WANTSCOW
-    add esp, 4
-    pop edx
-    test eax, eax
-    jz t_projdone
-    mov dword [S_PROJ], 23        ; a diseased cow
-t_projdone:
     push dword [S_PROJ]
     mov eax, [S_ID]
     push eax
@@ -1275,12 +1493,10 @@ t_projdone:
     mov eax, [S_ID]
     mov ecx, [S_INTV]
     mov [COOLDOWNT+eax*4], ecx
-    mov edx, eax
-    imul edx, edx, 0x490
-    movzx edx, word [edx+UNITTYPEBASE]
+    mov edx, [S_PROFILE]
     cmp dword [STAGMAXT+edx*4], 0
     je t_afterqueue
-    mov ecx, [COUNTT+edx*4]
+    mov ecx, [S_VOLLEYCOUNT]
     dec ecx
     cmp ecx, 0
     jle t_afterqueue
@@ -1293,9 +1509,7 @@ t_projdone:
 t_pendingfired:
     mov eax, [S_ID]
     dec dword [PENDINGT+eax*4]
-    mov edx, eax
-    imul edx, edx, 0x490
-    movzx edx, word [edx+UNITTYPEBASE]
+    mov edx, [S_PROFILE]
     push edx
     push eax
     call SETSTAGGER
@@ -1312,9 +1526,7 @@ t_retry:
     ; interval, otherwise a long interval means a unit almost never notices
     ; an enemy that walks past between two checks.
     mov eax, [S_ID]
-    mov edx, eax
-    imul edx, edx, 0x490
-    movzx edx, word [edx+UNITTYPEBASE]
+    mov edx, [S_PROFILE]
     mov ecx, RETRYTICKS
     cmp dword [PRELOADT+edx*4], 0
     je t_retrycap

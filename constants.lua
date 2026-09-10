@@ -29,10 +29,15 @@ local projectile_names = {
     crossbow_bolt             = 7,
     ballista_bolt             = 20,
     cow                       = 23,
+    arrow_untargeted           = 24,
+    crossbow_bolt_untargeted   = 25,
     slinger_stone             = 33,
-    firethrower_pot           = 35,
+    firethrower_pot           = 34,
+    slinger_stone_untargeted   = 35,
     firethrower_pot_untargeted= 36,
     fire_ballista_bolt        = 37,
+    fire_arrow                = 91,
+    fire_arrow_untargeted     = 92,
 }
 
 -- What a forced shooter is allowed to aim at, in the order the config lists them.
@@ -72,7 +77,7 @@ return {
         ['Catapult'] = 2, ['Trebuchet'] = 3, ['Mangonel'] = 4,
         ['Tower ballista'] = 20, ['Arabian archer'] = 1,
         ['Arabian slinger'] = 33, ['Arabian horse archer'] = 1,
-        ['Arabian firethrower'] = 35, ['Fire ballista'] = 37,
+        ['Arabian firethrower'] = 36, ['Fire ballista'] = 37,
     },
     unit_names = unit_names,
     target_kinds = target_kinds,

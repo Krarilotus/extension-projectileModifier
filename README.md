@@ -1,4 +1,4 @@
-# Projectile Modifier 1.4.0
+# Custom Projectiles 1.5.0 (test candidate)
 
 Configure projectile types, volley sizes and automatic firing for all 77 unit
 types using one readable YAML file. Based on Monsterfish's supplied 1.2.0 module.
@@ -6,9 +6,13 @@ Requires UCP 3.0.7+, map-extensions 1.x and Crusader/Extreme 1.41.
 
 ## Installation and use
 
-Import `projectileModifier-1.4.0.zip` into the launcher and enable the module and
+Import `custom-projectiles-1.5.0.zip` into the launcher and enable the module and
 map-extensions. This unsigned local test candidate requires development module
 loading. It is not a signed store release; see VALIDATION.md for test limits.
+
+**Unfinished:** intervals still schedule automatic shots independently of native
+reload animations. Animation-aligned reload timing, custom GM1 projectiles and
+build-menu decoration triggers are not included in this candidate.
 
 There is **one file picker** under **Customizations → Balance Changes**. There
 are no per-unit sliders, dropdowns, checkboxes or hidden override controls.
@@ -17,11 +21,11 @@ languages: de, en, fr, ru, hu, tr, ch, es and fa. The shared category matches
 Legacy's displayed category name, including its English fallback.
 
 1. Extract `vanilla-projectiles.yml` and `projectile-config.schema.json` from the
-   module ZIP. Copy them into your game's `ucp/resources/projectileModifier/`
+   module ZIP. Copy them into your game's `ucp/resources/custom-projectiles/`
    directory, creating it if needed. Keep your editable file outside the module
    archive so replacing the module does not overwrite your settings.
 2. Edit the copy, then select it with the file picker. The vanilla file lists all
-   77 units with empty `{}` mappings and documents all 30 settings in comments.
+   77 units with empty `{}` mappings and documents all 33 settings in comments.
    It makes no changes until you add settings. To edit a unit, replace its `{}`
    with indented fields.
 3. Restart the game after changing the selected file or its contents. No live
@@ -47,12 +51,13 @@ Omission preserves native behavior, except that explicitly enabling an automatic
 interval activates the documented automatic-fire defaults. Do not use null,
 `undefined`, required-value or suggested-value inside projectile settings.
 Wrong names, types, bounds and contradictory settings fail before native hooks.
-Negative scatter radii are invalid; zero means no added scatter.
+Negative scatter radii are invalid. Explicit zero accuracy removes random aim
+error; zero spread adds no volley spread.
 
 ## UCP required, suggested and unspecified settings
 
 The file picker uses the standard Rebalancer-style UCP option:
-`projectileModifier.projectile_config_file_selector`. UCP resolves its qualifiers
+`custom-projectiles.projectile_config_file_selector`. UCP resolves its qualifiers
 before passing a plain path to the module. The projectile file is one preset;
 UCP does not merge or lock its individual numeric fields.
 
@@ -71,7 +76,7 @@ meta:
   version: 1.0.0
 config-sparse:
   modules:
-    projectileModifier:
+    custom-projectiles:
       config:
         projectile_config_file_selector:
           contents:
@@ -80,7 +85,7 @@ config-sparse:
 ```
 
 Use your actual plugin name, ship `projectiles.yml` in that plugin and declare a
-dependency on projectileModifier in its definition. Full required, suggested and
+dependency on custom-projectiles in its definition. Full required, suggested and
 unspecified examples are supplied in `examples/ucp-plugin-*.yml`. These are UCP
 configuration examples, **not projectile files to select in the picker**.
 
@@ -90,7 +95,16 @@ A required path locks selection, not edits to an external file. Distribute the
 same preset contents to every multiplayer tester, preferably as a versioned
 balance plugin; identical path strings alone are insufficient.
 
-## Upgrade from 1.3.x
+## Upgrade from projectileModifier
+
+Enable only `custom-projectiles`, disabling the old `projectileModifier` module.
+Move its file-selector settings and plugin dependency to the new module ID.
+Existing YAML preset paths may stay where they are; the new resource folder is
+a suggested location. Start a new match: saved simulation state uses format 2
+and deliberately rejects older format-1 state. The internal save-section key
+remains `projectileModifier` so old state is detected instead of silently reset.
+
+For profiles from 1.3.x:
 
 Move any enabled per-unit GUI values to the YAML file. Then remove obsolete
 `customizations` or inline `units` entries from projectileModifier in your UCP
@@ -101,7 +115,10 @@ The original projectile YAML format (`units: ...`) remains supported.
 
 ## Behavior
 
-- `projectile` alone replaces native shots; it does not make a melee unit fire.
+- `projectile` alone replaces regular native shots; it does not make a melee unit fire.
+- `cow_projectile` and `cow_count` separately change siege cow ammunition.
+  If omitted, native cows remain unchanged, including their single-shot count,
+  even when normal catapult stones are replaced by three mangonel pebbles.
 - `count` sets 1–64 projectiles per volley. It replaces the mangonel's native
   seven-projectile volley. Leaving count unset preserves native volley size.
 - `interval` enables automatic fire, using the native projectile or arrows for
@@ -110,7 +127,10 @@ The original projectile YAML format (`units: ...`) remains supported.
   Set it true without an interval to disarm native fire.
 - Intervals use simulation ticks, not milliseconds. Wall-clock timing depends
   on game speed and pauses. The first eligible shot is immediately ready.
-- Moving/standing overrides require `interval`. Zero holds fire in that state.
+- Each moving/standing/docked interval can enable automatic fire independently.
+  `interval` is only a fallback where no matching state override applies.
+  With neither a state override nor a fallback, hold fire. Explicit zero also
+  holds fire. Docked `attached_interval` takes precedence over moving/standing.
   Movement lasts 20 ticks after the last measured step. New stationary units
   start stationary. Unmanned or hold-fire units pause their firing timers.
 - Staggering fires one projectile now and queues the rest. The main interval
@@ -119,6 +139,11 @@ The original projectile YAML format (`units: ...`) remains supported.
 - Automatic fire adds targeting and projectiles, not new unit animations or
   manual attack commands. Native collision, damage and entity allocation remain
   owned by the game.
+- `on_fortification` is a sparse mapping overriding the unit's settings only
+  while it stands on a wall/fortification. It requires positive structure height
+  and the native tile flags; hills and ground beside walls do not qualify.
+  Missing fields inherit the base settings. Leaving cancels queued conditional
+  shots while preserving the main cooldown.
 
 ## Complete settings reference
 
@@ -127,21 +152,23 @@ completion and validation; Lua also checks cross-field comparisons.
 
 | Setting | Values and defaults |
 |---|---|
-| `projectile` | `arrow`, `catapult_rock`, `trebuchet_rock`, `mangonel_pebble`, `crossbow_bolt`, `ballista_bolt`, `cow`, `slinger_stone`, `firethrower_pot`, `firethrower_pot_untargeted`, `fire_ballista_bolt`; their known numeric IDs are also accepted |
+| `projectile`, `cow_projectile` | Names or verified numeric IDs from the catalog below; cow ammunition is independent |
 | `count` | 1–64; unset preserves native volley size |
-| `interval` | 1–60000 ticks; enables automatic fire |
-| `interval_moving`, `interval_standing` | 0–60000; inherit interval; zero holds fire |
+| `cow_count` | 1–64; unset preserves one native cow |
+| `on_fortification` | Sparse mapping of the same settings; inherits base fields; cannot nest itself |
+| `interval` | 1–60000 ticks; optional fallback automatic-fire interval |
+| `interval_moving`, `interval_standing` | 0–60000; independently enable firing; inherit fallback or hold fire if omitted |
 | `targets` | One to four distinct target kinds in priority order; default `units` |
 | `range` | 1–100 tiles, default 20; automatic targeting only |
-| `spread_tiles`, `inaccuracy_tiles` | 0–100 tiles; default 0 |
-| `spread`, `inaccuracy` | 0–800 micro units; alternatives to the corresponding tile values |
+| `spread`, `inaccuracy` | 0–800 whole native coordinate units: **1 = ⅛ tile, 8 = 1 tile** |
+| `spread_tiles`, `inaccuracy_tiles` | Compatibility aliases, 0–100 whole tiles; use only one unit system per effect |
 | `wall_min_distance` | 0–100 tiles; default 3 |
 | `require_manned` | 0–4 engineers currently aboard; `true` means 1, `false` means 0 |
 | `random_targets` | Boolean; picks a candidate per projectile; default false |
 | `shoot_height` | 0–500 added native height units; default 0 |
-| `stagger_min`, `stagger_max` | Minimum 1–60000, maximum 0–60000 ticks; maximum 0 disables staggering; requires interval |
+| `stagger_min`, `stagger_max` | Minimum 1–60000, maximum 0–60000 ticks; maximum 0 disables staggering; requires any automatic-fire interval |
 | `density_min`, `density_radius` | 1–256 enemies (default 1), within 1–100 tiles (default 5) |
-| `attached_interval` | 0–60000 ticks; inherits ordinary interval; zero holds fire |
+| `attached_interval` | 0–60000 ticks while docked; omission keeps the moving/standing rate or fallback; zero holds fire |
 | `attached_ignore_crew` | Boolean; default true |
 | `attached_stop_when_boarded` | Boolean; default true; proximity approximation using target candidates |
 | `attached_board_radius` | 0–100 tiles; default 2 |
@@ -151,11 +178,45 @@ completion and validation; Lua also checks cross-field comparisons.
 | `preload_poll` | 1–60000 ticks, default 5; ordinary retries take at most 20 ticks |
 | `sync_to_animation` | Boolean; waits for an animation cycle; default false |
 | `sync_max_wait` | 1–60000 ticks, default 40; fires when this wait expires |
-| `suppress_default` | Boolean; defaults true with an interval, false otherwise |
+| `suppress_default` | Boolean; defaults true with any interval, false otherwise; unchanged native cow orders remain available |
 
-Spread offsets additional projectiles in simultaneous volleys; inaccuracy offsets
-every projectile, including first and staggered shots. Scattered aim coordinates
-are clamped and use the destination ground height.
+| Projectile name | Native ID |
+|---|---:|
+| `arrow` | 1 |
+| `catapult_rock` | 2 |
+| `trebuchet_rock` | 3 |
+| `mangonel_pebble` | 4 |
+| `crossbow_bolt` | 7 |
+| `ballista_bolt` | 20 |
+| `cow` | 23 |
+| `arrow_untargeted` | 24 |
+| `crossbow_bolt_untargeted` | 25 |
+| `slinger_stone` | 33 |
+| `firethrower_pot` | 34 |
+| `slinger_stone_untargeted` | 35 |
+| `firethrower_pot_untargeted` | 36 |
+| `fire_ballista_bolt` | 37 |
+| `fire_arrow` | 91 |
+| `fire_arrow_untargeted` | 92 |
+
+The old `firethrower_pot` mapping to 35 was incorrect (a slinger variant); it is
+now 34. Untargeted/burning modes may share the final entity type while differing
+in native flags. Numeric IDs retain their native meaning.
+
+Use `inaccuracy` for the maximum random aim-error **radius** in the game's native
+coordinate units. Values are whole numbers: **1 = ⅛ tile, 4 = ½ tile, 8 = 1 tile**.
+Write `inaccuracy: 1` for an eighth-tile radius, not `inaccuracy: 0.125` or `1/8`.
+Older `_tiles` aliases remain readable for compatibility and multiply whole-tile
+values by 8; do not combine both forms. An explicit **0 removes native random aim error**, including
+siege ground scatter and height-dependent error. Omission preserves native error.
+Native cow orders retain their own accuracy. Target prediction remains native:
+exact aim is not a guarantee that a moving target will still be there at impact.
+
+The configured radius applies once per projectile, including first and staggered
+shots. `spread` independently offsets additional simultaneous projectiles on
+each axis; set it to 0 as well if the entire volley should share an aim point.
+Scattered aim coordinates are clamped to map limits and use destination ground
+height. Unscattered shots retain their original target height.
 
 Targets: `units`, `cluster`, `buildings`, `fortifications`, `siege_towers`, `walls`.
 Unit scans exclude neutral owners, allies, dead and transitioning units. Cluster
@@ -176,8 +237,9 @@ the settings used to make the save. Loading with this module disabled does not
 retain its gameplay changes.
 
 Rebalancer damage, speed and projectile physics tables remain owned by Rebalancer.
-This module hooks the unit projectile dispatcher and unit-update loop. A module
-replacing either site conflicts; startup rejects a missing signature. Read-only
+This module hooks the unit projectile dispatcher, unit-update loop and two
+native aim-error stages. A module replacing these sites conflicts; startup
+rejects missing or ambiguous signatures. Read-only
 reference comparison does not prove compatibility with every mod combination.
 
 Multiplayer peers need identical versions and settings. Scheduling and random
@@ -199,8 +261,10 @@ agreement. Explicit ZIP directory entries are retained for locale discovery.
 Run `python -m unittest discover -s tests -p "test_*.py" -v` with lupa, pefile,
 unicorn, capstone, PyYAML and jsonschema installed. `SHC_REFERENCE_DIR` selects
 licensed 1.41 executables and `FASM` selects FASM.EXE. Native tests execute
-production Lua/FASM and original dispatcher/acquisition code in an emulator;
-the projectile spawner is an observed stand-in, not a rendered game session.
+production Lua/FASM and original dispatcher/acquisition code in an emulator.
+Most scheduling tests observe a spawner stand-in; the 77-unit × 16-projectile
+matrix additionally executes actual native entity creation and first update.
+Neither test path renders a game session.
 
 GUI tests use the adjacent UCP3-GUI-extension-dependents checkout and its installed
 dependencies (point this module's development node_modules there). Run:

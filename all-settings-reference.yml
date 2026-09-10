@@ -4,9 +4,9 @@ units:
   Siege tower:
     projectile: crossbow_bolt
     count: 3
-    interval: 100
+    # Alternatively use interval: 100 as a default for any missing state rate.
     interval_moving: 150
-    interval_standing: 100
+    interval_standing: 100 # Stopped; attached_interval overrides this when docked.
     suppress_default: true
     targets: [cluster, units, fortifications, buildings]
     range: 20
@@ -14,10 +14,9 @@ units:
     require_manned: 4
     random_targets: true
     shoot_height: 50
-    spread_tiles: 2
-    inaccuracy_tiles: 1
-    # Alternatively use spread: 16 and inaccuracy: 8 (micro units).
-    # Do not set both unit systems for the same setting.
+    # Whole native coordinate units: 1 = 1/8 tile, 8 = 1 tile.
+    spread: 16       # Two tiles per axis for additional simultaneous shots.
+    inaccuracy: 8    # One-tile aim-error radius; use 0 for no random error.
     stagger_min: 1
     stagger_max: 3
     density_min: 4

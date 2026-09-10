@@ -43,7 +43,7 @@ import { buildExtensionConfigurationDB } from '../../UCP3-GUI-extension-dependen
 const options=parse(readFileSync('options.yml','utf8')).options;
 const url=options[0].url;
 const languages=Object.keys(parse(readFileSync('../UCP3-GUI/resources/lang/languages.yaml','utf8')));
-const extension={name:'projectileModifier',version:'1.4.0',type:'module',ui:options,configEntries:{}} as any;
+const extension={name:'custom-projectiles',version:'1.5.0',type:'module',ui:options,configEntries:{}} as any;
 afterEach(cleanup);
 function setup(lang='en',lock=false) {
   const locale=parse(readFileSync('locale/'+lang+'.yml','utf8'));
@@ -64,10 +64,10 @@ for(const lang of languages) {
     expect(input.value).toBe('');
     expect(view.getByText(locale.config_file).getAttribute('title')).toContain(locale.config_help);
     expect(view.container.querySelectorAll('select,input[type="range"],input[type="checkbox"]')).toHaveLength(0);
-    vi.mocked(openFileDialog).mockResolvedValue({isPresent:()=>true,isEmpty:()=>false,get:()=> 'C:/Game/ucp/resources/projectileModifier/custom.yml'} as any);
+    vi.mocked(openFileDialog).mockResolvedValue({isPresent:()=>true,isEmpty:()=>false,get:()=> 'C:/Game/ucp/resources/custom-projectiles/custom.yml'} as any);
     fireEvent.click(view.getByRole('button',{name:'Browse'}));
-    await waitFor(()=>expect(store.get(USER)[url]).toBe('ucp/resources/projectileModifier/custom.yml'));
-    expect(store.get(FULL)[url]).toBe('ucp/resources/projectileModifier/custom.yml');
+    await waitFor(()=>expect(store.get(USER)[url]).toBe('ucp/resources/custom-projectiles/custom.yml'));
+    expect(store.get(FULL)[url]).toBe('ucp/resources/custom-projectiles/custom.yml');
   });
 }
 test('native qualifier toggles required/suggested and reset makes the option unspecified',()=>{
@@ -77,17 +77,17 @@ test('native qualifier toggles required/suggested and reset makes the option uns
   expect(store.get(QUALIFIER)[url]).toBe('required');
   expect(store.get(USER)[url]).toBe(''); // Explicit empty is a real choice.
   let saved=serializeUCPConfig(store.get(USER),store.get(FULL),[extension],[extension],store.get(QUALIFIER));
-  expect(saved['config-sparse'].modules.projectileModifier.config.projectile_config_file_selector.contents).toEqual({'required-value':''});
+  expect(saved['config-sparse'].modules['custom-projectiles'].config.projectile_config_file_selector.contents).toEqual({'required-value':''});
   fireEvent.click(toggle);
   expect(store.get(QUALIFIER)[url]).toBe('suggested');
   saved=serializeUCPConfig(store.get(USER),store.get(FULL),[extension],[extension],store.get(QUALIFIER));
-  expect(saved['config-sparse'].modules.projectileModifier.config.projectile_config_file_selector.contents).toEqual({'suggested-value':''});
+  expect(saved['config-sparse'].modules['custom-projectiles'].config.projectile_config_file_selector.contents).toEqual({'suggested-value':''});
   fireEvent.click(view.getByRole('button',{name:'config.popover.reset'}));
   expect(store.get(USER)[url]).toBeUndefined();
   expect(store.get(FULL)[url]).toBe('');
   saved=serializeUCPConfig(store.get(USER),store.get(FULL),[extension],[extension],store.get(QUALIFIER));
-  expect(saved['config-sparse'].modules.projectileModifier.config).toEqual({});
-  expect(saved['config-full'].modules.projectileModifier.config.projectile_config_file_selector.contents).toEqual({value:''});
+  expect(saved['config-sparse'].modules['custom-projectiles'].config).toEqual({});
+  expect(saved['config-full'].modules['custom-projectiles'].config.projectile_config_file_selector.contents).toEqual({value:''});
 });
 test('a required preset locks browsing and qualifier edits',()=>{
   const {view}=setup('en',true);
@@ -103,7 +103,7 @@ test('extension paths use the standard version-independent UCP spelling',async()
 test('shipped UCP examples resolve using the real qualifier merge rules',()=>{
   const preset=(qualifier:string)=>{
     const doc=parse(readFileSync('examples/ucp-plugin-'+qualifier+'.yml','utf8'));
-    const entry=doc['config-sparse'].modules.projectileModifier.config.projectile_config_file_selector;
+    const entry=doc['config-sparse'].modules['custom-projectiles'].config.projectile_config_file_selector;
     return {name:qualifier,type:'plugin',version:'1.0.0',ui:[],configEntries:entry?{[url]:entry}:{}};
   };
   const resolve=(...plugins:any[])=>buildExtensionConfigurationDB({activeExtensions:[...plugins,extension]} as any).configuration;

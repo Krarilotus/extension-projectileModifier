@@ -2,7 +2,7 @@
 local constants = require('constants')
 local M = {}
 M.numbers = {
-    count = {1, 64, 1}, spread = {0, 800, 0}, inaccuracy = {0, 800, 0},
+    count = {1, 64, 1}, cow_count = {1, 64, 1}, spread = {0, 800, 0}, inaccuracy = {0, 800, 0},
     spread_tiles = {0, 100, 0}, inaccuracy_tiles = {0, 100, 0},
     interval = {1, 60000, 100}, interval_moving = {0, 60000, 100},
     interval_standing = {0, 60000, 100}, range = {1, 100, 20},
@@ -26,13 +26,13 @@ local projectile_ids = {}
 for _, id in pairs(constants.projectile_names) do projectile_ids[id] = true end
 
 local function fail(path, reason)
-    error('[projectileModifier] ' .. path .. ': ' .. reason, 0)
+    error('[custom-projectiles] ' .. path .. ': ' .. reason, 0)
 end
 local function object(value, path)
     if type(value) ~= 'table' then fail(path, 'expected a mapping') end
 end
 
-function M.validate(config)
+local function validate_flat(config)
     object(config, 'config')
     for key in pairs(config) do
         if key ~= 'units' then fail(tostring(key), 'unknown section; expected units') end
@@ -59,7 +59,7 @@ function M.validate(config)
             elseif M.booleans[key] then
                 if type(value) ~= 'boolean' then fail(field, 'expected true or false') end
                 out[key] = value
-            elseif key == 'projectile' then
+            elseif key == 'projectile' or key == 'cow_projectile' then
                 local id = type(value) == 'string' and constants.projectile_names[value] or value
                 if not projectile_ids[id] then fail(field, 'unknown or unsafe projectile type') end
                 out[key] = id
@@ -91,10 +91,17 @@ function M.validate(config)
             fail(path, 'stagger_min must not exceed stagger_max')
         end
         if out.stagger_min and not out.stagger_max then fail(path, 'stagger_min requires stagger_max') end
-        if not out.interval then
-            for _, key in ipairs({'interval_moving', 'interval_standing', 'attached_interval', 'stagger_max'}) do
-                if out[key] ~= nil then fail(path .. '.' .. key, 'requires interval') end
-            end
+        -- Each state interval enables automatic fire independently. Without a
+        -- fallback, unconfigured states hold fire. Keep the native scheduler's
+        -- positive enable value internal; chooseInterval selects the state rate.
+        if out.interval == nil and (out.interval_moving ~= nil or out.interval_standing ~= nil
+            or out.attached_interval ~= nil) then
+            out.interval_moving = out.interval_moving or 0
+            out.interval_standing = out.interval_standing or 0
+            out.interval = math.max(1, out.interval_standing, out.interval_moving, out.attached_interval or 0)
+        end
+        if not out.interval and out.stagger_max ~= nil then
+            fail(path .. '.stagger_max', 'requires an automatic-fire interval: interval, interval_moving, interval_standing or attached_interval')
         end
         if out.interval then
             -- A timer replaces the native schedule unless explicitly combined.
@@ -104,6 +111,51 @@ function M.validate(config)
             end
         end
         if next(out) ~= nil then result.units[name] = out end
+    end
+    return result
+end
+
+function M.validate(config)
+    object(config, 'config')
+    local units = config.units
+    if units == nil then units = {} end
+    object(units, 'units')
+    local plain, fortified = {}, {}
+    for name, settings in pairs(units) do
+        object(settings, 'units.' .. tostring(name))
+        local base = {}
+        for key, value in pairs(settings) do
+            if key ~= 'on_fortification' then base[key] = value end
+        end
+        plain[name] = base
+        if settings.on_fortification ~= nil then
+            object(settings.on_fortification, 'units.' .. tostring(name) .. '.on_fortification')
+            for _, key in ipairs({'spread', 'inaccuracy'}) do
+                if settings.on_fortification[key] ~= nil and settings.on_fortification[key .. '_tiles'] ~= nil then
+                    fail('units.' .. name .. '.on_fortification', 'use only one of ' .. key .. ' and ' .. key .. '_tiles')
+                end
+            end
+            local merged = {}
+            for key, value in pairs(base) do merged[key] = value end
+            for key, value in pairs(settings.on_fortification) do
+                if key == 'on_fortification' then fail('units.' .. name, 'nested fortification overrides are not supported') end
+                merged[key] = value
+                -- An override may use a different unit system than its parent.
+                if key == 'spread' or key == 'inaccuracy' then merged[key .. '_tiles'] = nil end
+                if key == 'spread_tiles' then merged.spread = nil end
+                if key == 'inaccuracy_tiles' then merged.inaccuracy = nil end
+            end
+            if next(settings.on_fortification) ~= nil then fortified[name] = merged end
+        end
+    end
+    local copied = {}
+    for key, value in pairs(config) do copied[key] = value end
+    copied.units = plain
+    local result = validate_flat(copied)
+    local alternates = validate_flat({units=fortified})
+    for name in pairs(fortified) do
+        result.units[name] = result.units[name] or {}
+        result.units[name].on_fortification = alternates.units[name] or {}
     end
     return result
 end

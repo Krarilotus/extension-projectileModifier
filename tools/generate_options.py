@@ -15,7 +15,7 @@ constants = lua.execute("return (require('constants'))")
 def build_options():
     return [dict(name='projectile_config_file_selector', category=['{{balance_changes}}'],
                  display='FileInput', text='{{config_file}}', tooltip='{{config_help}}',
-                 url='projectileModifier.projectile_config_file_selector',
+                 url='custom-projectiles.projectile_config_file_selector',
                  contents=dict(type='string', value='', filter='files', generalizeExtensionPaths=True))]
 
 def generate():

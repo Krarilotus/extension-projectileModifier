@@ -50,10 +50,135 @@ class NativeTests(unittest.TestCase):
             self.assertTrue(all(s[9]==4 for s in shots),shots)
             self.assertEqual(h.get(h.v['REENTRY']),0)
 
+    def test_all_unit_types_create_every_supported_projectile_both_executables(self):
+        # Execute the real entity allocator, projectile initialization, velocity
+        # setup and first update. Graphics remain unrendered in this emulator.
+        for extreme in [False,True]:
+            h=Harness(extreme)
+            constants=h.lua.execute(b"return (require('constants'))")
+            names={i:name.decode() for i,name in constants.unit_names.items()}
+            h.enable({name:{'count':1} for name in names.values()})
+            h.v={key:value for _,_,values in h.blobs.values() for key,value in values.items()}
+            self.assertEqual(h.get(h.v['FIREPROJ']+0x415,1),0xb9)
+            entity_state=h.get(h.v['FIREPROJ']+0x416)
+            # Valid flat terrain in a small area; map validity base is taken from
+            # the original allocator's bounds check (same layout on both EXEs).
+            original=bytes(h.uc.mem_read(h.spawner,0x500))
+            import struct
+            pattern=b'\x80\xbc\x01'
+            offset=original.index(pattern)
+            validity=struct.unpack_from('<I',original,offset+3)[0]
+            for y in range(35,50):
+                h.put(h.v['TILEROWS']+12*y,400*y)
+                h.uc.mem_write(validity+400*y+35,b'\x01'*15)
+            normalized={24:1,25:7,35:33,36:34,37:20,91:1,92:1}
+            for kind,name in names.items():
+                for projectile in constants.projectile_names.values():
+                    with self.subTest(extreme=extreme,unit=name,projectile=projectile):
+                        h.unit(1,kind)
+                        h.put(h.v['NATIVESEENT']+4,0)
+                        h.put(h.v['REMAPT']+kind*4,projectile)
+                        args=self.fire(h,1)[0]
+                        self.assertEqual(args[9],projectile)
+                        h.put(entity_state+8,25)
+                        entity=entity_state+20+25*232
+                        h.uc.mem_write(entity,b'\0'*232)
+                        result=h.call(h.spawner,args,{r.UC_X86_REG_ECX:entity_state})
+                        self.assertEqual(result,25)
+                        self.assertGreater(h.get(entity+0x28,2),0)
+                        self.assertEqual(h.get(entity+0x2a,2),normalized.get(projectile,projectile))
+                        self.assertGreater(h.get(entity+6,2),0) # Native projectile GM selection exists.
+
     def test_unconfigured_shot_passes_through(self):
         h=self.prepare({'Catapult':{'count':3}}); h.unit(1,22)
         shots=self.fire(h,1,1)
         self.assertEqual(len(shots),1); self.assertEqual(shots[0][9],1)
+
+    def prepare_native_aim(self,h,id,x=352,y=320,z=0):
+        a=h.base+id*0x490
+        for offset,value in [(0xbe,x),(0xc0,y),(0xc2,z)]: h.put(a+offset,value,2)
+        # Run the real ground scatter AND height-dependent scatter stages used
+        # by catapult/trebuchet/mangonel just before firing, including their calls.
+        address=h.scan(b'8B 44 24 08 55 56 33 ED 83 F8 FF 57')
+        h.call(address,[id,0xffffffff,200],{r.UC_X86_REG_ECX:h.v['UNITSTATE']})
+        self.assertEqual(h.uc.reg_read(r.UC_X86_REG_ESP),0x53f0010)
+        return tuple(h.get(a+offset,2) for offset in [0xbe,0xc0,0xc2])
+
+    def test_explicit_zero_removes_both_native_accuracy_stages(self):
+        for extreme in [False,True]:
+            h=self.prepare({name:{'inaccuracy_tiles':0} for name in
+                            ['Catapult','Trebuchet','Mangonel','European archer']},extreme)
+            for kind in [39,40,41,22]:
+                for height in [0,80]:
+                    with self.subTest(extreme=extreme,kind=kind,height=height):
+                        a=h.unit(1,kind)
+                        h.put(a+0xba,height,2)
+                        for _ in range(8):
+                            self.assertEqual(self.prepare_native_aim(h,1),(352,320,0))
+                        # Zero does not consume the module RNG either.
+                        seed=h.get(h.v['SEED'])
+                        self.assertEqual(self.fire(h,1)[0][6:9],(352,320,30))
+                        self.assertEqual(h.get(h.v['SEED']),seed)
+
+    def test_accuracy_omitted_and_native_cow_orders_retain_original_scatter(self):
+        for extreme in [False,True]:
+            baseline=self.prepare({'Catapult':{'count':1}},extreme)
+            changed=self.prepare({'Catapult':{'inaccuracy_tiles':0}},extreme)
+            for cow in [False,True]:
+                for h in [baseline,changed]:
+                    a=h.unit(1,39); h.put(a+0x3b0,int(cow),2)
+                before=self.prepare_native_aim(baseline,1)
+                after=self.prepare_native_aim(changed,1)
+                self.assertNotEqual(before,(352,320,0))
+                if cow: self.assertEqual(before,after)
+                else: self.assertEqual(after,(352,320,0))
+
+    def test_inaccuracy_tiles_is_a_radius_and_matches_micro_units(self):
+        for extreme in [False,True]:
+            for tiles in [1,2,100]:
+                sequences=[]
+                for key,value in [('inaccuracy_tiles',tiles),('inaccuracy',tiles*8)]:
+                    h=self.prepare({'Catapult':{key:value,'count':64}},extreme)
+                    h.unit(1,39)
+                    self.assertEqual(self.prepare_native_aim(h,1),(352,320,0))
+                    shots=[]
+                    h.call(h.v['FIREPROJ'],[1,2,1600,1600,0],
+                           {r.UC_X86_REG_ECX:h.v['UNITSTATE']},
+                           callbacks={h.spawner:self.spawn_callback(shots)})
+                    self.assertEqual(len(shots),64)
+                    offsets=[(s[6]-1600,s[7]-1600) for s in shots]
+                    self.assertTrue(all(x*x+y*y <= (tiles*8)**2 for x,y in offsets))
+                    self.assertTrue(any(x or y for x,y in offsets))
+                    sequences.append(offsets)
+                self.assertEqual(*sequences)
+
+    def test_accuracy_override_follows_fortification_and_ai_scope(self):
+        for extreme in [False,True]:
+            h=self.prepare({'Catapult':{'on_fortification':{'inaccuracy_tiles':0}},
+                            'Trebuchet':{'inaccuracy_tiles':0,'ai_only':True}},extreme)
+            a=h.unit(1,39)
+            h.put(h.v['TILEROWS']+40*12,400*40)
+            h.put(h.v['TILEFLAGS']+(400*40+40)*4,0x100)
+            self.assertNotEqual(self.prepare_native_aim(h,1),(352,320,0))
+            h.put(a+0xbc,80,2)
+            self.assertEqual(self.prepare_native_aim(h,1),(352,320,0))
+            h.put(a+0xbc,0,2)
+            self.assertNotEqual(self.prepare_native_aim(h,1),(352,320,0))
+            h.unit(2,40,owner=1)
+            # Same AI ownership table as the native firing gate.
+            h.put(h.v['PLAYERAIC']+0x39f4,0)
+            self.assertNotEqual(self.prepare_native_aim(h,2),(352,320,0))
+            h.put(h.v['PLAYERAIC']+0x39f4,1)
+            self.assertEqual(self.prepare_native_aim(h,2),(352,320,0))
+
+    def test_native_accuracy_one_supports_eighth_tile_steps(self):
+        for extreme in [False,True]:
+            h=self.prepare({'Catapult':{'inaccuracy':1,'count':64}},extreme)
+            h.unit(1,39)
+            self.assertEqual(self.prepare_native_aim(h,1),(352,320,0))
+            offsets={(s[6]-352,s[7]-320) for s in self.fire(h,1)}
+            # Integer points in a radius of one micro unit (one eighth tile).
+            self.assertEqual(offsets,{(0,0),(-1,0),(1,0),(0,-1),(0,1)})
 
     def test_tower_fires_exact_count_and_interval_both_executables(self):
         for extreme in [False,True]:
@@ -87,8 +212,37 @@ class NativeTests(unittest.TestCase):
 
     def test_scratch_cannot_overlap_candidates(self):
         h=self.prepare({'Catapult':{'count':3}})
+        self.assertLessEqual(h.v['ORDERT']+h.v['MAXPROFILES']*4,h.v['RANGET'])
         for key,address in h.v.items():
             if key.startswith('S_') and key!='S_CANDS': self.assertLess(address+3,h.v['S_CANDS'],key)
+
+    def test_fortification_override_requires_structure_height_and_native_tile_flags(self):
+        for extreme in [False,True]:
+            h=self.prepare({'European archer':{'projectile':'arrow','count':1,
+                'on_fortification':{'projectile':'crossbow_bolt','count':2}}},extreme)
+            a=h.unit(1,22)
+            h.put(h.v['TILEROWS']+40*12,400*40)
+            tile=400*40+40
+            for height,flags,expected in [(0,0,[1]),(30,0,[1]),(0,0x100,[1]),
+                                           (30,0x100,[7,7]),(30,0x10000000,[7,7]),(0,0,[1])]:
+                h.put(h.v['NATIVESEENT']+4,0)
+                h.put(a+0xbc,height,2); h.put(h.v['TILEFLAGS']+tile*4,flags)
+                self.assertEqual([s[9] for s in self.fire(h,1,1)],expected)
+
+    def test_fortification_only_automatic_fire_cancels_queued_shots_on_exit(self):
+        h=self.prepare({'European spearman':{'on_fortification':{
+            'projectile':'arrow','interval_standing':4,'count':3,'stagger_max':1}}})
+        a=h.unit(1,24); h.unit(2,22,2,x=44)
+        h.put(h.v['TILEROWS']+40*12,400*40)
+        h.put(h.v['TILEFLAGS']+(400*40+40)*4,0x100)
+        self.assertEqual(self.tick(h,1),[])
+        h.put(a+0xbc,30,2)
+        self.assertEqual(len(self.tick(h,1)),1)
+        self.assertEqual(h.get(h.v['PENDINGT']+4),2)
+        h.put(a+0xbc,0,2)
+        self.assertEqual(self.tick(h,1),[])
+        self.assertEqual(h.get(h.v['PENDINGT']+4),0)
+        self.assertGreater(h.get(h.v['COOLDOWNT']+4),0)
 
     def test_animation_wait_does_not_consume_queued_projectiles(self):
         h=self.prepare({'Siege tower':{'interval':100,'count':3,'stagger_max':1,
@@ -128,16 +282,62 @@ class NativeTests(unittest.TestCase):
             self.tick(h,1)
             self.assertEqual(len(self.fire(h,1,4)),count)
 
-    def test_explicit_rock_remap_overrides_native_cow_flag_and_restores_it(self):
+    def test_regular_rock_remap_preserves_native_cow_ammunition(self):
         h=self.prepare({'Catapult':{'projectile':'trebuchet_rock'}}); a=h.unit(1,39)
         h.put(a+0x3b0,1,2)
-        self.assertEqual(self.fire(h,1)[0][9],3)
+        self.assertEqual(self.fire(h,1)[0][9],23)
         self.assertEqual(h.get(a+0x3b0,2),1)
 
     def test_count_alone_preserves_native_cow_flag(self):
         h=self.prepare({'Catapult':{'count':2}}); a=h.unit(1,39)
         h.put(a+0x3b0,1,2)
-        self.assertTrue(all(s[9]==23 for s in self.fire(h,1)))
+        shots=self.fire(h,1)
+        self.assertEqual(len(shots),1)
+        self.assertEqual(shots[0][9],23)
+
+    def test_cow_and_regular_projectile_settings_are_independent_both_executables(self):
+        for extreme in [False,True]:
+            h=self.prepare({name:{'projectile':'mangonel_pebble','count':3,
+                                  'cow_projectile':'trebuchet_rock','cow_count':2}
+                            for name in ['Catapult','Trebuchet']},extreme)
+            for kind,mode in [(39,2),(40,3)]:
+                a=h.unit(1,kind)
+                for cow,projectile,count in [(0,4,3),(1,3,2)]:
+                    h.put(h.v['NATIVESEENT']+4,0); h.put(a+0x3b0,cow,2)
+                    shots=self.fire(h,1,mode)
+                    self.assertEqual([s[9] for s in shots],[projectile]*count)
+                    self.assertEqual(h.get(a+0x3b0,2),cow)
+
+    def test_native_cow_orders_survive_regular_automatic_fire_suppression(self):
+        h=self.prepare({'Catapult':{'interval':100,'projectile':'mangonel_pebble','count':3}})
+        a=h.unit(1,39)
+        self.assertEqual(self.fire(h,1),[])
+        h.put(a+0x3b0,1,2)
+        self.assertEqual([s[9] for s in self.fire(h,1)],[23])
+
+    def test_ai_cow_volley_uses_separate_ammunition_and_count(self):
+        h=self.prepare({'Catapult':{'interval':30,'projectile':'mangonel_pebble','count':3,
+                                   'ai_cow_vs_units':True,'cow_projectile':'arrow','cow_count':2,
+                                   'stagger_max':1}})
+        h.unit(1,39); h.unit(2,22,2,x=44)
+        h.put(h.v['PLAYERAIC']+0x39f4,1); h.put(h.v['AICCOW']+0x2a4,1)
+        shots=sum((self.tick(h,1) for _ in range(5)),[])
+        self.assertEqual([s[9] for s in shots],[1,1])
+
+    def test_explicit_cows_use_native_siege_launch_metadata_both_executables(self):
+        for extreme in [False,True]:
+            h=self.prepare({'Catapult':{'count':1},'Trebuchet':{'count':1}},extreme)
+            for kind,mode in [(39,2),(40,3)]:
+                h.put(h.v['NATIVESEENT']+4,0)
+                a=h.unit(1,kind); h.put(a+0x344,2,2); h.put(a+0x3b0,1,2)
+                native=self.fire(h,1,mode)
+                h.put(h.v['NATIVESEENT']+4,0)
+                h.put(h.v['REMAPT']+kind*4,23); h.put(a+0x3b0,0,2)
+                explicit=self.fire(h,1,mode)
+                self.assertEqual(explicit,native)
+                self.assertEqual(explicit[0][9],23)
+                self.assertEqual(explicit[0][10],0)
+                self.assertEqual(h.get(a+0x3b0,2),0)
 
     def test_movement_can_hold_fire_without_marking_new_stationary_unit_moving(self):
         h=self.prepare({'Siege tower':{'interval':1,'interval_moving':0}})
@@ -147,6 +347,31 @@ class NativeTests(unittest.TestCase):
         self.assertEqual(self.tick(h,1),[])
         for _ in range(19): self.assertEqual(self.tick(h,1),[])
         self.assertEqual(len(self.tick(h,1)),1)
+
+    def test_stance_intervals_independently_enable_fire_both_executables(self):
+        cases = [
+            ({'interval_moving': 3}, (0, 3, 0)),
+            ({'interval_standing': 4}, (4, 0, 4)),
+            ({'attached_interval': 2}, (0, 0, 2)),
+            ({'interval_moving': 3, 'interval_standing': 4, 'attached_interval': 2}, (4, 3, 2)),
+            ({'interval': 5, 'interval_moving': 0, 'attached_interval': 2}, (5, 0, 2)),
+        ]
+        for extreme in [False, True]:
+            for settings, rates in cases:
+                with self.subTest(extreme=extreme, settings=settings):
+                    h=self.prepare({'Siege tower': settings}, extreme)
+                    a=h.unit(1,58); h.unit(2,22,2,x=44)
+                    b=h.v['BLDBASE']+0x32c
+                    for state, rate in zip(['standing', 'moving', 'docked'], rates):
+                        h.put(h.v['COOLDOWNT']+4,0)
+                        h.put(h.v['MOVECDT']+4,20 if state=='moving' else 0)
+                        h.put(a+0x338,1 if state=='docked' else 0,2)
+                        h.put(a+0x368,123)
+                        h.put(b+0xd0,1,2); h.put(b+0xd2,69,2); h.put(b+0xd8,123)
+                        shots=[len(self.tick(h,1)) for _ in range(rate+1 if rate else 6)]
+                        expected=[1]+[0]*(rate-1)+[1] if rate else [0]*6
+                        self.assertEqual(shots,expected,(settings,state))
+                    self.assertEqual(self.fire(h,1),[]) # Automatic fire suppresses native shots.
 
     def test_ai_only_preserves_human_native_fire(self):
         h=self.prepare({'Catapult':{'interval':1,'ai_only':True}}); h.unit(1,39)
@@ -228,7 +453,8 @@ class ConfigTests(unittest.TestCase):
     def test_invalid_config_never_patches(self):
         cases=[{'Cataplut':{'count':2}}, {'Catapult':{'count':0}}, {'Catapult':{'count':65}},
             {'Catapult':{'count':1.5}}, {'Catapult':{'count':'3'}}, {'Catapult':{'count':float('nan')}},
-            {'Catapult':{'projectile':99}}, {'Catapult':{'interval_moving':3}},
+            {'Catapult':{'projectile':99}}, {'Catapult':{'interval_moving':-1}},
+            {'Catapult':{'stagger_max':3}},
             {'Catapult':{'interval':5,'stagger_min':4,'stagger_max':2}},
             {'Catapult':{'spread':2,'spread_tiles':2}}, {'Catapult':{'targets':['units','units']}},
             {'Catapult':{'suppress_default':'false'}}, {'Catapult':False}]
@@ -303,11 +529,40 @@ class ConfigTests(unittest.TestCase):
         for name in ['example-projectiles.yml','all-settings-reference.yml','vanilla-projectiles.yml']:
             validator.validate(yaml.safe_load((ROOT/name).read_text(encoding='utf-8')))
         for unit in ['Catapult','Siege tower']:
-            for field,value in [('count',65),('interval_moving',5),('projectile',99),('typo',True),('targets',['units','units'])]:
+            for field,value in [('count',65),('interval_moving',-1),('stagger_max',3),('projectile',99),('typo',True),('targets',['units','units'])]:
                 self.assertFalse(validator.is_valid({'units':{unit:{field:value}}}))
         self.assertFalse(validator.is_valid({'units':{'Cataplut':{'count':2}}}))
         self.assertFalse(validator.is_valid({'units':{'Catapult':{'spread':1,'spread_tiles':1}}}))
         self.assertTrue(validator.is_valid({'units':{'Siege tower':{'interval':40,'require_manned':True,'preload':False}}}))
+
+    def test_interval_schema_and_runtime_agree_on_all_fallback_combinations(self):
+        import itertools, json
+        from jsonschema import Draft202012Validator
+        validator=Draft202012Validator(json.loads((ROOT/'projectile-config.schema.json').read_text(encoding='utf-8')))
+        h=Harness(); config=h.lua.execute(b"return (require('configuration'))")
+        fields=['interval','interval_moving','interval_standing','attached_interval']
+        for values in itertools.product([None,5],[None,0,3],[None,0,4],[None,0,2]):
+            settings={key:value for key,value in zip(fields,values) if value is not None}
+            source={'units':{'Siege tower':settings}}
+            with self.subTest(settings=settings):
+                validator.validate(source)
+                normalized=config.validate(h.config(source))[b'units'][b'Siege tower']
+                if not settings:
+                    self.assertIsNone(normalized)
+                    continue
+                self.assertGreater(normalized[b'interval'],0)
+                for key in ['interval_moving','interval_standing']:
+                    actual=normalized[key.encode()]
+                    if actual is None: actual=normalized[b'interval']
+                    self.assertEqual(actual,settings.get(key,settings.get('interval',0)))
+                self.assertEqual(normalized[b'attached_interval'],settings.get('attached_interval'))
+                self.assertTrue(normalized[b'suppress_default'])
+                self.assertEqual(normalized[b'projectile'],1)
+                # Staggering accepts every kind of automatic-fire schedule.
+                settings['stagger_max']=2
+                validator.validate(source); config.validate(h.config(source))
+                settings['suppress_default']=False
+                self.assertFalse(config.validate(h.config(source))[b'units'][b'Siege tower'][b'suppress_default'])
 
     def load_file(self,h,path):
         h.lua.globals().yaml.parse=lambda source:h.config(yaml.safe_load(source.decode('utf-8-sig')))

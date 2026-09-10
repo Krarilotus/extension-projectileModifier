@@ -5,13 +5,12 @@ units:
   Catapult:
     projectile: mangonel_pebble
     count: 3
-    spread_tiles: 4
+    spread: 32 # Native coordinate units: 8 = 1 tile (here, four tiles).
   Siege tower:
     projectile: crossbow_bolt
     count: 2
-    interval: 50
-    interval_moving: 100
-    interval_standing: 50
+    interval_moving: 100   # While moving; all intervals are simulation ticks.
+    interval_standing: 50 # While stopped. No default interval is needed.
     require_manned: 4
     targets: [units]
     range: 18

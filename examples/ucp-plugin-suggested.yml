@@ -3,7 +3,7 @@ meta:
   version: 1.0.0
 config-sparse:
   modules:
-    projectileModifier:
+    custom-projectiles:
       config:
         projectile_config_file_selector:
           contents:

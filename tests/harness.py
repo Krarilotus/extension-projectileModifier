@@ -90,7 +90,7 @@ class Harness:
             src.write_text(script)
             # Framework uses 64,000 bytes; 62 KiB is a slightly tighter budget.
             result=subprocess.run([str(FASM),'-m','62',str(src),str(out)],capture_output=True,text=True)
-            if result.returncode: raise RuntimeError(result.stdout+result.stderr)
+            if result.returncode: raise RuntimeError(source.decode().splitlines()[1]+'\n'+result.stdout+result.stderr)
             code=out.read_bytes()
         assert len(code) < 0x4000
         self.uc.mem_write(address,code)

@@ -4,6 +4,6 @@ meta:
   version: 1.0.0
 config-sparse:
   modules:
-    projectileModifier:
+    custom-projectiles:
       config: {}
   plugins: {}

@@ -1,5 +1,5 @@
 balance_changes: Balance Changes
 config_file: فایل تنظیمات پرتابه (YAML)
-config_help: فایل vanilla-projectiles.yml را از ZIP ماژول به ucp/resources/projectileModifier/ کپی کنید، نسخهٔ کپی
+config_help: فایل vanilla-projectiles.yml را از ZIP ماژول به ucp/resources/custom-projectiles/ کپی کنید، نسخهٔ کپی
   را ویرایش و اینجا انتخاب کنید. تنظیمات حذف‌شده تغییر نمی‌کنند؛ مسیر خالی هیچ تغییری ایجاد نمی‌کند. قواعد مقدار
   الزامی یا پیشنهادی UCP به کل فایل انتخاب‌شده اعمال می‌شوند. پس از تغییرات، بازی را دوباره اجرا کنید.

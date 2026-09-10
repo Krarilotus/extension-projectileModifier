@@ -7,7 +7,7 @@ options:
   display: FileInput
   text: '{{config_file}}'
   tooltip: '{{config_help}}'
-  url: projectileModifier.projectile_config_file_selector
+  url: custom-projectiles.projectile_config_file_selector
   contents:
     type: string
     value: ''

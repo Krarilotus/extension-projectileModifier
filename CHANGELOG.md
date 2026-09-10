@@ -1,4 +1,22 @@
-# 1.3.0 (local test candidate)
+# Changelog
+
+## 1.5.0 (unreleased, work in progress)
+
+- Rename the module identifier to `custom-projectiles`.
+- Make stance intervals independently enable firing and use `interval` only as
+  a fallback. Add separate regular/cow ammunition and fortification overrides.
+- Correct `firethrower_pot` to entity 34 and extend the verified projectile catalog.
+- Make explicit `inaccuracy_tiles: 0` / `inaccuracy: 0` remove native ground and
+  height-dependent aim error. Omission keeps native error; unchanged cow orders
+  retain their original behavior.
+- Interpret inaccuracy as a bounded circular radius, with 8 micro units per tile,
+  instead of additional square scatter. Keep volley `spread` independent.
+- Update the schema, reference and all nine localized previews for accuracy.
+- Use native coordinate units in the examples: `inaccuracy: 1` is an eighth-tile
+  radius, `inaccuracy: 8` is one tile. Keep older whole-tile aliases compatible.
+
+Reload-animation timing, custom sprites and placeable decoration triggers remain
+in development. This entry does not announce a finished release.
 
 ## 1.4.0
 

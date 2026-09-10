@@ -1,5 +1,5 @@
 balance_changes: Balance Changes
 config_file: Projectile configuration file (YAML)
-config_help: Copy vanilla-projectiles.yml from the module ZIP into ucp/resources/projectileModifier/, edit the copy
+config_help: Copy vanilla-projectiles.yml from the module ZIP into ucp/resources/custom-projectiles/, edit the copy
   and select it here. Omitted settings stay unchanged; an empty path makes no changes. UCP required/suggested rules
   apply to the selected file as a whole. Restart the game after changes.

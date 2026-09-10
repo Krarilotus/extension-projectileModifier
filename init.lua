@@ -8,16 +8,17 @@ local namespace = {}
 local unit_names       = constants.unit_names
 local projectile_names = constants.projectile_names
 local MAX_TYPES        = constants.MAX_UNIT_TYPES
+local MAX_PROFILES     = MAX_TYPES * 2
 local MAX_UNITS        = addresses.max_units
 
 local function resolve()
 local function locate(pattern)
     local ok, address = pcall(core.scanForAOB, pattern, 0x400000, 0x700000)
     assert(ok and type(address) == 'number' and address >= 0x400000 and address < 0x700000,
-        '[projectileModifier] unsupported executable or conflicting module at signature: ' .. pattern)
+        '[custom-projectiles] unsupported executable or conflicting module at signature: ' .. pattern)
     local found, duplicate = pcall(core.scanForAOB, pattern, address + 1, 0x700000)
     assert(not found or type(duplicate) ~= 'number' or duplicate <= 0,
-        '[projectileModifier] ambiguous native signature: ' .. pattern)
+        '[custom-projectiles] ambiguous native signature: ' .. pattern)
     return address
 end
 
@@ -29,6 +30,12 @@ local fire_projectile_addr = locate("53 56 57 8B 7C 24 14 33 C0 33 D2 83 FF 03 0
 -- UnitsState::acquireShootTarget(unitID) -> bool, thiscall, ret 4.
 -- Fills unit+0xBE/0xC0/0xC2 with the target position.
 local acquire_target_addr = locate("83 EC 40 53 56 57 8B 7C 24 50 69 FF 90 04 00 00 8B F1 0F BF 84 37 AA 06 00 00")
+
+-- Native scatter is applied BEFORE the projectile dispatcher: one routine for
+-- ground aim, followed by a second height-dependent error stage. Override both
+-- only when accuracy is explicitly configured (including zero).
+local ground_aim_addr = locate("51 8B 44 24 08 8B 54 24 0C 69 C0 90 04 00 00 53 55 56 8D 34 08")
+local aim_error_addr = locate("0F B7 86 CE 06 00 00 0F B7 8E D6 06 00 00 66 3B C1")
 
 -- Inside UnitsState::updateUnits, reached once per tick for every living unit.
 local unit_tick_addr = locate("83 C2 01 89 16 8B 15 ? ? ? ? 69 D2 90 04 00 00 33 C9 66 89 8C 32 AE 09 00 00")
@@ -58,12 +65,13 @@ local aic_cow_addr = aic_array_base - AIC_STRIDE
 
 local unit_array_base = addresses.unit_array_base_addr
 assert(core.readInteger(fire_projectile_addr + 0x23) - 0x3B0 == unit_array_base,
-    '[projectileModifier] unit array does not match this executable')
+    '[custom-projectiles] unit array does not match this executable')
 local unit_state_this = unit_array_base - 0x614
 local current_unit_id_addr = core.readInteger(unit_tick_addr + 7)
 assert(core.readInteger(unit_tick_addr + 0x3A4) == MAX_UNITS,
-    '[projectileModifier] unsupported unit-array capacity modification')
+    '[custom-projectiles] unsupported unit-array capacity modification')
 return {fire=fire_projectile_addr, acquire=acquire_target_addr, tick=unit_tick_addr,
+    groundAim=ground_aim_addr, aimError=aim_error_addr,
     rows=tile_rows_addr, flags=tile_flags_addr, terrain=terrain_height_addr,
     teams=team_table_addr, buildings=building_base_addr, aic=aic_array_base,
     playerAic=player_aic_addr, cow=aic_cow_addr, units=unit_array_base,
@@ -71,7 +79,7 @@ return {fire=fire_projectile_addr, acquire=acquire_target_addr, tick=unit_tick_a
 end
 
 -- Private tables, non-overlapping scratch and persistent per-unit firing state.
-local TABLE_BYTES = MAX_TYPES * 4
+local TABLE_BYTES = MAX_PROFILES * 4
 local OFF_REENTRY   = 0x00
 local OFF_SEED      = 0x04
 local OFF_SCATY     = 0x08
@@ -83,7 +91,7 @@ local OFF_SUPPRESS  = OFF_INTERVAL + TABLE_BYTES
 local OFF_FORCED    = OFF_SUPPRESS + TABLE_BYTES
 local OFF_COOLDOWN  = OFF_FORCED   + TABLE_BYTES
 local OFF_ORDER     = OFF_COOLDOWN + MAX_UNITS * 4   -- 4 target kinds per unit type
-local OFF_RANGE     = OFF_ORDER    + MAX_TYPES * 4
+local OFF_RANGE     = OFF_ORDER    + TABLE_BYTES
 local OFF_WALLMIN   = OFF_RANGE    + TABLE_BYTES
 local OFF_MULTI     = OFF_WALLMIN  + TABLE_BYTES     -- random-target volleys
 local OFF_HEIGHT    = OFF_MULTI    + TABLE_BYTES     -- extra firing height
@@ -106,17 +114,22 @@ local OFF_ATTCREW   = OFF_ATTINT   + TABLE_BYTES     -- attached ignores the cre
 local OFF_ATTBOARD  = OFF_ATTCREW  + TABLE_BYTES     -- stop when enemies board
 local OFF_ATTBR2    = OFF_ATTBOARD + TABLE_BYTES     -- boarding radius, squared
 local OFF_AICOW     = OFF_ATTBR2   + TABLE_BYTES     -- AI lords may send cows
-local OFF_PRELOAD   = OFF_AICOW    + TABLE_BYTES     -- hold a loaded weapon ready
+local OFF_COWREMAP  = OFF_AICOW    + TABLE_BYTES
+local OFF_COWCOUNT  = OFF_COWREMAP + TABLE_BYTES
+local OFF_PRELOAD   = OFF_COWCOUNT + TABLE_BYTES     -- hold a loaded weapon ready
 local OFF_PRELPOLL  = OFF_PRELOAD  + TABLE_BYTES
 local OFF_SYNC      = OFF_PRELPOLL + TABLE_BYTES     -- fire on an animation beat
 local OFF_SYNCMAX   = OFF_SYNC     + TABLE_BYTES
 local OFF_SYNCWAIT  = OFF_SYNCMAX  + TABLE_BYTES     -- per unit, ticks waited
 local OFF_INACC     = OFF_SYNCWAIT + MAX_UNITS * 4   -- per-shot aiming error
-local OFF_AIONLY    = OFF_INACC    + TABLE_BYTES     -- leave the player's units alone
+local OFF_INACCSET  = OFF_INACC    + TABLE_BYTES     -- explicit zero differs from omitted
+local OFF_AIONLY    = OFF_INACCSET + TABLE_BYTES     -- leave the player's units alone
 local OFF_UID       = OFF_AIONLY   + TABLE_BYTES
 local OFF_IDENTITY  = OFF_UID      + MAX_UNITS * 4
 local OFF_NATIVESEEN = OFF_IDENTITY + MAX_UNITS * 4
-local DATA_SIZE     = OFF_NATIVESEEN + MAX_UNITS * 4
+local OFF_FORTIFIED = OFF_NATIVESEEN + MAX_UNITS * 4
+local OFF_PROFILESTATE = OFF_FORTIFIED + MAX_TYPES * 4
+local DATA_SIZE     = OFF_PROFILESTATE + MAX_UNITS * 4
 
 local data_addr = nil
 local volley_addr = nil
@@ -127,7 +140,7 @@ local persistent
 local function unit_type_id(name)
     local index = table.find(unit_names, name)
     if index == nil then
-        log(WARNING, "[projectileModifier] unknown unit name: " .. tostring(name))
+        log(WARNING, "[custom-projectiles] unknown unit name: " .. tostring(name))
     end
     return index
 end
@@ -138,7 +151,7 @@ local function projectile_id(value)
     end
     local id = projectile_names[value]
     if id == nil then
-        log(WARNING, "[projectileModifier] unknown projectile name: " .. tostring(value))
+        log(WARNING, "[custom-projectiles] unknown projectile name: " .. tostring(value))
     end
     return id
 end
@@ -155,9 +168,9 @@ local function set_targets(type_id, list)
     for _, name in ipairs(list) do
         local kind = constants.target_kinds[name]
         if kind == nil then
-            log(WARNING, "[projectileModifier] unknown target kind: " .. tostring(name))
+            log(WARNING, "[custom-projectiles] unknown target kind: " .. tostring(name))
         elseif slot >= 4 then
-            log(WARNING, "[projectileModifier] more than four target kinds listed, ignoring " .. tostring(name))
+            log(WARNING, "[custom-projectiles] more than four target kinds listed, ignoring " .. tostring(name))
         else
             core.writeByte(data_addr + OFF_ORDER + 4 * type_id + slot, kind)
             slot = slot + 1
@@ -204,8 +217,9 @@ local function install(config)
     core.writeInteger(data_addr + OFF_SEED, 0x1D872B41)
 
     -- -1 in the remap table means "leave the game's choice alone".
-    for i = 0, MAX_TYPES - 1 do
+    for i = 0, MAX_PROFILES - 1 do
         core.writeInteger(data_addr + OFF_REMAP + 4 * i, 0xFFFFFFFF)
+        core.writeInteger(data_addr + OFF_COWREMAP + 4 * i, 0xFFFFFFFF)
         core.writeInteger(data_addr + OFF_RANGE + 4 * i, constants.DEFAULT_RANGE)
         core.writeInteger(data_addr + OFF_WALLMIN + 4 * i, constants.DEFAULT_WALL_MIN_DISTANCE)
         core.writeInteger(data_addr + OFF_DRAD + 4 * i, constants.DEFAULT_DENSITY_RADIUS)
@@ -239,6 +253,8 @@ local function install(config)
         SEED          = data_addr + OFF_SEED,
         SCATY         = data_addr + OFF_SCATY,
         REMAPT        = data_addr + OFF_REMAP,
+        COWREMAPT     = data_addr + OFF_COWREMAP,
+        COWCOUNTT     = data_addr + OFF_COWCOUNT,
         COUNTT        = data_addr + OFF_COUNT,
         SPREADT       = data_addr + OFF_SPREAD,
         INTERVALT     = data_addr + OFF_INTERVAL,
@@ -252,6 +268,9 @@ local function install(config)
         FIREPROJ      = fire_projectile_addr,
         ACQUIRE       = acquire_target_addr,
         MAXTYPES      = MAX_TYPES,
+        MAXPROFILES   = MAX_PROFILES,
+        FORTIFIEDT    = data_addr + OFF_FORTIFIED,
+        PROFILESTATET = data_addr + OFF_PROFILESTATE,
         MAXUNITS      = MAX_UNITS,
         ORDERT        = data_addr + OFF_ORDER,
         RANGET        = data_addr + OFF_RANGE,
@@ -289,6 +308,8 @@ local function install(config)
         S_SAVETILE    = data_addr + OFF_SCRATCH + 0xB0,
         S_EXPLICIT    = data_addr + OFF_SCRATCH + 0xB4,
         S_SAVECOW     = data_addr + OFF_SCRATCH + 0xB8,
+        S_VOLLEYCOUNT = data_addr + OFF_SCRATCH + 0xBC,
+        S_PROFILE     = data_addr + OFF_SCRATCH + 0xC0,
         S_SELF        = data_addr + OFF_SCRATCH + 0x50,
         S_ID          = data_addr + OFF_SCRATCH + 0x54,
         S_INTV        = data_addr + OFF_SCRATCH + 0x58,
@@ -324,6 +345,7 @@ local function install(config)
         SYNCMAXT      = data_addr + OFF_SYNCMAX,
         SYNCWAITT     = data_addr + OFF_SYNCWAIT,
         INACCT        = data_addr + OFF_INACC,
+        INACCSETT     = data_addr + OFF_INACCSET,
         AIONLYT       = data_addr + OFF_AIONLY,
         TERRAINH      = terrain_height_addr,
         MAPMICROMAX   = constants.MAP_MICRO_MAX,
@@ -348,11 +370,19 @@ local function install(config)
     }
 
     for _, name in ipairs(unit_names) do
-        if config.units[name] then apply_unit(name, config.units[name]) end
+        if config.units[name] then
+            apply_unit(name, config.units[name])
+            if config.units[name].on_fortification then
+                local id = unit_type_id(name)
+                apply_unit(name, config.units[name].on_fortification, id + MAX_TYPES)
+                core.writeInteger(data_addr + OFF_FORTIFIED + id * 4, 1)
+            end
+        end
     end
 
     -- Each blob starts with the routine the others call, so its address is its
     -- entry point. Order matters: a blob may only reference blobs built before it.
+    values.PROFILE = assemble_blob(templates.profile_code, values)
     values.FIXSCATTER = assemble_blob(templates.fixscatter_code, values)
     values.RND = assemble_blob(templates.rand_code, values)
     values.SETSTAGGER = assemble_blob(templates.stagger_code, values)
@@ -361,7 +391,9 @@ local function install(config)
     values.CHECKATTACHED = assemble_blob(templates.attach_code, values)
     values.ISBOARDED = assemble_blob(templates.board_code, values)
     values.ISAIOWNED = assemble_blob(templates.aiowned_code, values)
+    values.ACCURACYSET = assemble_blob(templates.accuracy_set_code, values)
     values.WANTSCOW = assemble_blob(templates.aicow_code, values)
+    values.CHOOSEAMMO = assemble_blob(templates.ammo_code, values)
     values.SYNCREADY = assemble_blob(templates.sync_code, values)
     values.CHOOSEINTERVAL = assemble_blob(templates.interval_code, values)
     values.RESETUNIT = assemble_blob(templates.identity_code, values)
@@ -381,6 +413,11 @@ local function install(config)
     values.RESUME = unit_tick_addr + 5
     local tick_hook = assemble_blob(templates.tick_hook_code, values)
 
+    values.RESUME = native.groundAim + 5
+    local ground_hook = assemble_blob(templates.ground_aim_hook_code, values)
+    values.RESUME = native.aimError + 7
+    local accuracy_hook = assemble_blob(templates.aim_error_hook_code, values)
+
     -- Prepare persistence and all code before either entry point is redirected.
     persistent = require('state').new({
         {'seed', data_addr + OFF_SEED, 4},
@@ -392,8 +429,9 @@ local function install(config)
         {'sync-wait', data_addr + OFF_SYNCWAIT, MAX_UNITS * 4},
         {'uid', data_addr + OFF_UID, MAX_UNITS * 4},
         {'identity', data_addr + OFF_IDENTITY, MAX_UNITS * 4},
+        {'profile', data_addr + OFF_PROFILESTATE, MAX_UNITS * 4},
     }, config)
-    assert(modules['map-extensions'], '[projectileModifier] map-extensions is required')
+    assert(modules['map-extensions'], '[custom-projectiles] map-extensions is required')
     modules['map-extensions']:registerSection('projectileModifier', persistent)
     core.writeCode(fire_projectile_addr, {
         0xE9, core.itob(core.getRelativeAddress(fire_projectile_addr, fire_hook, -5)), 0x90, 0x90
@@ -401,9 +439,15 @@ local function install(config)
     core.writeCode(unit_tick_addr, {
         0xE9, core.itob(core.getRelativeAddress(unit_tick_addr, tick_hook, -5))
     })
+    core.writeCode(native.groundAim, {
+        0xE9, core.itob(core.getRelativeAddress(native.groundAim, ground_hook, -5))
+    })
+    core.writeCode(native.aimError, {
+        0xE9, core.itob(core.getRelativeAddress(native.aimError, accuracy_hook, -5)), 0x90, 0x90
+    })
 
     log(INFO, string.format(
-        "[projectileModifier] fire=%X acquire=%X tick=%X teams=%X buildings=%X aic=%X data=%X volley=%X",
+        "[custom-projectiles] fire=%X acquire=%X tick=%X teams=%X buildings=%X aic=%X data=%X volley=%X",
         fire_projectile_addr, acquire_target_addr, unit_tick_addr, team_table_addr,
         building_base_addr, aic_array_base, data_addr, volley_addr))
 end
@@ -411,7 +455,7 @@ end
 -- Every key this module understands. Anything else in a unit entry is a typo,
 -- and silently ignoring it makes for a long evening.
 local KNOWN_KEYS = {
-    projectile = true, count = true, spread = true,
+    projectile = true, count = true, cow_projectile = true, cow_count = true, on_fortification = true, spread = true,
     interval = true, interval_moving = true, interval_standing = true,
     suppress_default = true, targets = true, range = true,
     wall_min_distance = true, require_manned = true,
@@ -427,14 +471,14 @@ local KNOWN_KEYS = {
     sync_to_animation = true, sync_max_wait = true,
 }
 
-apply_unit = function(name, cfg)
-    local id = unit_type_id(name)
+apply_unit = function(name, cfg, profile)
+    local id = profile or unit_type_id(name)
     if id == nil then return end
 
     for key, _ in pairs(cfg) do
         if not KNOWN_KEYS[key] then
             log(WARNING, string.format(
-                "[projectileModifier] '%s': unknown setting '%s' (check for a comma where a colon belongs)",
+                "[custom-projectiles] '%s': unknown setting '%s' (check for a comma where a colon belongs)",
                 name, tostring(key)))
         end
     end
@@ -450,6 +494,8 @@ apply_unit = function(name, cfg)
     if cfg["count"] ~= nil then
         set_entry(OFF_COUNT, id, math.max(1, math.floor(cfg["count"])))
     end
+    if cfg.cow_projectile ~= nil then set_entry(OFF_COWREMAP, id, cfg.cow_projectile) end
+    if cfg.cow_count ~= nil then set_entry(OFF_COWCOUNT, id, cfg.cow_count) end
 
     if cfg["spread"] ~= nil then
         set_entry(OFF_SPREAD, id, math.max(0, math.floor(cfg["spread"])))
@@ -523,10 +569,12 @@ apply_unit = function(name, cfg)
     end
 
     if cfg["inaccuracy"] ~= nil then
+        set_entry(OFF_INACCSET, id, 1)
         set_entry(OFF_INACC, id, math.max(0, math.floor(cfg["inaccuracy"])))
     end
 
     if cfg["inaccuracy_tiles"] ~= nil then
+        set_entry(OFF_INACCSET, id, 1)
         set_entry(OFF_INACC, id, math.max(0, math.floor(cfg["inaccuracy_tiles"] * 8)))
     end
 
@@ -592,11 +640,11 @@ apply_unit = function(name, cfg)
         set_entry(OFF_SUPPRESS, id, 1)
     end
 
-    log(INFO, string.format("[projectileModifier] applied '%s' (type %d)", name, id))
+    log(INFO, string.format("[custom-projectiles] applied '%s' (type %d)", name, id))
 end
 
 namespace.apply = function(config)
-    assert(not installed, '[projectileModifier] settings cannot be changed during a running session; relaunch the game')
+    assert(not installed, '[custom-projectiles] settings cannot be changed during a running session; relaunch the game')
     local validated = configuration.validate(config)
     if next(validated.units) == nil then return end
     install(validated)
@@ -604,23 +652,23 @@ namespace.apply = function(config)
 end
 
 namespace.enable = function(self, config)
-    assert(not installed, '[projectileModifier] already enabled; relaunch to change settings')
-    assert(type(config) == 'table', '[projectileModifier] expected module options')
+    assert(not installed, '[custom-projectiles] already enabled; relaunch to change settings')
+    assert(type(config) == 'table', '[custom-projectiles] expected module options')
     for key in pairs(config) do
         assert(key ~= 'customizations' and key ~= 'units',
-            '[projectileModifier] old per-unit UCP settings are no longer supported; move them into a projectile YAML file and reset the old module overrides')
+            '[custom-projectiles] old per-unit UCP settings are no longer supported; move them into a projectile YAML file and reset the old module overrides')
         assert(key == 'projectile_config_file_selector',
-            '[projectileModifier] unknown module option: ' .. tostring(key))
+            '[custom-projectiles] unknown module option: ' .. tostring(key))
     end
     local path = config["projectile_config_file_selector"]
     local cfg = {units = {}}
-    assert(path == nil or type(path) == 'string', '[projectileModifier] config path must be a resolved string; required/suggested qualifiers belong in UCP config.yml, not the projectile file')
+    assert(path == nil or type(path) == 'string', '[custom-projectiles] config path must be a resolved string; required/suggested qualifiers belong in UCP config.yml, not the projectile file')
     if path ~= nil and path ~= '' then
         local file = io.open(path, "rb")
-        assert(file, '[projectileModifier] cannot open config file: ' .. tostring(path))
+        assert(file, '[custom-projectiles] cannot open config file: ' .. tostring(path))
         local spec = file:read("*all")
         file:close()
-        assert(spec, '[projectileModifier] cannot read config file: ' .. tostring(path))
+        assert(spec, '[custom-projectiles] cannot read config file: ' .. tostring(path))
         cfg = yaml.parse(spec)
     end
     namespace.apply(cfg)
@@ -631,7 +679,7 @@ namespace.disable = function(self, config)
     return true
 end
 
-namespace.simulationStateFormat = 1
+namespace.simulationStateFormat = 2
 namespace.serializeSimulationState = function(self, handle)
     if persistent then persistent:serialize(handle) end
 end
