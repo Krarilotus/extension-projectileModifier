@@ -395,7 +395,7 @@
         },
         "sync_to_animation": {
           "type": "boolean",
-          "description": "Defaults to native firing-frame timing for catapult, trebuchet, mangonel and both ballistas: reload while waiting and never truncate the animation. False selects the independent timer. Other units default false; true uses the legacy bounded animation wait."
+          "description": "Defaults to native firing-frame timing for catapult, trebuchet, mangonel, both ballistas, European/Arabian foot archers, crossbowmen, slingers and firethrowers. Reload while waiting; never truncate the animation. False selects the independent timer. Other units default false; true uses the legacy bounded animation wait."
         },
         "projectile": {
           "enum": [
@@ -707,7 +707,7 @@
         },
         "sync_to_animation": {
           "type": "boolean",
-          "description": "Defaults to native firing-frame timing for catapult, trebuchet, mangonel and both ballistas: reload while waiting and never truncate the animation. False selects the independent timer. Other units default false; true uses the legacy bounded animation wait."
+          "description": "Defaults to native firing-frame timing for catapult, trebuchet, mangonel, both ballistas, European/Arabian foot archers, crossbowmen, slingers and firethrowers. Reload while waiting; never truncate the animation. False selects the independent timer. Other units default false; true uses the legacy bounded animation wait."
         },
         "projectile": {
           "enum": [

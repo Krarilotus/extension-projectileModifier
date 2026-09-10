@@ -1,4 +1,4 @@
-# Custom Projectiles 1.6.0 (test candidate)
+# Custom Projectiles 1.7.0 (test candidate)
 
 Configure projectile types, volley sizes and automatic firing for all 77 unit
 types using one readable YAML file. Based on Monsterfish's supplied 1.2.0 module.
@@ -6,12 +6,13 @@ Requires UCP 3.0.7+, map-extensions 1.x and Crusader/Extreme 1.41.
 
 ## Installation and use
 
-Import `custom-projectiles-1.6.0.zip` into the launcher and enable the module and
+Import `custom-projectiles-1.7.0.zip` into the launcher and enable the module and
 map-extensions. This unsigned local test candidate requires development module
 loading. It is not a signed store release; see VALIDATION.md for test limits.
 
-Native reload timing is implemented for catapults, trebuchets, mangonels and both
-ballistas. **Unfinished:** infantry/mounted/hunter animation timing, custom GM1
+Native reload timing covers catapults, trebuchets, mangonels, both ballistas,
+European/Arabian foot archers, crossbowmen, slingers and firethrowers.
+**Unfinished:** mounted/hunter animation timing, custom GM1
 projectiles and build-menu decoration triggers. Live acceptance remains pending.
 
 There is **one file picker** under **Customizations → Balance Changes**. There
@@ -100,7 +101,7 @@ balance plugin; identical path strings alone are insufficient.
 Enable only `custom-projectiles`, disabling the old `projectileModifier` module.
 Move its file-selector settings and plugin dependency to the new module ID.
 Existing YAML preset paths may stay where they are; the new resource folder is
-a suggested location. Start a new match: saved simulation state uses format 3
+a suggested location. Start a new match: saved simulation state uses format 4
 and deliberately rejects older states with different timing semantics. The internal save-section key
 remains `projectileModifier` so old state is detected instead of silently reset.
 
@@ -122,16 +123,19 @@ The original projectile YAML format (`units: ...`) remains supported.
 - `count` sets 1–64 projectiles per volley. It replaces the mangonel's native
   seven-projectile volley. Leaving count unset preserves native volley size.
 - `interval` enables automatic fire, using the native projectile or arrows for
-  units without one unless a projectile is selected. For catapults, trebuchets,
-  mangonels and both ballistas, it controls starts of volleys on their native
+  units without one unless a projectile is selected. For the ten native shooters
+  listed above, it controls starts of volleys on their native
   firing frame. Reload proceeds during the interval, then waits before release.
   Short intervals cannot cut the native animation cycle short. The mangonel
   retains seven projectiles when `count` is omitted.
-- These five engines use native animation timing by default. They finish movement
+- These ten unit types use native animation timing by default. They finish movement
   before starting an attack. `sync_to_animation: false` explicitly selects the
   previous independent timer, including automatic fire while moving.
   Other units currently retain that timer by default; native animation timing
-  for infantry, mounted archers and hunters remains unfinished.
+  for mounted archers and hunters remains unfinished.
+- Native cooldowns continue during stance/crew holds; release waits until the
+  unit is eligible. A loaded foot shooter rechecks its configured target before
+  release. Target loss earlier in wind-up may restart the native attack cycle.
 - `suppress_default` defaults true with an interval. False combines native and
   automatic shots only with the independent timer; it cannot bypass a native
   reload interval. True without an interval disarms regular native fire.

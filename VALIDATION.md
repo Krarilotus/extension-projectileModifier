@@ -1,6 +1,51 @@
 # Validation — unreleased work
 
-## Siege reload integration, 1.6.0
+## Foot-shooter reload integration, 1.7.0
+
+Final native/configuration run: **66 Python/Lua/x86 tests passed**. The complete
+GUI/archive suite also passes **23 checks** (13 component/qualifier and 10
+archive/locale tests). The private Reconquista preset passes both production
+Lua validation and the editor schema and is packaged separately.
+
+Five integrated tests execute the native European archer, crossbowman, Arabian
+archer, slinger and firethrower updates along with real animation advancement.
+Both executables cover release-frame intervals, comparison against the native
+minimum cycle, building targets, fortification/stance holds and save/load while
+loaded. Further cases cover stale-target replacement and native pending archer
+retries. Sound/device calls and projectile-spawn observation are substituted;
+rendered gameplay, multiplayer and replay acceptance remain outstanding.
+
+The slinger's initial script pose is at index 0 but its first executable release
+is index 1. Crossbows compare cycle 2 across their three elevation scripts. The
+other infantry scripts are resolved from each executable. Only configured native
+types need their release signatures; an unrelated modified archer signature no
+longer prevents a catapult-only configuration from loading.
+
+A regression reproduced a native stance hold freezing the cooldown as well as
+release. Native clocks now continue through crew/stance holds; an eligible loaded
+unit can release immediately once both the interval and hold have ended. The
+native crew-hold test verifies releases at ticks 99 and 420 after a crew return
+at 420, rather than applying an additional remainder of the interval.
+
+Save format 4 rejects the older scheduler semantics. The saved unit animation
+and module timers reproduce loaded building-target volleys, including staggered
+shots. Test observation now hooks only requested native boundaries instead of
+calling Python for every instruction; native code and instruction limits remain
+in use. The complete module assembles to 6,229 bytes across 31 routines under the
+63,488-byte FASM budget. Data uses 143,504 / 503,504 bytes (Crusader / Extreme).
+
+For live acceptance, add all five foot shooters to the siege checks below.
+Compare interval 400 and 1 against units/buildings, replace a target while loaded,
+move onto/off fortifications, and save/load during holds and staggered fire.
+Earlier target loss during wind-up can restart the native cycle; the loaded
+release check does not promise that every interrupted attack retains its timing.
+
+Mounted/hunter timing, custom GM1 variants and build-menu decoration triggers
+remain unfinished. The agreed custom variant scope is native damage/flight
+behavior with independent sprites. See IMPLEMENTATION-TODO.md for the remaining
+integration boundaries.
+
+## Historical siege reload integration, 1.6.0
 
 Final run: all **59 Python/Lua/x86 tests** passed, along with the complete
 **23 GUI/archive checks** (13 component/qualifier and 10 archive/locale tests).

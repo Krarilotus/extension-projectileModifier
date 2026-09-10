@@ -72,10 +72,13 @@ local fortification_types = {
 }
 
 return {
-    -- Native idle-state crew gates in the five siege update routines.
+    -- Supported native reload routines; zero means no engineer crew is needed.
     native_reload_crews = {
         ['Catapult'] = 2, ['Trebuchet'] = 3, ['Mangonel'] = 2,
         ['Tower ballista'] = 2, ['Fire ballista'] = 2,
+        ['European archer'] = 0, ['European crossbowman'] = 0,
+        ['Arabian archer'] = 0, ['Arabian slinger'] = 0,
+        ['Arabian firethrower'] = 0,
     },
     native_projectiles = {
         ['Hunter'] = 1, ['European archer'] = 1, ['European crossbowman'] = 7,

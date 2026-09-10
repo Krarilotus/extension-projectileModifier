@@ -1,4 +1,4 @@
-# Custom Projectiles 1.6.0
+# Custom Projectiles 1.7.0
 
 Elige proyectiles, tamaños de salva e intervalos de disparo automático para los 77 tipos de unidades. Las catapultas pueden lanzar piedras de mangonel; las torres de asedio y las unidades cuerpo a cuerpo pueden obtener un ataque a distancia automático.
 
@@ -8,4 +8,4 @@ Requiere UCP 3.0.7+, map-extensions 1.x y Crusader/Extreme 1.41. Los 33 ajustes 
 
 Precisión: inaccuracy usa unidades enteras del juego: 1 = 1/8 de casilla, 8 = 1 casilla. 0 elimina el error aleatorio; omitirlo conserva la precisión original. spread es independiente.
 
-Catapultas, trabuquetes, mangoneles y balistas: interval sigue la animación de disparo y no la acorta. sync_to_animation: false restaura el temporizador independiente. Inicia una partida nueva tras actualizar.
+Unidades de disparo compatibles (consulta README.md): interval sigue la animación de disparo sin acortarla. sync_to_animation: false restaura el temporizador independiente. Inicia una partida nueva tras actualizar.

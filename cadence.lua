@@ -1,18 +1,30 @@
 -- Native-animation cadence: reload during the interval and hold at release.
 local M = {}
-local native_crews = require('constants').native_reload_crews
+local constants = require('constants')
+local native_crews = constants.native_reload_crews
+
+-- Raw unit types, independent of the base/fortification profile selection.
+M.attack_states = {[22]=6, [23]=6, [39]=4, [40]=4, [41]=4,
+    [61]=4, [70]=6, [72]=6, [76]=6, [77]=4}
+M.start_states = {[22]=4, [23]=4, [39]=2, [40]=2, [41]=2,
+    [61]=2, [70]=4, [72]=4, [76]=4, [77]=2}
+
+local function enabled(config, name)
+    if config == nil then return true end
+    local cfg = config.units[name] or {}
+    local wall = cfg.on_fortification or {}
+    return (cfg.interval and cfg.sync_to_animation ~= false)
+        or (wall.interval and wall.sync_to_animation ~= false)
+end
 
 function M.required(config)
     for name in pairs(native_crews) do
-        local cfg = config.units[name] or {}
-        local wall = cfg.on_fortification or {}
-        if (cfg.interval and cfg.sync_to_animation ~= false)
-            or (wall.interval and wall.sync_to_animation ~= false) then return true end
+        if enabled(config, name) then return true end
     end
     return false
 end
 
-function M.resolve(locate)
+function M.resolve(locate, config)
     local result = {}
     for _, item in ipairs({
         {39, '80 BA ? ? ? ? 17 0F 85', 2, 23},
@@ -20,16 +32,33 @@ function M.resolve(locate)
         {41, '80 BA ? ? ? ? 16 75', 2, 22},
         {61, '80 BA ? ? ? ? 0C 75 65', 2, 12},
         {77, '0F BE 80 ? ? ? ? 3B C5 89 86 ? ? ? ? 7E 4A', 3, 13},
+        {22, '0F BE 82 ? ? ? ? 85 C0 89 86 ? ? ? ? 7E 6D 0F BF 96 ? ? ? ? 8D 84 C2 79 01 00 00', 3, 6},
+        {70, '0F BE 81 ? ? ? ? 83 CA FF 85 C0 89 86 ? ? ? ? 7E 4B', 3, 22},
+        {72, '0F BE 81 ? ? ? ? 85 C0 89 86 ? ? ? ? 7E 6D 0F BF 8E ? ? ? ? 8D 84 C1 C1 01 00 00', 3, 12},
+        {76, '0F BE 81 ? ? ? ? 85 C0 89 86 ? ? ? ? 7E 14 0F BF 96 ? ? ? ? 8D 84 C2 39 01 00 00', 3, 20},
     }) do
+      if enabled(config, constants.unit_names[item[1]]) then
         local address = locate(item[2])
         local script = core.readInteger(address + item[3])
         assert(script >= 0x400000 and script < 0x4000000, 'invalid native release script')
         local found
-        for index = 0, 39 do
+        -- Script index zero is the phase's initial pose. The animation pass
+        -- advances before the first update: slingers release at index 1.
+        for index = 1, 39 do
             if core.readByte(script + index) == item[4] then found = index; break end
         end
         assert(found and found > 0, 'unsupported native release script')
         result[item[1]] = found
+      end
+    end
+    -- Crossbows compare the cycle itself, not the rendered frame; all three
+    -- elevation scripts share this gate. Resolve its immediate from the code.
+    if enabled(config, 'European crossbowman') then
+    local crossbow = locate('B9 ? ? ? ? 89 8E ? ? ? ? C7 86 ? ? ? ? 00 00 00 00 0F B7 86 ? ? ? ? 83 CA FF 66 85 C0 75 0F')
+    assert(core.readByte(crossbow + 0x78) == 0x39
+        and core.readByte(crossbow + 0x79) == 0x8E, 'unsupported crossbow release gate')
+    result[23] = core.readInteger(crossbow + 1)
+    assert(result[23] == 2, 'unsupported crossbow release cycle')
     end
     return result
 end
@@ -91,8 +120,8 @@ nr_done:
     ret
 ]]
 
--- Start native reload only from idle, preserving move/attack/cow orders already
--- in progress. Target picking temporarily saves/restores the native order fields.
+-- Start native reload only from idle, preserving movement/cow states already
+-- in progress. Foot shooters need the selected target for their native checks.
 M.idle_code = [[
 nativeIdle:
     pushad
@@ -112,7 +141,9 @@ nativeIdle:
     mov eax, [S_ID]
     imul eax, eax, 0x490
     add eax, UNITARRAY
-    mov word [eax+0x2C0], 2
+    movzx ecx, word [eax+0x8E]
+    mov ecx, [NATIVESTARTT+ecx*4]
+    mov word [eax+0x2C0], cx
     mov dword [eax+0x2B0], 0
 ni_done:
     popad
@@ -133,6 +164,26 @@ nativeTarget:
     push ebx
     call PICKTARGET
     add esp, 8
+    test eax, eax
+    jz nt_restore
+    mov ecx, [S_UNITPTR]
+    movzx ecx, word [ecx+0x8E]
+    cmp dword [NATIVESTARTT+ecx*4], 4
+    jne nt_restore
+    ; Configured infantry targets must reach the native wind-up and LOS/UID
+    ; checks. Otherwise a stale prior target can discard a valid loaded shot.
+    cmp eax, 2
+    je nt_ground
+    mov ecx, [S_UNITPTR]
+    mov word [ecx+0x39C], 3
+    jmp nt_done
+nt_ground:
+    push ebx
+    mov ecx, UNITSTATE
+    call ACQUIRE
+    test eax, eax
+    jnz nt_done
+nt_restore:
     push eax
     call RESTORETARGET
     pop eax
@@ -241,7 +292,11 @@ shouldHold:
     add eax, UNITARRAY
     cmp word [eax+0x3B0], 0
     jne nh_no
-    cmp word [eax+0x2C0], 4
+    movzx ecx, word [eax+0x8E]
+    cmp ecx, MAXTYPES
+    jae nh_no
+    mov ecx, [NATIVEATTACKT+ecx*4]
+    cmp word [eax+0x2C0], cx
     jne nh_no
     mov ecx, [esp+12]
     cmp ecx, 1

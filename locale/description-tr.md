@@ -1,4 +1,4 @@
-# Custom Projectiles 1.6.0
+# Custom Projectiles 1.7.0
 
 77 birim türünün tamamı için mermi türünü, salvo boyutunu ve otomatik atış aralığını seçin. Mancınıklar mangonel taşları atabilir; kuşatma kuleleri ve yakın dövüş birimleri otomatik menzilli saldırı kazanabilir.
 
@@ -8,4 +8,4 @@ UCP 3.0.7+, map-extensions 1.x ve Crusader/Extreme 1.41 gerektirir. 33 ayarın v
 
 İsabet: inaccuracy oyunun tam sayı koordinat birimlerini kullanır: 1 = 1/8 kare, 8 = 1 kare. 0 rastgele nişan hatasını kaldırır; belirtilmezse özgün isabet korunur. spread bağımsızdır.
 
-Mancınık, trebuşe, mangonel ve balistalarda interval atış animasyonunu izler; animasyonu kısaltmaz. sync_to_animation: false bağımsız zamanlayıcıyı geri getirir. Güncellemeden sonra yeni oyun başlatın.
+Desteklenen menzilli birimler (README.md dosyasına bakın): interval atış animasyonunu kısaltmadan izler. sync_to_animation: false bağımsız zamanlayıcıyı geri getirir. Güncellemeden sonra yeni oyun başlatın.

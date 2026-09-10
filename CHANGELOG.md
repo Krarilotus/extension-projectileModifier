@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.7.0 (unreleased test candidate)
+
+- Extend native reload timing to European/Arabian foot archers, crossbowmen,
+  slingers and firethrowers. Keep the native firing frame and full cycle minimum.
+- Hand configured infantry targets to native wind-up and release checks,
+  including buildings, replacement targets and fortification profiles.
+- Prevent pending archer retries from bypassing the cooldown.
+- Keep native cooldowns running during stance/crew holds; only release is held.
+- Resolve release scripts only for unit types needing native timing, so an
+  unrelated animation modification does not prevent installation.
+- Save format 4 rejects earlier scheduler semantics. Update short timing
+  instructions in all nine locales; no additional customization controls.
+
+Mounted/hunter native timing, custom GM1 projectiles and build-menu decorations
+remain unfinished. Named custom projectiles will inherit a native base's damage
+and flight behavior and use independent sprites; no separate physics is planned.
+
 ## 1.6.0 (unreleased test candidate)
 
 - Drive catapult, trebuchet, mangonel and both ballista intervals through their

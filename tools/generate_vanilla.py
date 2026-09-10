@@ -63,6 +63,8 @@ HEADER='''# yaml-language-server: $schema=./projectile-config.schema.json
 #   preload_poll: 5              # 1..60000 ticks between loaded target checks.
 #   sync_to_animation: true      # Default for catapult/trebuchet/mangonel/ballistas:
 #                               # native release frame; interval cannot cut the cycle.
+#                               # Also foot archers/crossbowmen/slingers/firethrowers.
+#                               # Crew/stance holds do not pause native cooldowns.
 #                               # false restores their old independent timer.
 #                               # Other units default false; true uses legacy wait.
 #   sync_max_wait: 40            # 1..60000; legacy wait only, not native reload.

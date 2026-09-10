@@ -12,7 +12,7 @@ local MAX_TYPES        = constants.MAX_UNIT_TYPES
 local MAX_PROFILES     = MAX_TYPES * 2
 local MAX_UNITS        = addresses.max_units
 
-local function resolve(native_cadence)
+local function resolve(native_cadence, config)
 local function locate(pattern)
     local ok, address = pcall(core.scanForAOB, pattern, 0x400000, 0x700000)
     assert(ok and type(address) == 'number' and address >= 0x400000 and address < 0x700000,
@@ -44,7 +44,7 @@ local animation_addr, release_cycles
 if native_cadence then
     animation_addr = locate('A1 ? ? ? ? 69 C0 90 04 00 00 01 9C 30 54 06 00 00')
     assert(core.readByte(animation_addr + 0xA1) == 0x69, 'unsupported animation continuation')
-    release_cycles = cadence.resolve(locate)
+    release_cycles = cadence.resolve(locate, config)
 end
 
 -- Tile layer bases, read out of the wall-validation code inside acquireShootTarget.
@@ -140,7 +140,9 @@ local OFF_PROFILESTATE = OFF_FORTIFIED + MAX_TYPES * 4
 local OFF_NATIVECYCLE = OFF_PROFILESTATE + MAX_UNITS * 4
 local OFF_NATIVEINT = OFF_NATIVECYCLE + TABLE_BYTES
 local OFF_NATIVEBLOCK = OFF_NATIVEINT + MAX_UNITS * 4
-local DATA_SIZE     = OFF_NATIVEBLOCK + MAX_UNITS * 4
+local OFF_NATIVEATTACK = OFF_NATIVEBLOCK + MAX_UNITS * 4
+local OFF_NATIVESTART = OFF_NATIVEATTACK + MAX_TYPES * 4
+local DATA_SIZE     = OFF_NATIVESTART + MAX_TYPES * 4
 
 local data_addr = nil
 local volley_addr = nil
@@ -219,7 +221,7 @@ local function assemble_blob(script, values)
 end
 
 local function install(config)
-    local native = resolve(cadence.required(config))
+    local native = resolve(cadence.required(config), config)
     release_cycles = native.releaseCycles or {}
     local fire_projectile_addr, acquire_target_addr, unit_tick_addr = native.fire, native.acquire, native.tick
     local tile_rows_addr, tile_flags_addr, terrain_height_addr = native.rows, native.flags, native.terrain
@@ -228,6 +230,8 @@ local function install(config)
     local unit_array_base, unit_state_this, current_unit_id_addr = native.units, native.this, native.current
     data_addr = core.allocate(DATA_SIZE, true)
     core.writeInteger(data_addr + OFF_SEED, 0x1D872B41)
+    for kind, phase in pairs(cadence.attack_states) do set_entry(OFF_NATIVEATTACK, kind, phase) end
+    for kind, phase in pairs(cadence.start_states) do set_entry(OFF_NATIVESTART, kind, phase) end
 
     -- -1 in the remap table means "leave the game's choice alone".
     for i = 0, MAX_PROFILES - 1 do
@@ -287,6 +291,8 @@ local function install(config)
         NATIVECYCLET  = data_addr + OFF_NATIVECYCLE,
         NATIVEINTT    = data_addr + OFF_NATIVEINT,
         NATIVEBLOCKT  = data_addr + OFF_NATIVEBLOCK,
+        NATIVEATTACKT = data_addr + OFF_NATIVEATTACK,
+        NATIVESTARTT  = data_addr + OFF_NATIVESTART,
         MAXUNITS      = MAX_UNITS,
         ORDERT        = data_addr + OFF_ORDER,
         RANGET        = data_addr + OFF_RANGE,
@@ -717,7 +723,7 @@ namespace.disable = function(self, config)
     return true
 end
 
-namespace.simulationStateFormat = 3
+namespace.simulationStateFormat = 4
 namespace.serializeSimulationState = function(self, handle)
     if persistent then persistent:serialize(handle) end
 end

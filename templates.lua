@@ -1545,6 +1545,18 @@ t_notaionly:
     jz t_done
     mov [S_ID], eax               ; the called game code is free to clobber
                                   ; registers, so keep what we need in memory
+    cmp dword [NATIVECYCLET+edx*4], 0
+    je t_chooseinterval
+    ; Native reload and its shot-to-shot clock keep progressing during a
+    ; crew/stance hold. Eligibility blocks release, not elapsed time.
+    cmp dword [COOLDOWNT+eax*4], 0
+    jle t_nativepoll
+    dec dword [COOLDOWNT+eax*4]
+t_nativepoll:
+    cmp dword [SYNCWAITT+eax*4], 0
+    jle t_chooseinterval
+    dec dword [SYNCWAITT+eax*4]
+t_chooseinterval:
     push edx
     push edx
     push eax
@@ -1569,10 +1581,7 @@ t_notaionly:
 t_crewed:
     mov dword [NATIVEBLOCKT+eax*4], 0
     cmp dword [NATIVECYCLET+edx*4], 0
-    je t_cooldown
-    cmp dword [SYNCWAITT+eax*4], 0
-    jle t_cooldown
-    dec dword [SYNCWAITT+eax*4]
+    jne t_cdelapsed              ; native clock was advanced before the gates
 t_cooldown:
     ; The interval measures time between volley starts. It also advances while
     ; a staggered volley is pending; volleys themselves never overlap.

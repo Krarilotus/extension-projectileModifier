@@ -15,6 +15,26 @@ class CadenceTests(unittest.TestCase):
         h=observer.prepare({'Catapult':{'on_fortification':{'interval':100}}})
         self.assertIn('configuredAnimationHold',h.blobs)
 
+    def test_unconfigured_infantry_animation_changes_do_not_block_siege(self):
+        from harness import Harness
+        for extreme in [False,True]:
+            h=Harness(extreme)
+            at=h.scan(b'0F BE 82 ? ? ? ? 85 C0 89 86 ? ? ? ? 7E 6D 0F BF 96 ? ? ? ? 8D 84 C2 79 01 00 00')
+            h.put(at,0x90,1)  # simulate an unrelated module changing archers
+            h.enable({'Catapult':{'interval':300}})
+            self.assertIn('configuredAnimationHold',h.blobs)
+
+    def test_native_cooldown_continues_during_a_crew_hold(self):
+        h,a,tick=self.integrated('Catapult',39,0x568320,{'interval':250})
+        events=[]
+        for t in range(470):
+            if t==150: h.put(a+0x3b4,0,2)
+            if t==420: h.put(a+0x3b4,2,2)
+            queued,shots=tick()
+            self.assertFalse(queued)
+            if shots: events.append(t)
+        self.assertEqual(events,[99,420])
+
     def test_native_crew_defaults_and_explicit_overrides(self):
         observer=projectile_tests.NativeTests()
         for name,kind,crew in [('Catapult',39,2),('Trebuchet',40,3),('Mangonel',41,2),
@@ -263,7 +283,7 @@ class CadenceTests(unittest.TestCase):
         self.assertEqual(first,second)
         self.assertTrue(any(queued or shots for queued,shots in first))
         self.assertEqual(h.get(a+0x362,2),stones)
-        handle[b'files'][b'format']=b'2'
+        handle[b'files'][b'format']=b'3'
         before=h.get(h.v['COOLDOWNT']+4)
         with self.assertRaisesRegex(Exception,'unsupported saved state format'):
             state.deserialize(state,handle)

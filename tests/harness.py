@@ -119,9 +119,13 @@ class Harness:
         def hook(uc,ip,size,_):
             if ip == (stop or 0x53ff000): reached.append(ip); uc.emu_stop()
             elif callbacks and ip in callbacks: callbacks[ip](self)
-        token=self.uc.hook_add(UC_HOOK_CODE,hook)
+        # Observe only the requested boundaries. A global instruction hook made
+        # long native animation/target scans spend most of their time in Python.
+        points={(stop or 0x53ff000), *(callbacks or {}).keys()}
+        tokens=[self.uc.hook_add(UC_HOOK_CODE,hook,begin=ip,end=ip) for ip in points]
         try: self.uc.emu_start(address,0,count=8000000)
-        finally: self.uc.hook_del(token)
+        finally:
+            for token in tokens: self.uc.hook_del(token)
         assert reached, 'instruction budget exceeded'
         return self.uc.reg_read(r.UC_X86_REG_EAX)
 

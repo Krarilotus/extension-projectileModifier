@@ -20,7 +20,7 @@ def build_schema():
                                                minItems=1, maxItems=4, uniqueItems=True)])
     fields['stagger_min']['description'] = 'Requires stagger_max; must not exceed it when staggering is enabled. Checked by the game loader.'
     fields['interval']['description'] = 'Optional fallback automatic-fire interval in simulation ticks. Applies only where no state interval overrides it.'
-    fields['sync_to_animation']['description'] = 'Defaults to native firing-frame timing for catapult, trebuchet, mangonel and both ballistas: reload while waiting and never truncate the animation. False selects the independent timer. Other units default false; true uses the legacy bounded animation wait.'
+    fields['sync_to_animation']['description'] = 'Defaults to native firing-frame timing for catapult, trebuchet, mangonel, both ballistas, European/Arabian foot archers, crossbowmen, slingers and firethrowers. Reload while waiting; never truncate the animation. False selects the independent timer. Other units default false; true uses the legacy bounded animation wait.'
     fields['sync_max_wait']['description'] = 'Legacy animation wait only; never bypasses a native reload firing frame.'
     fields['suppress_default']['description'] = 'Defaults true with an interval. False combines native and automatic shots only in independent timer mode; it cannot bypass native reload timing. Unchanged cow orders remain available.'
     fields['interval_moving']['description'] = 'Enables firing while moving; 0 holds fire. If omitted, use interval, or hold fire if neither is set.'
