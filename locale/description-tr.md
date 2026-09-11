@@ -1,4 +1,4 @@
-# Custom Projectiles 1.8.3
+# Custom Projectiles 1.8.4
 
 77 birim türünün tamamını YAML ile ayarlayın. Normal mühimmat ve inekler ayrı ayarlanır. Aralıklar desteklenen atış animasyonlarına uyar; inaccuracy yerel oyun birimlerini kullanır: 1 = 1/8 karo, 8 = 1 karo, 0 = tam isabetli nişan.
 

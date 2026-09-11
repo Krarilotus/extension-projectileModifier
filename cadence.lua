@@ -135,8 +135,17 @@ nativeRelease:
     push eax
     call CHECKATTACHED
     add esp, 4
+    push dword [S_ID]
+    call MANUALORDER
+    add esp, 4
+    test eax, eax
+    jz nr_search
+    mov eax, [ebp+44]            ; native code already acquired and charged this shot
+nr_search:
+    push eax                    ; zero retains automatic AI/search behavior
     mov edx, [S_PROFILE]
     call AUTOVOLLEY
+    add esp, 4
     cmp dword [S_FIRED], 0
     jne nr_done
 nr_refund:
@@ -184,12 +193,22 @@ ni_horse:
     cmp ecx, 101
     jne ni_done
 ni_target:
+    mov ecx, [S_ID]
+    cmp dword [PENDINGT+ecx*4], 0
+    je ni_acquire
+    push ecx
+    call MANUALORDER
+    add esp, 4
+    test eax, eax
+    jnz ni_start                 ; queued native shots already own their aim
+ni_acquire:
     push dword [S_PROFILE]
     push dword [S_ID]
     call NATIVETARGET
     add esp, 8
     test eax, eax
     jz ni_done
+ni_start:
     mov eax, [S_ID]
     imul eax, eax, 0x490
     add eax, UNITARRAY

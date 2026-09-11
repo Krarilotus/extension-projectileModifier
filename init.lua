@@ -530,6 +530,7 @@ local function install(config)
     values.SCANWALL = assemble_blob(templates.scan_wall_code, values)
     volley_addr = assemble_blob(templates.volley_code, values)
     values.VOLLEY = volley_addr
+    values.MANUALORDER = assemble_blob(templates.manual_order_code, values)
     values.PICKTARGET = assemble_blob(templates.pick_code, values)
     values.RESTORETARGET = assemble_blob(templates.restore_code, values)
     values.AUTOVOLLEY = assemble_blob(templates.automatic_code, values)

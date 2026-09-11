@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.8.4 (test candidate)
+
+- Preserve the game's accepted human shot at native projectile dispatch. Do not
+  reacquire after the native catapult/trebuchet has consumed its last stone:
+  that rejected the shot and cleared wall, ground and building attack orders.
+- Human explicit orders take precedence over every automatic search policy,
+  including the default units policy. Native targeting, animation and stone
+  consumption remain in place; configured volleys use the native shot coordinates.
+- Finish staggered manual volleys with the accepted native aim, including after
+  save/load. No new configuration fields or persistent state are introduced.
+
 ## 1.8.3 (test candidate)
 
 - Apply cluster-density targeting restrictions only to AI owners. Human native

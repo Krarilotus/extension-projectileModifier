@@ -1,5 +1,33 @@
 # Validation — unreleased work
 
+## Native manual-release correction, 1.8.4
+
+All **100 Python/Lua/x86 tests passed**, together with **23 GUI/archive checks**.
+
+Reproduced the reported animation-without-projectile failure against published
+1.8.3: a valid trebuchet wall order with one stone and no alternative enemies
+reached firing state 4/cycle 3, emitted no projectile, refunded the stone and
+changed the order to 3. The earlier fixtures used 1000 stones and missed this.
+Native acquireShootTarget checks ammunition before accepting an artillery order;
+calling it again after the original handler debits its last stone is incorrect.
+
+Human native dispatch now passes its original coordinates into the existing
+volley routine. Automatic acquisition remains before release; the already
+accepted shot is not reacquired, redirected or charged again. Explicit human
+orders take precedence over every search policy. Queued native manual volleys
+reuse the game's saved unit aim. Runtime save format remains 5.
+
+New regressions execute original catapult/trebuchet handlers on both EXEs with
+one stone, no fallback enemies, and unit/ground/wall/building orders. They observe
+the native dispatch arguments, downstream projectile spawns, stock and order,
+and reject any acquisition call after the stone debit. Further checks cover the
+default units policy and a long staggered wall volley across native save/load.
+
+Live reviewer confirmation remains open. Test the existing Reconquista settings
+in a new match with 1.8.4: ground, wall and building commands with one stone left,
+then repeat after supplying more stones. Check regular volleys and native cows
+separately. This fix is established by native execution, not rendered gameplay.
+
 ## Human cluster targeting follow-up, 1.8.3
 
 **97 Python/Lua/x86 tests passed**: the 96-test full run (607.824 seconds), plus

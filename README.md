@@ -245,11 +245,16 @@ height. Unscattered shots retain their original target height.
 Targets: `units`, `cluster`, `buildings`, `fortifications`, `siege_towers`, `walls`.
 
 `cluster` applies its density threshold only to AI-controlled units. For a human
-native shooter with a cluster policy, its existing unit, building, ground or wall
+native shooter, its existing unit, building, ground or wall
 attack order takes precedence over the search list. Native target acquisition
 and the configured range still apply; random-target volleys do not redirect that
 order. Without such an order, a human unit treats `cluster` like `units`, with no
 density threshold. AI owners retain the configured search priorities and density.
+
+At a human native release, the module uses the coordinates already supplied by
+the game. It does not reacquire the target after the engine charges ammunition;
+this preserves wall/ground/building orders when firing the last stone. Queued
+shots finish that accepted aim without charging another stone.
 
 Unit scans exclude neutral owners, allies, dead and transitioning units. Cluster
 and random targeting consider at most 256 candidates in slot order. Building

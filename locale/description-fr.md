@@ -1,4 +1,4 @@
-# Custom Projectiles 1.8.3
+# Custom Projectiles 1.8.4
 
 Configurez les 77 types d’unités en YAML. Munitions normales et vaches sont indépendantes. Les intervalles respectent les animations de tir prises en charge ; inaccuracy utilise les unités natives : 1 = 1/8 de case, 8 = 1 case, 0 = visée exacte.
 

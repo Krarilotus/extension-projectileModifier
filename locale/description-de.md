@@ -1,4 +1,4 @@
-# Custom Projectiles 1.8.3
+# Custom Projectiles 1.8.4
 
 Alle 77 Einheitentypen per YAML einstellen. Normale Munition und Kühe sind unabhängig. Intervalle beachten unterstützte Schussanimationen; inaccuracy nutzt native Einheiten: 1 = 1/8 Feld, 8 = 1 Feld, 0 = genaues Zielen.
 

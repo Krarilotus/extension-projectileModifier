@@ -20,7 +20,7 @@ def build_schema():
     target = dict(type='string', enum=sorted(constants.target_kinds.keys()))
     fields['targets'] = dict(oneOf=[target, dict(type='array', items=target,
                                                minItems=1, maxItems=4, uniqueItems=True)])
-    fields['targets']['description'] = 'Automatic search priorities. Cluster density applies only to AI owners. With cluster configured, human native shooters retain their current unit/building/ground/wall attack order within range; humans without an order treat cluster as units.'
+    fields['targets']['description'] = 'Automatic search priorities. Cluster density applies only to AI owners. Human native shooters retain their current unit/building/ground/wall attack order within range; humans without an order treat cluster as units.'
     fields['density_min']['description'] = 'Minimum enemy count for AI cluster targeting; human attack orders are not restricted by this threshold.'
     fields['density_radius']['description'] = 'Radius in tiles for counting nearby enemies in an AI cluster.'
     fields['stagger_min']['description'] = 'Requires stagger_max; must not exceed it when staggering is enabled. Checked by the game loader.'

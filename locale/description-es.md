@@ -1,4 +1,4 @@
-# Custom Projectiles 1.8.3
+# Custom Projectiles 1.8.4
 
 Configura los 77 tipos de unidades mediante YAML. La munición normal y las vacas se ajustan por separado. Los intervalos respetan las animaciones de disparo compatibles; inaccuracy usa unidades nativas: 1 = 1/8 de casilla, 8 = 1 casilla, 0 = puntería exacta.
 

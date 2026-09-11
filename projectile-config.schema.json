@@ -611,7 +611,7 @@
               "uniqueItems": true
             }
           ],
-          "description": "Automatic search priorities. Cluster density applies only to AI owners. With cluster configured, human native shooters retain their current unit/building/ground/wall attack order within range; humans without an order treat cluster as units."
+          "description": "Automatic search priorities. Cluster density applies only to AI owners. Human native shooters retain their current unit/building/ground/wall attack order within range; humans without an order treat cluster as units."
         },
         "on_fortification": {
           "$ref": "#/$defs/override"
@@ -950,7 +950,7 @@
               "uniqueItems": true
             }
           ],
-          "description": "Automatic search priorities. Cluster density applies only to AI owners. With cluster configured, human native shooters retain their current unit/building/ground/wall attack order within range; humans without an order treat cluster as units."
+          "description": "Automatic search priorities. Cluster density applies only to AI owners. Human native shooters retain their current unit/building/ground/wall attack order within range; humans without an order treat cluster as units."
         }
       },
       "description": "Sparse overrides while on a wall or fortification. Missing fields inherit the ground settings. Runtime validates the merged settings.",
@@ -1253,7 +1253,7 @@
               "uniqueItems": true
             }
           ],
-          "description": "Automatic search priorities. Cluster density applies only to AI owners. With cluster configured, human native shooters retain their current unit/building/ground/wall attack order within range; humans without an order treat cluster as units."
+          "description": "Automatic search priorities. Cluster density applies only to AI owners. Human native shooters retain their current unit/building/ground/wall attack order within range; humans without an order treat cluster as units."
         },
         "decoration": {
           "type": "string",

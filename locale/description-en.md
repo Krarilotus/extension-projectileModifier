@@ -1,4 +1,4 @@
-# Custom Projectiles 1.8.3
+# Custom Projectiles 1.8.4
 
 Configure all 77 unit types in YAML. Regular and cow ammunition are independent. Intervals respect supported firing animations; inaccuracy uses native units: 1 = 1/8 tile, 8 = 1 tile, 0 = exact aim.
 
