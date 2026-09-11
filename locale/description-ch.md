@@ -1,4 +1,4 @@
-# Custom Projectiles 1.8.5
+# Custom Projectiles 1.8.6
 
 通过 YAML 配置全部 77 种单位。普通弹药和牛弹可分别设置。射击间隔遵循受支持的射击动画；inaccuracy 使用游戏原生单位：1 = 1/8 格，8 = 1 格，0 = 精确瞄准。
 

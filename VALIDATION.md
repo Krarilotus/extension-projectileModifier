@@ -1,5 +1,40 @@
 # Validation — unreleased work
 
+## Catapult lowered pause, 1.8.6
+
+All **106 Python/Lua/x86 tests passed** (750.162 seconds), together with all
+**23 GUI/archive checks**. The previously tested 1.8.5 native aiming correction
+remains covered by the full regression suite.
+
+The 1.8.5 catapult cooldown stopped at firing state 4/cycle 8, engine pose 22,
+with its arm already raised. A new regression reproduces that on both EXEs.
+Original reload scripts identify the final state 2/cycle 12 entry as engine
+pose 13 (arm lowered) and engineer pose 41. The cooldown now waits there and
+resumes 27 ticks before release, retaining the entire native swing and recoil.
+The existing release guard still handles eligibility changes during the swing.
+No new hooks, saved state, settings or changes to native animation scripts.
+
+The regression compares complete firing-phase traces at intervals 1 and 700
+in Crusader and Extreme. Every firing frame and duration matches; long-interval
+releases remain at ticks 117, 817 and 1517 with one stone per volley. Tests also
+cover cow/movement bypass, late eligibility checks, saved lowered waits and crew
+recovery. Missing crew delays firing until the complete swing can resume.
+Changed engine/engineer scripts or firing speed are rejected before patching.
+
+Live normal Crusader 1.41, 11 September: 1.8.6 with unchanged Reconquista YAML
+loaded the existing wall-order save. The catapult visibly waited with its arm
+lowered. Read-only observations recorded 240 samples at state 2/cycle 12,
+engine frame 102/engineer frame 326 (facing 5: poses 13/41). Two three-pebble
+volleys consumed stones 12->11->10, 17.840 seconds apart, at native clock values
+37667 and 38369 (702 sampled ticks, consistent with 700 at 10 Hz precision).
+The saved match subsequently lost the engine during enemy attack. The 516-sample
+record spans 55.847 seconds and ends when the game was closed normally; observer
+error 299 reflects process closure. Desktop released at 22:24:08 CEST.
+All six pebbles have 13-18 distinct observed flight positions; the UCP error
+log contains only its header.
+Rendered Extreme acceptance and the broader compatibility/multiplayer gates
+below remain open.
+
 ## Native aiming correction, 1.8.5
 
 All **103 Python/Lua/x86 tests passed**: the 102-test full run (718.319 seconds)

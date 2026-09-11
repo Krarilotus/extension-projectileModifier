@@ -70,6 +70,37 @@ function M.resolve(locate, config)
     return result
 end
 
+function M.resolve_catapult_rest(locate, release_cycle)
+    if not release_cycle then return nil end
+    -- Final native reload entry: engine pose 13 (arm down), engineer pose 41.
+    -- The old release gate waited at firing pose 22, with the arm raised.
+    local site = locate('8B 1D ? ? ? ? 8B C3 69 C0 90 04 00 00 8B 88 ? ? ? ? 0F BE 89 ? ? ? ? 3B CD 89 88 ? ? ? ? 7F 17 5F 5E') + 8
+    local script = core.readInteger(site + 15)
+    assert(script >= 0x400000 and script < 0x4000000, 'invalid catapult reload script')
+    local finish
+    for index = 1, 39 do
+        if core.readByte(script + index) == 0 then finish = index; break end
+    end
+    assert(core.readByte(site + 0x4B) == 0x0F and core.readByte(site + 0x4C) == 0xBE
+        and core.readByte(site + 0x4D) == 0x8A, 'unsupported catapult engineer script')
+    local crew = core.readInteger(site + 0x4E)
+    assert(crew >= 0x400000 and crew < 0x4000000
+        and finish and finish > 1 and core.readByte(script + finish - 1) == 13
+        and core.readByte(crew + finish - 1) == 41 and core.readByte(crew + finish) == 0,
+        'unsupported catapult lowered pose')
+    local speed = site - 0x8C
+    local attack = speed + 14 + core.readInteger(speed + 10)
+    assert(attack >= 0x400000 and attack < 0x700000
+        and core.readByte(speed) == 0xB9 and core.readInteger(speed + 1) == 2
+        and core.readInteger(speed + 5) == 0x0FC13B66
+        and core.readByte(speed + 9) == 0x85
+        and core.readInteger(attack) == 0x00043D66
+        and core.readSmallInteger(attack + 10) % 65536 == 0x8E89
+        and core.readInteger(attack + 12) == core.readInteger(speed + 16),
+        'unsupported catapult firing speed')
+    return {cycle=finish-1, lead=release_cycle * (core.readInteger(speed + 1) + 1)}
+end
+
 function M.resolve_trebuchet_rest(locate, release_cycle)
     if not release_cycle then return nil end
     -- The trebuchet's firing phase already starts its swing. The loaded pose
@@ -409,7 +440,7 @@ ca_hold:
 -- shouldHold(unitID, releaseCycle, remaining, blocked) -> bool
 -- remaining is a shot-to-shot cooldown, decremented once per simulation tick.
 -- blocked covers hold-fire/crew/target/queued-volley gating. Caller has resolved
--- a supported native attack profile. Trebuchets wait at the loaded reload pose
+-- a supported native attack profile. Catapults/trebuchets wait at the reload pose
 -- and start the swing early enough to release on time. Retain the release gate
 -- for late eligibility changes. Do not freeze movement, recoil or native cows.
 M.hold_code = [[
@@ -428,6 +459,15 @@ shouldHold:
     cmp ecx, MAXTYPES
     jae nh_no
     xor ebx, ebx               ; remaining ticks allowed before this transition
+    cmp ecx, 39
+    jne nh_trebuchet
+    cmp word [eax+0x2C0], 2
+    jne nh_attack
+    cmp dword [eax+0x2B0], CATRESTCYCLE
+    jne nh_no
+    mov ebx, CATRELEASELEAD
+    jmp nh_transition
+nh_trebuchet:
     cmp ecx, 40
     jne nh_attack
     cmp word [eax+0x2C0], 2

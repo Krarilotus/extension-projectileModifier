@@ -123,7 +123,8 @@ class CadenceTests(unittest.TestCase):
             queued,shots=tick()
             self.assertFalse(queued)
             if shots: events.append(t)
-        self.assertEqual(events,[117,420])
+        # Crew recovery resumes the complete native swing from the lowered pose.
+        self.assertEqual(events,[117,447])
 
     def test_native_crew_defaults_and_explicit_overrides(self):
         observer=projectile_tests.NativeTests()
@@ -170,7 +171,10 @@ class CadenceTests(unittest.TestCase):
         release=lib.resolve(h.scan)[kind]
         self.assertGreater(release,0)
         rest=lib.resolve_trebuchet_rest(h.scan,release if kind==40 else None)
+        cat=lib.resolve_catapult_rest(h.scan,release if kind==39 else None)
         values=dict(h.v, RELEASECYCLE=release, ANIMATIONDONE=end,
+                    CATRESTCYCLE=cat[b'cycle'] if cat else -1,
+                    CATRELEASELEAD=cat[b'lead'] if cat else 0,
                     TREBRESTCYCLE=rest[b'cycle'] if rest else -1,
                     TREBRELEASELEAD=rest[b'lead'] if rest else 0,
                     RESUME=animation+18, BLOCKEDT=h.allocate(h.v['MAXUNITS']*4))
@@ -366,6 +370,7 @@ class CadenceTests(unittest.TestCase):
             {'interval':250,'count':3,'stagger_max':3,'inaccuracy':8})
         for y in range(400): h.put(h.v['TILEROWS']+12*y,400*y)
         for _ in range(320): tick()
+        self.assertEqual((h.get(a+0x2c0,2),h.get(a+0x2b0)),(2,12))
         handle=observer.state_handle(h);state=h.sections[b'projectileModifier']
         state.serialize(state,handle)
         native=bytes(h.uc.mem_read(a,0x490))

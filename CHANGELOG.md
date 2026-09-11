@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.8.6 (test candidate)
+
+- Move the catapult cooldown pause from the raised pre-release frame to the
+  final native reload pose, with the arm lowered. Resume early enough to run
+  the complete swing and retain the configured shot-to-shot interval.
+- Validate the original reload scripts and firing speed before installing hooks.
+  Native turning, cow shots, ammunition accounting and save format are unchanged.
+
 ## 1.8.5 (test candidate)
 
 - Restore native aiming before siege reload. Configured catapults, trebuchets,

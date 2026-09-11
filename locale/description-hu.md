@@ -1,4 +1,4 @@
-# Custom Projectiles 1.8.5
+# Custom Projectiles 1.8.6
 
 Mind a 77 egységtípus YAML-ban állítható. A normál lövedékek és a tehenek külön kezelhetők. Az időközök igazodnak a támogatott tüzelési animációkhoz; az inaccuracy játékbeli egységei: 1 = 1/8 mező, 8 = 1 mező, 0 = pontos célzás.
 
