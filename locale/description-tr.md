@@ -1,6 +1,8 @@
-# Custom Projectiles 1.8.2
+# Custom Projectiles 1.8.3
 
 77 birim türünün tamamını YAML ile ayarlayın. Normal mühimmat ve inekler ayrı ayarlanır. Aralıklar desteklenen atış animasyonlarına uyar; inaccuracy yerel oyun birimlerini kullanır: 1 = 1/8 karo, 8 = 1 karo, 0 = tam isabetli nişan.
+
+Hedef grubu eşiği yalnızca yapay zekâ için geçerlidir; oyuncular saldırı hedefini elle seçebilir.
 
 Modül ZIP dosyasındaki vanilla-projectiles.yml dosyasını ucp/resources/custom-projectiles/ klasörüne kopyalayın, kopyayı düzenleyip burada seçin. Atlanan ayarlar değişmez; boş yol hiçbir değişiklik yapmaz. UCP zorunlu ve önerilen değer kuralları seçilen dosyanın tamamına uygulanır. Değişikliklerden sonra oyunu yeniden başlatın.
 

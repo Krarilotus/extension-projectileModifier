@@ -1,6 +1,8 @@
-# Custom Projectiles 1.8.2
+# Custom Projectiles 1.8.3
 
 Alle 77 Einheitentypen per YAML einstellen. Normale Munition und Kühe sind unabhängig. Intervalle beachten unterstützte Schussanimationen; inaccuracy nutzt native Einheiten: 1 = 1/8 Feld, 8 = 1 Feld, 0 = genaues Zielen.
+
+Die Mindestgröße von Zielgruppen gilt nur für die KI; menschliche Angriffsbefehle bleiben möglich.
 
 vanilla-projectiles.yml aus dem Modul-ZIP nach ucp/resources/custom-projectiles/ kopieren, dort bearbeiten und hier auswählen. Ausgelassene Einstellungen bleiben unverändert; ein leerer Pfad bewirkt keine Änderungen. Die UCP-Regeln für erforderliche und vorgeschlagene Werte gelten für die gesamte Dateiauswahl. Nach Änderungen das Spiel neu starten.
 

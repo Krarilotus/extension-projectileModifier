@@ -9,6 +9,8 @@ release acceptance checks are listed separately below.
   movement, stance/crew/target gating, volleys and saved continuation.
 - [x] Reviewer trebuchet correction: hold the loaded reload pose before the
   swing, retaining shot spacing and complete native swing frame durations.
+- [x] AI-only cluster threshold; human native attack orders retain their target,
+  range checks and native cleanup when the selected target disappears.
 - [x] Configurable projectile behavior for all 77 unit types; independent regular
   and cow ammunition; stance-only rates and fallback intervals.
 - [x] Native accuracy units: 0 exact, 1 = 1/8 tile, 8 = one tile; sparse wall overrides.
@@ -25,8 +27,8 @@ release acceptance checks are listed separately below.
 
 ## Delivery
 
-- [x] Final full regression/archive checks and private Reconquista 1.8.2 tester bundle.
-- [x] Prepare source and store PR update for 1.8.2 (base 3.0.7), including TL;DR
+- [x] Final regression/archive checks and revised private Reconquista 1.8.3 tester bundle.
+- [x] Prepare source and store PR update for 1.8.3 (base 3.0.7), including TL;DR
   and testing instructions. Release acceptance remains open below.
 
 ## Release acceptance still requiring live play
@@ -35,6 +37,7 @@ release acceptance checks are listed separately below.
 - [x] Live Crusader: custom and ordinary wall placement, custom removal and saved identity restoration.
 - [ ] Rendered animation, sprites and build-menu interaction on both EXEs.
 - [ ] Live reviewer confirmation of the 1.8.2 trebuchet loaded wait and firing swing.
+- [ ] Live human manual orders versus AI cluster thresholds with the 1.8.3 preset.
 - [ ] Intended Legacy/Rebalancer combinations and long crowded sessions.
 - [ ] Paired multiplayer, recorder/replay and save/load during active firing.
 

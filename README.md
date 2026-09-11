@@ -1,4 +1,4 @@
-# Custom Projectiles 1.8.2 (test candidate)
+# Custom Projectiles 1.8.3 (test candidate)
 
 Configure projectile types, volley sizes and automatic firing for all 77 unit
 types using one readable YAML file. Based on Monsterfish's supplied 1.2.0 module.
@@ -12,7 +12,7 @@ includes that dependency built from commit `d3a807cfee70308f707ea81ddb92ac8b1d37
 
 ## Installation and use
 
-Import `custom-projectiles-1.8.2.zip` into the launcher and enable the module and its dependencies. This unsigned local test candidate requires development module
+Import `custom-projectiles-1.8.3.zip` into the launcher and enable the module and its dependencies. This unsigned local test candidate requires development module
 loading. It is not a signed store release; see VALIDATION.md for test limits.
 
 Native reload timing covers catapults, trebuchets, mangonels, both ballistas,
@@ -191,7 +191,7 @@ completion and validation; Lua also checks cross-field comparisons.
 | `random_targets` | Boolean; picks a candidate per projectile; default false |
 | `shoot_height` | 0–500 added native height units; default 0 |
 | `stagger_min`, `stagger_max` | Minimum 1–60000, maximum 0–60000 ticks; maximum 0 disables staggering; requires any automatic-fire interval |
-| `density_min`, `density_radius` | 1–256 enemies (default 1), within 1–100 tiles (default 5) |
+| `density_min`, `density_radius` | AI cluster threshold: 1–256 enemies (default 1), within 1–100 tiles (default 5) |
 | `attached_interval` | 0–60000 ticks while docked; omission keeps the moving/standing rate or fallback; zero holds fire |
 | `attached_ignore_crew` | Boolean; default true |
 | `attached_stop_when_boarded` | Boolean; default true; proximity approximation using target candidates |
@@ -243,6 +243,14 @@ Scattered aim coordinates are clamped to map limits and use destination ground
 height. Unscattered shots retain their original target height.
 
 Targets: `units`, `cluster`, `buildings`, `fortifications`, `siege_towers`, `walls`.
+
+`cluster` applies its density threshold only to AI-controlled units. For a human
+native shooter with a cluster policy, its existing unit, building, ground or wall
+attack order takes precedence over the search list. Native target acquisition
+and the configured range still apply; random-target volleys do not redirect that
+order. Without such an order, a human unit treats `cluster` like `units`, with no
+density threshold. AI owners retain the configured search priorities and density.
+
 Unit scans exclude neutral owners, allies, dead and transitioning units. Cluster
 and random targeting consider at most 256 candidates in slot order. Building
 scans exclude allies. **Wall targeting includes your own walls**; minimum distance

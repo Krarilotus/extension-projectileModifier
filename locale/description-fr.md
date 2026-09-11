@@ -1,6 +1,8 @@
-# Custom Projectiles 1.8.2
+# Custom Projectiles 1.8.3
 
 Configurez les 77 types d’unités en YAML. Munitions normales et vaches sont indépendantes. Les intervalles respectent les animations de tir prises en charge ; inaccuracy utilise les unités natives : 1 = 1/8 de case, 8 = 1 case, 0 = visée exacte.
+
+Le seuil de regroupement ne concerne que l’IA ; les joueurs peuvent toujours donner leurs ordres d’attaque.
 
 Copiez vanilla-projectiles.yml depuis le ZIP du module dans ucp/resources/custom-projectiles/, modifiez la copie et sélectionnez-la ici. Les réglages omis restent inchangés ; un chemin vide ne modifie rien. Les règles UCP de valeurs requises ou suggérées portent sur le fichier choisi dans son ensemble. Relancez le jeu après les modifications.
 

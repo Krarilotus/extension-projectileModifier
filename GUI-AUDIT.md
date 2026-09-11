@@ -1,4 +1,4 @@
-# File-only customization audit — 1.8.2
+# File-only customization audit — 1.8.3
 
 The user requested removing the unit editor after trying the earlier layout.
 The module now exposes one standard FileInput, following Rebalancer's option
@@ -34,7 +34,7 @@ ZipArchive.by_name. Files merely sharing the prefix do not satisfy that lookup.
 
 Rebalancer still owns its balance tables. This module owns its native firing
 hooks, scheduler and saved state; there is no Rebalancer registration API for
-those features. The 1.8.2 candidate adds native reload, custom sprites and decoration triggers
+those features. The 1.8.3 candidate adds native reload, custom sprites and decoration triggers
 with save format 5. Decoration choices belong to the in-game build menu; they
 do not add customization-tab controls. The modal uses the standard ui module
 API, callback-group header, eight rows per page and bounded pagination.

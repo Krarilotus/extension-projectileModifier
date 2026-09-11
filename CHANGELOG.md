@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.8.3 (test candidate)
+
+- Apply cluster-density targeting restrictions only to AI owners. Human native
+  shooters with a cluster policy retain their chosen unit, building, ground or
+  wall target, with native acquisition and configured range checks. Without an
+  order, human units use ordinary unit targeting instead of a density threshold.
+- Keep human manual volleys on the chosen target even with random targeting
+  enabled. Preserve AI search priorities, crew, ammunition and reload timing.
+- Document the targeting distinction in the schema, template and all nine GUI
+  previews. The projectile preset must contain only units/projectiles/decorations;
+  GitHub workflow fields such as name and on are not valid preset sections.
+
 ## 1.8.2 (test candidate)
 
 - Fix trebuchets waiting mid-swing during a configured reload interval. Wait

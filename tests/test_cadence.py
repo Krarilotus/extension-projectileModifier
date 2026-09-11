@@ -260,7 +260,7 @@ class CadenceTests(unittest.TestCase):
         a=h.unit(1,kind)
         h.unit(2,22,owner=2,x=44)
         for off,value,size in [(0x3b4,3 if kind==40 else 2,2),(0x362,1000,2),(0xbe,352,2),
-                              (0xc0,320,2),(0x39c,5,2),(0x344,0xffff,2)]:
+                              (0xc0,320,2),(0x39c,3,2),(0x344,0xffff,2)]:
             h.put(a+off,value,size)
         animation=h.blobs['configuredAnimationHold'][2]['RESUME']-18
         handler+=h.v['FIREPROJ']-0x532700

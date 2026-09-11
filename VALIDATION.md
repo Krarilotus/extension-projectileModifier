@@ -1,5 +1,37 @@
 # Validation — unreleased work
 
+## Human cluster targeting follow-up, 1.8.3
+
+**97 Python/Lua/x86 tests passed**: the 96-test full run (607.824 seconds), plus
+the added all-twelve-shooters manual-acquisition check. The focused manual-order
+suite also passed after the final native-order cleanup change. All **23 GUI/
+archive checks passed**, including the nine revised localized previews.
+
+The supplied configuration contained GitHub workflow fields (`name` and `on`)
+at its root, causing the reported startup error before native hooks installed.
+Removing those fields makes it valid. Its artillery blocks also selected only
+clusters of at least 30 enemies, which previously restricted human orders too.
+
+The revised picker keeps the cluster threshold for AI owners. Human native
+shooters retain their chosen unit/building/ground/wall target; without such an
+order, human cluster searches behave like ordinary unit searches. Native target
+acquisition still validates the order, and a range guard prevents the scheduled
+building/ground path from bypassing configured range. Random targeting does not
+redirect a manual volley. No new runtime state or save-format change is needed.
+
+Focused regressions check manual acquisition for all twelve native shooter types
+and run the original catapult, trebuchet and mangonel updates
+on both EXEs, checking selected targets and 700/800/400-tick intervals. Further
+checks cover AI threshold blocking/recovery, manual building/ground/wall aim,
+range and target UID validation. These are native harness checks; live manual
+orders and multiplayer still need gameplay acceptance.
+
+Tester check: with 1.8.3 and the revised preset, order a human catapult to attack
+one enemy, then a building or valid ground/wall location in range. It must keep
+that target and fire three mangonel pebbles per regular volley, 700 simulation
+ticks apart. Native cows remain independent. For AI engines, compare 29 and 30
+clustered enemies, then remove/restore a target while the engine is loaded.
+
 ## Trebuchet animation follow-up, 1.8.2
 
 All **91 Python/Lua/x86 tests passed**, together with **23 GUI/archive checks**.

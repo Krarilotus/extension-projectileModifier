@@ -46,8 +46,8 @@ HEADER='''# yaml-language-server: $schema=./projectile-config.schema.json
 #   stagger_min: 1               # 1..60000; requires stagger_max.
 #   stagger_max: 0               # 0..60000; needs automatic fire; 0 disables.
 #                                # When enabled, min must not exceed max.
-# Cluster targeting:
-#   density_min: 1               # 1..256 enemies; used by targets: cluster.
+# Cluster targeting (AI only; human native shooters keep their attack orders):
+#   density_min: 1               # 1..256 enemies; AI targets: cluster threshold.
 #   density_radius: 5            # 1..100 tiles around each candidate.
 # Wall targeting:
 #   wall_min_distance: 3         # 0..100 tiles; does NOT exclude your own walls.

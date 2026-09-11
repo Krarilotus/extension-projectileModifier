@@ -384,6 +384,7 @@ class NativeTests(unittest.TestCase):
         h=self.prepare({'Siege tower':{'interval':1,'count':16,'targets':['cluster'],
             'density_min':3,'random_targets':True}})
         a=h.unit(1,58)
+        h.put(h.v['PLAYERAIC']+0x39f4,1)
         for id in range(2,8): h.unit(id,22,2,x=44+id%2)
         h.put(a+0x344,123,2); h.put(a+0xa0,456)
         shots=self.tick(h,1)

@@ -653,28 +653,7 @@ pickTarget:
     add eax, UNITARRAY
     mov [S_UNITPTR], eax
     mov esi, eax
-    movzx ecx, word [esi+0x39C]
-    mov [S_SAVE0], ecx
-    movzx ecx, word [esi+0x336]
-    mov [S_SAVE1], ecx
-    movzx ecx, word [esi+0x39E]
-    mov [S_SAVE2], ecx
-    mov ecx, [esi+0x3A0]
-    mov [S_SAVE3], ecx
-    movzx ecx, word [esi+0x3E8]
-    mov [S_SAVE4], ecx
-    movzx ecx, word [esi+0x3EA]
-    mov [S_SAVE5], ecx
-    movzx ecx, word [esi+0x344]
-    mov [S_SAVE6], ecx
-    mov ecx, [esi+0xA0]
-    mov [S_SAVE7], ecx
-    mov ecx, [esi+0xBE]
-    mov [S_SAVEXY], ecx
-    movzx ecx, word [esi+0xC2]
-    mov [S_SAVEZ], ecx
-    mov ecx, [esi+0x3A8]
-    mov [S_SAVETILE], ecx
+    call pk_saveorder
     mov ecx, [ebp+0x08]
     mov [S_SELF], ecx
     mov dword [S_NCAND], 0
@@ -700,6 +679,65 @@ pk_teamok:
     mov eax, ecx
     imul eax, ecx
     mov [S_WMIN2], eax
+    ; Cluster policy is AI targeting. A human native shooter's existing attack
+    ; order takes precedence, even when cluster is later in a priority list.
+    push dword [ebp+0x08]
+    call ISAIOWNED
+    add esp, 4
+    test eax, eax
+    jnz pk_policy
+    mov ecx, [ORDERT+edx*4]
+    mov ebx, 4
+pk_findcluster:
+    cmp cl, 5
+    je pk_humanorder
+    shr ecx, 8
+    dec ebx
+    jnz pk_findcluster
+    jmp pk_policy
+pk_humanorder:
+    mov esi, [S_UNITPTR]
+    movzx eax, word [esi+0x8E]
+    cmp dword [NATIVESTARTT+eax*4], 0
+    je pk_policy
+    movzx eax, word [esi+0x39C]
+    cmp eax, 4                  ; native unit order (ID + UID)
+    je pk_nativeorder
+    cmp eax, 9                  ; building order
+    je pk_nativeorder
+    cmp eax, 5                  ; ground attack
+    je pk_nativeorder
+    cmp eax, 22                 ; alternate explicit ground attack
+    je pk_nativeorder
+    cmp eax, 23                 ; wall attack
+    jne pk_policy
+pk_nativeorder:
+    push dword [ebp+0x08]
+    mov ecx, UNITSTATE
+    call ACQUIRE                ; native validity, range and target prediction
+    mov esi, [S_UNITPTR]
+    call pk_saveorder           ; keep native cleanup of stale/reused orders
+    test eax, eax
+    jz pk_fail                  ; native acquisition must accept the order
+    ; Native building/ground acquisition assumes its caller checked range.
+    ; Our scheduled path must still obey the configured range for those orders.
+    mov esi, [S_UNITPTR]
+    movsx eax, word [esi+0xBE]
+    movsx ecx, word [esi+0xB6]
+    sub eax, ecx
+    imul eax, eax
+    movsx ecx, word [esi+0xC0]
+    movsx edx, word [esi+0xB8]
+    sub ecx, edx
+    imul ecx, ecx
+    add eax, ecx
+    mov ecx, [S_R2]
+    shl ecx, 6                 ; squared tiles -> squared native eighth-tiles
+    cmp eax, ecx
+    ja pk_fail
+    mov eax, 2                 ; keep the chosen target; no random-target scan
+    jmp pk_out
+pk_policy:
     mov ebx, edx
     shl ebx, 2
     add ebx, ORDERT
@@ -732,6 +770,11 @@ pk_next:
     mov word [esi+0x39C], 9
     jmp pk_ok
 pk_cluster:
+    push dword [ebp+0x08]
+    call ISAIOWNED
+    add esp, 4
+    test eax, eax
+    jz pk_units                ; humans without an order use ordinary unit aim
     mov edx, [ebp+0x0C]
     mov ecx, [DRADT+edx*4]
     mov eax, ecx
@@ -788,6 +831,31 @@ pk_out:
     pop esi
     pop ebx
     pop ebp
+    ret
+
+pk_saveorder:
+    movzx ecx, word [esi+0x39C]
+    mov [S_SAVE0], ecx
+    movzx ecx, word [esi+0x336]
+    mov [S_SAVE1], ecx
+    movzx ecx, word [esi+0x39E]
+    mov [S_SAVE2], ecx
+    mov ecx, [esi+0x3A0]
+    mov [S_SAVE3], ecx
+    movzx ecx, word [esi+0x3E8]
+    mov [S_SAVE4], ecx
+    movzx ecx, word [esi+0x3EA]
+    mov [S_SAVE5], ecx
+    movzx ecx, word [esi+0x344]
+    mov [S_SAVE6], ecx
+    mov ecx, [esi+0xA0]
+    mov [S_SAVE7], ecx
+    mov ecx, [esi+0xBE]
+    mov [S_SAVEXY], ecx
+    movzx ecx, word [esi+0xC2]
+    mov [S_SAVEZ], ecx
+    mov ecx, [esi+0x3A8]
+    mov [S_SAVETILE], ecx
     ret
 
 ]],
