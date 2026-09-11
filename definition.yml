@@ -1,7 +1,7 @@
 name: custom-projectiles
 display-name: Custom Projectiles
 type: module
-version: 1.8.0
+version: 1.8.1
 author: Monsterfish
 game: [SHC==1.41, SHCE==1.41]
 dependencies:
@@ -12,3 +12,12 @@ dependencies:
   ui: '^1.0.0'
 meta:
   version: 1.0.0
+tags:
+- behavior
+- textures
+- tools
+capabilities:
+  files: false
+  code: true
+  configuration: false
+  options: true
