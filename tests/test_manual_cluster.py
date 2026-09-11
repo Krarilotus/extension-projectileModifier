@@ -81,7 +81,7 @@ class ManualClusterTests(unittest.TestCase):
             for t in range(450):
                 queued,shots=tick()
                 if queued or shots:events.append(t)
-            self.assertEqual(events,[99,399])
+            self.assertEqual(events,[117,417])
 
     def test_manual_building_and_ground_orders_use_native_aim(self):
         for extreme in (False,True):

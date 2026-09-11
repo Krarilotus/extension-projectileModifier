@@ -13,6 +13,8 @@ release acceptance checks are listed separately below.
   range checks and native cleanup when the selected target disappears.
 - [x] Preserve accepted native human dispatch after the last stone debit,
   including wall/ground/building orders and staggered saved continuation.
+- [x] Restore the original siege aiming state before reload; compare all five
+  engines' turning steps with both original executables across directions/cameras.
 - [x] Configurable projectile behavior for all 77 unit types; independent regular
   and cow ammunition; stance-only rates and fallback intervals.
 - [x] Native accuracy units: 0 exact, 1 = 1/8 tile, 8 = one tile; sparse wall overrides.
@@ -29,8 +31,8 @@ release acceptance checks are listed separately below.
 
 ## Delivery
 
-- [x] Final regression/archive checks and revised downloadable Reconquista 1.8.4 tester bundle.
-- [x] Prepare source and store PR update for 1.8.4 (base 3.0.7), including TL;DR
+- [x] Final regression/archive checks and revised downloadable Reconquista 1.8.5 tester bundle.
+- [x] Prepare source and store PR update for 1.8.5 (base 3.0.7), including TL;DR
   and testing instructions. Release acceptance remains open below.
 
 ## Release acceptance still requiring live play
@@ -38,6 +40,8 @@ release acceptance checks are listed separately below.
 - [x] Crusader startup, custom-resource initialization and decoration selector rendering.
 - [x] Live Crusader: custom and ordinary wall placement, custom removal and saved identity restoration.
 - [ ] Rendered animation, sprites and build-menu interaction on both EXEs.
+- [x] Live 1.8.5 catapult/trebuchet rotation and ground retargeting with Reconquista.
+- [ ] Live 1.8.5 remaining siege types and Extreme rotation/retargeting.
 - [ ] Live reviewer confirmation of the 1.8.2 trebuchet loaded wait and firing swing.
 - [ ] Live human manual orders versus AI cluster thresholds with 1.8.4 and the Reconquista preset.
 - [ ] Intended Legacy/Rebalancer combinations and long crowded sessions.

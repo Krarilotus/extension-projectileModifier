@@ -32,8 +32,9 @@ class ManualReleaseTests(unittest.TestCase):
 
     def test_last_stone_fires_native_unit_ground_wall_and_building_orders(self):
         for extreme in (False,True):
-            for name,kind,handler,release in [('Catapult',39,0x568320,99),
-                                             ('Trebuchet',40,0x569410,219)]:
+            # Native aiming from facing 0 to east precedes the reload cycle.
+            for name,kind,handler,release in [('Catapult',39,0x568320,117),
+                                             ('Trebuchet',40,0x569410,235)]:
                 for order in (4,5,9,23):
                     with self.subTest(extreme=extreme,unit=name,order=order):
                         h,a,tick=self.prepare(name,kind,handler,order,extreme)
@@ -68,7 +69,7 @@ class ManualReleaseTests(unittest.TestCase):
             h,a,tick=self.prepare('Catapult',39,0x568320,5,extreme,targets='units')
             h.unit(2,22,owner=2,x=41)
             events=[]
-            for t in range(100):
+            for t in range(118):
                 queued,shots=tick()
                 if queued or shots:events.extend(queued+shots)
             self.assertEqual(len(events),3)
@@ -78,14 +79,14 @@ class ManualReleaseTests(unittest.TestCase):
         for extreme in (False,True):
             h,a,tick=self.prepare('Catapult',39,0x568320,23,extreme,
                                  count=4,stagger_min=80,stagger_max=80)
-            for _ in range(100):tick()
+            for _ in range(118):tick()
             self.assertEqual(h.get(a+0x362,2),0)
             handle=projectile_tests.NativeTests().state_handle(h);state=h.sections[b'projectileModifier']
             state.serialize(state,handle)
             native=bytes(h.uc.mem_read(a,0x490))
             first=[tick() for _ in range(240)]
-            shots=[(i+100,q+s) for i,(q,s) in enumerate(first) if q or s]
-            self.assertEqual([t for t,_ in shots],[179,259,339])
+            shots=[(i+118,q+s) for i,(q,s) in enumerate(first) if q or s]
+            self.assertEqual([t for t,_ in shots],[197,277,357])
             self.assertTrue(all(s[6:8]==(352,320) for _,ss in shots for s in ss))
             self.assertEqual(h.get(a+0x362,2),0)
             h.uc.mem_write(a,native);state.deserialize(state,handle)

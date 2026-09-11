@@ -29,7 +29,7 @@ class CadenceTests(unittest.TestCase):
             with self.subTest(extreme=extreme):
                 h,a,tick=self.integrated('Trebuchet',40,0x569410,{'interval':400},extreme)
                 events=[]; swings=[]; current=[]; resting=[]
-                for t in range(1100):
+                for t in range(1140):
                     queued,shots=tick()
                     self.assertFalse(queued)
                     if shots: events.append(t)
@@ -41,10 +41,10 @@ class CadenceTests(unittest.TestCase):
                         swings.append(current);current=[]
                     if events and state==2 and cycle==35:
                         resting.append(t)
-                        # Facing zero renders the loaded body pose 23, not
+                        # Facing east renders the loaded body pose 23, not
                         # firing pose 26 (the previous mid-swing hold point).
-                        self.assertEqual(h.get(a+0x74),(23-1)*8+5)
-                self.assertEqual(events,[219,619,1019])
+                        self.assertEqual(h.get(a+0x74),(23-1)*8+7)
+                self.assertEqual(events,[235,635,1035])
                 self.assertEqual(len(swings),3)
                 self.assertEqual(swings[0],swings[1])
                 self.assertEqual(swings[0],swings[2])
@@ -81,10 +81,10 @@ class CadenceTests(unittest.TestCase):
         handle=observer.state_handle(h);state=h.sections[b'projectileModifier']
         state.serialize(state,handle)
         native=bytes(h.uc.mem_read(a,0x490))
-        first=[tick() for _ in range(105)]
+        first=[tick() for _ in range(121)]
         h.uc.mem_write(a,native)
         state.deserialize(state,handle)
-        self.assertEqual(first,[tick() for _ in range(105)])
+        self.assertEqual(first,[tick() for _ in range(121)])
         self.assertTrue(any(shots for _,shots in first))
         # After another reload, missing crew holds the same loaded pose even
         # when the interval expires. Re-boarding permits the full swing.
@@ -123,7 +123,7 @@ class CadenceTests(unittest.TestCase):
             queued,shots=tick()
             self.assertFalse(queued)
             if shots: events.append(t)
-        self.assertEqual(events,[99,420])
+        self.assertEqual(events,[117,420])
 
     def test_native_crew_defaults_and_explicit_overrides(self):
         observer=projectile_tests.NativeTests()
@@ -138,14 +138,14 @@ class CadenceTests(unittest.TestCase):
                 self.assertEqual(h.get(a+0x2c0,2),0)
                 h.put(a+0x3b4,crew,2)
                 self.assertEqual(observer.tick(h,1),[])
-                self.assertEqual(h.get(a+0x2c0,2),2)
+                self.assertEqual(h.get(a+0x2c0,2),8)
         for extra in [{'require_manned':False},{'sync_to_animation':False}]:
             h=observer.prepare({'Catapult':dict(interval=250,**extra)})
             a=h.unit(1,39);h.unit(2,22,owner=2,x=44)
             self.assertEqual(h.get(h.v['MANNEDT']+39*4),0)
             shots=observer.tick(h,1)
             if 'sync_to_animation' in extra: self.assertEqual(len(shots),1)
-            else: self.assertEqual(h.get(a+0x2c0,2),2)
+            else: self.assertEqual(h.get(a+0x2c0,2),8)
 
     def test_next_reload_prepares_during_a_long_staggered_volley(self):
         h,a,tick=self.integrated('Catapult',39,0x568320,
@@ -155,8 +155,8 @@ class CadenceTests(unittest.TestCase):
             following,first=tick()
             if following: queued.append(t)
             if first: releases.append(t)
-        self.assertEqual(releases,[99,349])
-        self.assertEqual(queued[:63],list(range(102,289,3)))
+        self.assertEqual(releases,[117,367])
+        self.assertEqual(queued[:63],list(range(120,307,3)))
         self.assertEqual(h.get(a+0x362,2),998)
 
     def prepare(self, name, kind, frame, handler, extreme):
@@ -189,8 +189,9 @@ class CadenceTests(unittest.TestCase):
         h.put(h.v['CURUNIT'],1)
         h.put(v['COOLDOWNT']+4,0)
         h.put(v['BLOCKEDT']+4,0)
-        for off,value,size in [(0x2c0,2,2),(0x3b4,2,2),(0x362,1000,2),
-                              (0xbe,352,2),(0xc0,320,2),(0x39c,5,2),(0x344,0xffff,2)]:
+        for off,value,size in [(0x2c0,8,2),(0x3b4,2,2),(0x362,1000,2),
+                              (0xbe,352,2),(0xc0,320,2),(0x3e8,44,2),(0x3ea,40,2),
+                              (0x39c,5,2),(0x344,0xffff,2)]:
             h.put(a+off,value,size)
         events=[]
         # Sound's device side effects are unrelated to animation/ammunition.
@@ -214,7 +215,7 @@ class CadenceTests(unittest.TestCase):
             if h.get(a+0x2c0,2)==0:
                 # Fixture supplies the next attack order; native code still
                 # performs its entire reload, release and recoil animations.
-                h.put(a+0x2c0,2,2); h.put(a+0x2b0,0)
+                h.put(a+0x2c0,8,2); h.put(a+0x2b0,0)
         return events,h.get(a+0x362,2)
 
     def test_artillery_delay_preserves_firing_frame_and_ammunition(self):
@@ -341,7 +342,7 @@ class CadenceTests(unittest.TestCase):
                     self.assertFalse(queued)
                     if shots: events.append(t)
                     if 300<=t<420: self.assertEqual(h.get(a+0x362,2),999)
-                self.assertEqual(events[0],99)
+                self.assertEqual(events[0],117)
                 self.assertGreaterEqual(len(events),2,events)
                 self.assertGreaterEqual(events[1],420,events)
                 self.assertEqual(1000-h.get(a+0x362,2),len(events))
@@ -355,7 +356,7 @@ class CadenceTests(unittest.TestCase):
         for t in range(450):
             queued,shots=tick()
             if queued or shots: events.append((t,[s[9] for s in queued+shots]))
-        self.assertEqual(events,[(99,[1]),(104,[1]),(349,[1]),(354,[1])])
+        self.assertEqual(events,[(117,[1]),(122,[1]),(367,[1]),(372,[1])])
         self.assertEqual(h.get(a+0x362,2),998)
         self.assertEqual(h.get(a+0x3b0,2),0)
 

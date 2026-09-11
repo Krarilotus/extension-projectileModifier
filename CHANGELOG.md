@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.8.5 (test candidate)
+
+- Restore native aiming before siege reload. Configured catapults, trebuchets,
+  mangonels and both ballistas enter the original aiming state instead of skipping
+  directly into reload. The original handlers own turning, facing and frame timing.
+- Keep configured automatic target coordinates available to that native state;
+  preserve explicit human orders and avoid acquiring their accepted target twice.
+- No new hooks, rotation implementation, configuration fields or saved tables.
+  Shot intervals still include the native minimum aiming/reload/firing cycle.
+
 ## 1.8.4 (test candidate)
 
 - Preserve the game's accepted human shot at native projectile dispatch. Do not

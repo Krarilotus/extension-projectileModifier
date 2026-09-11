@@ -133,7 +133,9 @@ The original projectile YAML format (`units: ...`) remains supported.
   firing frame. Reload proceeds during the interval. Trebuchets wait in their
   loaded pose before the swing and allow time for that swing before release;
   other shooters retain their release gate.
-  Short intervals cannot cut the native animation cycle short. The mangonel
+  Siege engines turn through their original aiming state before reloading;
+  turning to a new target can delay a shot. Short intervals cannot cut the native
+  aiming/reload/firing cycle short. The mangonel
   retains seven projectiles when `count` is omitted.
 - These twelve unit types use native animation timing by default. Horse archers
   have a separate bow clock, preserving their movement animation. Hunters keep

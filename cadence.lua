@@ -6,8 +6,8 @@ local native_crews = constants.native_reload_crews
 -- Raw unit types, independent of the base/fortification profile selection.
 M.attack_states = {[6]=10, [22]=6, [23]=6, [39]=4, [40]=4, [41]=4,
     [61]=4, [70]=6, [72]=6, [76]=6, [77]=4}
-M.start_states = {[6]=10, [22]=4, [23]=4, [39]=2, [40]=2, [41]=2,
-    [61]=2, [70]=4, [72]=4, [74]=4, [76]=4, [77]=2}
+M.start_states = {[6]=10, [22]=4, [23]=4, [39]=8, [40]=8, [41]=8,
+    [61]=8, [70]=4, [72]=4, [74]=4, [76]=4, [77]=8}
 
 local function enabled(config, name)
     if config == nil then return true end
@@ -167,8 +167,9 @@ nr_done:
     ret
 ]]
 
--- Start native reload only from idle, preserving movement/cow states already
--- in progress. Foot shooters need the selected target for their native checks.
+-- Enter the native aiming state from idle. Siege state 8 owns turning and
+-- enters reload only after alignment; starting at reload (2) skips rotation.
+-- Preserve movement/cow states already in progress.
 M.idle_code = [[
 nativeIdle:
     pushad
@@ -237,6 +238,10 @@ nativeTarget:
     xor eax, eax
     cmp dword [SYNCWAITT+ebx*4], 0
     jg nt_done
+    push ebx
+    call MANUALORDER
+    add esp, 4
+    mov edi, eax               ; snapshot before an automatic scan changes order
     push dword [ebp+40]
     push ebx
     call PICKTARGET
@@ -247,6 +252,8 @@ nativeTarget:
     movzx ecx, word [ecx+0x8E]
     cmp ecx, 6
     je nt_hunter
+    cmp dword [NATIVESTARTT+ecx*4], 8
+    je nt_siege
     cmp dword [NATIVESTARTT+ecx*4], 4
     jne nt_restore
     ; Configured infantry targets must reach the native wind-up and LOS/UID
@@ -254,6 +261,25 @@ nativeTarget:
     cmp eax, 2
     je nt_ground
     mov ecx, [S_UNITPTR]
+    mov word [ecx+0x39C], 3
+    jmp nt_done
+nt_siege:
+    cmp eax, 2
+    jne nt_siegeunit
+    test edi, edi
+    jnz nt_done                 ; PICKTARGET already acquired this human order
+    jmp nt_ground               ; newly selected automatic building/wall target
+nt_siegeunit:
+    ; A configured automatic unit target supplies the same tile fields used by
+    ; the original siege aiming state. Retain the selected UID as for infantry.
+    ; Human explicit orders use mode 2 and never take this path.
+    mov ecx, [S_UNITPTR]
+    movsx edx, word [ecx+0xBE]
+    sar edx, 3
+    mov word [ecx+0x3E8], dx
+    movsx edx, word [ecx+0xC0]
+    sar edx, 3
+    mov word [ecx+0x3EA], dx
     mov word [ecx+0x39C], 3
     jmp nt_done
 nt_ground:
