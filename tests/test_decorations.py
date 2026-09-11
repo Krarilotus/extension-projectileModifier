@@ -5,26 +5,45 @@ import test_projectiles as projectile_tests
 
 
 class DecorationTests(unittest.TestCase):
+    def test_native_signature_with_signed_framework_reads(self):
+        for extreme in [False, True]:
+            h = Harness(extreme)
+            h.lua.globals().core.readInteger = lambda a: int.from_bytes(h.uc.mem_read(a, 4), 'little', signed=True)
+            h.lua.globals().core.readSmallInteger = lambda a: int.from_bytes(h.uc.mem_read(a, 2), 'little', signed=True)
+            resolved = h.lua.execute(b"return require('decorations')").resolve(h.scan)
+            self.assertEqual(resolved[b'queue'], 0x489100 + (0x110 if extreme else 0))
+            # Preserve the guard: a genuinely changed instruction must fail.
+            h.put(resolved[b'queue'], 0x90, 1)
+            with self.assertRaises(LuaError):
+                h.lua.execute(b"return require('decorations')").resolve(h.scan)
+
     def test_native_menu_group_pagination_selection_and_reopening(self):
         h=Harness()
+        h.lua.globals().core.AOBScan=h.scan
         h.lua.execute(b'''
-            callbacks={};handlers={};sent={};drawn={};closed=0
+            callbacks={};handlers={};sent={};drawn={};closed=0;consumed=0
             registerObject=function(v) return v end
             ffi={cast=function(kind,v)
+                if kind=='void (__thiscall *)(void *)' then
+                    reset_input_address=v
+                    return function(mouse) assert(mouse==123);consumed=consumed+1 end
+                end
                 if type(v)=='function' then callbacks[#callbacks+1]=v;return #callbacks end
                 return v end,new=function(kind,values) return values end}
-            remote={interface={manager={getAvailableMenuID=function(n) return n end,
+            remote={interface={core=core,manager={getAvailableMenuID=function(n) return n end,
                 getAvailableModalMenuID=function(n) return n end}},events={
                 receive=function(key,handler) handlers[key]=handler end,
-                send=function(key,value) sent[#sent+1]=value end}}
+                send=function(key,value) assert(consumed==closed);sent[#sent+1]=value end}}
             api={ui={Menu={createMenu=function(self,spec) menu_spec=spec;return spec end},
                 ModalMenu={createModalMenu=function(self,spec) return spec end}}}
-            game={UI={activateModalMenu=function() closed=closed+1 end},Rendering={
+            game={Input={mouseState=123},UI={activateModalMenu=function() closed=closed+1 end},Rendering={
                 ButtonState={x=0,y=0},pDrawBufferChoiceValue={[0]=1},
                 drawBlendedBlackBox=function() end,
                 renderTextToScreenConst=function(self,label) drawn[#drawn+1]=label end}}
         ''')
         from harness import ROOT
+        # The UI's LuaJIT environment exposes core only through remote.interface.
+        h.lua.execute(b'core=nil')
         h.lua.execute((ROOT/'ui/decorations.lua').read_bytes())
         h.lua.execute(b'''
             assert(menu_spec.menuItems[1].menuItemType==0x01000000)
@@ -42,8 +61,19 @@ class DecorationTests(unittest.TestCase):
             click(1);assert(sent[2].id==0)
             click(102);open(nil,{language='english',choices=choices})
             click(2);assert(sent[3].id==1) -- reopening resets pagination
-            click(103);assert(closed==4)
+            click(103);assert(closed==4 and consumed==4)
         ''')
+        # The real native reset consumes this frame's button edges and held
+        # state without moving the pointer. Repeat against both executables.
+        pattern=h.scans[-1]
+        for extreme in [False,True]:
+            native=Harness(extreme);address=native.scan(pattern)
+            mouse=native.allocate(0x274)
+            for offset in range(0x28,0x58,4):native.put(mouse+offset,1)
+            native.put(mouse+0x10,512);native.put(mouse+0x14,256)
+            native.call(address,registers={r.UC_X86_REG_ECX:mouse})
+            self.assertTrue(all(native.get(mouse+o)==0 for o in range(0x28,0x58,4)))
+            self.assertEqual((native.get(mouse+0x10),native.get(mouse+0x14)),(512,256))
 
     def prepare_module(self, config, extreme=False):
         h=Harness(extreme)

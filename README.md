@@ -1,14 +1,18 @@
-# Custom Projectiles 1.8.0 (test candidate)
+# Custom Projectiles 1.8.1 (test candidate)
 
 Configure projectile types, volley sizes and automatic firing for all 77 unit
 types using one readable YAML file. Based on Monsterfish's supplied 1.2.0 module.
 Requires UCP 3.0.7+, Crusader/Extreme 1.41 and the declared map-extensions,
 gmResourceModifier, protocol and ui dependencies (the launcher resolves them).
-The ui dependency requires launcher 1.0.12 or later.
+The ui dependency requires version 1.0.1 or later and launcher 1.0.12 or later.
+UI 1.0.0 has a native menu-array overrun that can crash startup.
+Until [the UI fix](https://github.com/gynt/ucp-extension-ui/pull/6) reaches the
+store, import its unsigned `ui-1.0.1.zip` before this candidate. The tester bundle
+includes that dependency built from commit `d3a807cfee70308f707ea81ddb92ac8b1d375bd9`.
 
 ## Installation and use
 
-Import `custom-projectiles-1.8.0.zip` into the launcher and enable the module and its dependencies. This unsigned local test candidate requires development module
+Import `custom-projectiles-1.8.1.zip` into the launcher and enable the module and its dependencies. This unsigned local test candidate requires development module
 loading. It is not a signed store release; see VALIDATION.md for test limits.
 
 Native reload timing covers catapults, trebuchets, mangonels, both ballistas,
@@ -294,8 +298,9 @@ It rejects missing files, incompatible sheets, absolute paths and parent travers
 Open the **brazier button in the castle decorations build menu**. The standard
 UCP modal offers the original brazier followed by the configured decorations,
 eight choices per page. Select one, then place it with the normal brazier cursor.
-Native placement restrictions, wall/ownership checks, cost and removal still
-apply. Omit a decoration's `sprites` to retain the native brazier appearance.
+Place on valid owned walls, towers or supported stone keeps; the starting
+manor house cannot hold braziers. Native placement, cost and removal rules apply.
+Omit a decoration's `sprites` to retain the native brazier appearance.
 `label` is an optional short build-menu name (defaults to the configuration name);
 use text supported by the installed game's font.
 

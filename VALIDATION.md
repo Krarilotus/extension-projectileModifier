@@ -1,5 +1,44 @@
 # Validation — unreleased work
 
+## Live startup follow-up, 1.8.1
+
+All **87 Python/Lua/x86 tests passed** with signed framework memory reads
+(561.888 seconds). All **23 GUI/archive checks passed** on retry; the initial
+archive setup exceeded its 10-second hook timeout during concurrent desktop
+testing. The native modal test additionally executes the input-reset routine
+on both EXEs and verifies button edges/state are consumed without moving the pointer.
+
+On 11 September, the isolated Crusader 1.41 game reproduced a startup crash in
+UI 1.0.0. UI 1.0.1 from upstream PR gynt/ucp-extension-ui#6 passed that point.
+The fixture also needed CFFI and LuaJIT's published option defaults.
+
+Live initialization then exposed an unsigned opcode comparison in this module.
+Normalizing the signed UCP reads fixed it; a regression checks both executables
+and still rejects changed instructions. The game reached Castle Builder with
+custom sprite resources loaded and the ordinary/custom brazier selector rendered.
+Live Crusader checks now pass for custom placement, removal and save/load:
+
+- A stone wall built through the game UI accepted the Training brazier. The
+  native command queue carried command 69 and the custom lockstep command.
+- Read-only diagnostics confirmed owner 1, custom GM slot 208, entity slot 25,
+  UID 1569 and position (239, 240, 98). Native demolition removed the brazier
+  while retaining the wall. Reloading the saved game restored the same identity,
+  position and custom GM slot.
+- Selecting the ordinary brazier then placed a separate entity using native
+  GM slot 138, without changing the custom brazier.
+- Earlier unsuccessful clicks targeted ground or manor-house type 40, which
+  the native predicate rejects. Runtime inspection confirmed build mode 148
+  remained selected; no placement-mode cancellation was established.
+
+The isolated fixture received test gold and a native stockpile stone gift before
+building the wall. These setup changes are not packaged. This live check does
+not establish construction-price behavior; both-EXE native tests cover that.
+Live proximity firing, edited-sheet appearance and Extreme rendering remain open.
+
+The UCP developer warning was accepted with the user's explicit authorization.
+There is no remaining consent blocker. Both-EXE gameplay, compatibility,
+multiplayer/replay and long-session acceptance remain open.
+
 ## Completed feature integration, 1.8.0
 
 **86 Python/Lua/x86 tests passed** in the final full run. All **23 GUI/archive checks passed** (13 component/qualifier and 10 archive/locale checks). The private Reconquista preset passes both the production Lua validator and editor schema.
@@ -54,10 +93,8 @@ The implementation checklist is complete. These release checks remain open:
 5. Repeat paired multiplayer and recorder/replay with identical YAML/assets;
    test intended Legacy/Rebalancer combinations and a long crowded match.
 
-Live testing was prepared in an isolated game copy. Its UCP developer-build
-security prompt awaits manual user handling; no security choice was automated.
-The shared desktop was released while waiting. No rendered, multiplayer or
-replay pass is claimed. This remains an unsigned draft test candidate.
+The subsequent live startup results are recorded above. Full rendered gameplay,
+multiplayer and replay acceptance remain open. This is an unsigned draft candidate.
 
 ## Historical foot-shooter reload integration, 1.7.0
 

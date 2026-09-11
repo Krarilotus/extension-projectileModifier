@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.8.1 (unreleased test candidate)
+
+- Require UI 1.0.1, which fixes the menu-array overrun observed at game startup.
+- Compare native opcode signatures by their bit patterns. UCP's signed integer
+  reads previously caused decoration initialization to reject a valid executable.
+- Match signed UCP memory reads in the native regression harness.
+- Consume the decoration modal's closing click through the native mouse reset,
+  preventing the same click from reaching the map after selecting a build variant.
+- Clarify valid wall/tower placement in all nine localized previews; the native
+  manor house cannot hold braziers. Record live placement/removal/save-load checks.
+
 ## 1.8.0 (unreleased test candidate)
 
 - Complete native reload timing for horse archers and hunters. Mounted weapon

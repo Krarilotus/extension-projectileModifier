@@ -36,8 +36,9 @@ class Harness:
         g.register = lambda n,s: self.sections.__setitem__(n,s)
         c = g.core
         c.scanForAOB = self.scan
-        c.readInteger = lambda a: self.get(a)
-        c.readSmallInteger = lambda a: self.get(a,2)
+        # Match UCP's signed native int/short API, including opcode bit patterns.
+        c.readInteger = lambda a: int.from_bytes(self.uc.mem_read(a,4),'little',signed=True)
+        c.readSmallInteger = lambda a: int.from_bytes(self.uc.mem_read(a,2),'little',signed=True)
         c.readByte = lambda a: self.get(a,1)
         c.readString = lambda a,n: bytes(self.uc.mem_read(a,n))
         c.readBytes = lambda a,n: self.lua.table_from(list(self.uc.mem_read(a,n)))

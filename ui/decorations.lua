@@ -7,6 +7,10 @@ local native_name = native_names.english
 local manager = remote.interface.manager
 local menu_id = manager.getAvailableMenuID(2030)
 local modal_id = manager.getAvailableModalMenuID(2031)
+-- A modal can disappear before the game finishes processing its click. Consume
+-- that input before entering build mode, or the map handles the same click too.
+local reset_mouse = ffi.cast('void (__thiscall *)(void *)', remote.interface.core.AOBScan(
+    '33 C0 39 81 D8 01 00 00 89 81 D8 01 00 00 75 ? 89 41 28 89 41 2C 89 41 30'))
 
 remote.events.receive('custom-projectiles/decorations/open', function(_, value)
     choices = {{id=0,label=native_names[(value.language or 'english'):lower()] or native_name}}
@@ -16,6 +20,7 @@ end)
 
 local function close()
     game.UI.activateModalMenu(game.UI.MenuModalComposition1, -1, false)
+    reset_mouse(game.Input.mouseState)
 end
 local action = registerObject(ffi.cast('void (__cdecl *)(int)', function(parameter)
     if parameter==101 then page=math.max(0,page-1)
