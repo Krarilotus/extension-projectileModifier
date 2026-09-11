@@ -42,11 +42,12 @@ local aim_error_addr = locate("0F B7 86 CE 06 00 00 0F B7 8E D6 06 00 00 66 3B C
 
 -- Inside UnitsState::updateUnits, reached once per tick for every living unit.
 local unit_tick_addr = locate("83 C2 01 89 16 8B 15 ? ? ? ? 69 D2 90 04 00 00 33 C9 66 89 8C 32 AE 09 00 00")
-local animation_addr, release_cycles, horse_addr, hunter_addr, hunter_script, hunter_sound, sound_this, hunter_end, hunter_face
+local animation_addr, release_cycles, trebuchet_rest, horse_addr, hunter_addr, hunter_script, hunter_sound, sound_this, hunter_end, hunter_face
 if native_cadence then
     animation_addr = locate('A1 ? ? ? ? 69 C0 90 04 00 00 01 9C 30 54 06 00 00')
     assert(core.readByte(animation_addr + 0xA1) == 0x69, 'unsupported animation continuation')
     release_cycles = cadence.resolve(locate, config)
+    trebuchet_rest = cadence.resolve_trebuchet_rest(locate, release_cycles[40])
     if release_cycles[74] then
         horse_addr = locate('53 56 8B 74 24 0C 69 F6 90 04 00 00 0F B7 86 ? ? ? ? 33 DB 66 3B C3')
     end
@@ -97,7 +98,7 @@ local current_unit_id_addr = core.readInteger(unit_tick_addr + 7)
 assert(core.readInteger(unit_tick_addr + 0x3A4) == MAX_UNITS,
     '[custom-projectiles] unsupported unit-array capacity modification')
 return {locate=locate, fire=fire_projectile_addr, acquire=acquire_target_addr, tick=unit_tick_addr,
-    animation=animation_addr, releaseCycles=release_cycles, horse=horse_addr,
+    animation=animation_addr, releaseCycles=release_cycles, trebuchetRest=trebuchet_rest, horse=horse_addr,
     hunter=hunter_addr, hunterScript=hunter_script, hunterSound=hunter_sound, soundThis=sound_this, hunterEnd=hunter_end, hunterFace=hunter_face,
     groundAim=ground_aim_addr, aimError=aim_error_addr,
     rows=tile_rows_addr, flags=tile_flags_addr, terrain=terrain_height_addr,
@@ -347,6 +348,8 @@ local function install(config)
         NATIVEBLOCKT  = data_addr + OFF_NATIVEBLOCK,
         NATIVEATTACKT = data_addr + OFF_NATIVEATTACK,
         NATIVESTARTT  = data_addr + OFF_NATIVESTART,
+        TREBRESTCYCLE = native.trebuchetRest and native.trebuchetRest.cycle or -1,
+        TREBRELEASELEAD = native.trebuchetRest and native.trebuchetRest.lead or 0,
         HUNTERFACE    = native.hunterFace or 0,
         SPRITET       = data_addr + OFF_SPRITE,
         COWSPRITET    = data_addr + OFF_COWSPRITE,

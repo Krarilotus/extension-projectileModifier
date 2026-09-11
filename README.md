@@ -1,4 +1,4 @@
-# Custom Projectiles 1.8.1 (test candidate)
+# Custom Projectiles 1.8.2 (test candidate)
 
 Configure projectile types, volley sizes and automatic firing for all 77 unit
 types using one readable YAML file. Based on Monsterfish's supplied 1.2.0 module.
@@ -12,7 +12,7 @@ includes that dependency built from commit `d3a807cfee70308f707ea81ddb92ac8b1d37
 
 ## Installation and use
 
-Import `custom-projectiles-1.8.1.zip` into the launcher and enable the module and its dependencies. This unsigned local test candidate requires development module
+Import `custom-projectiles-1.8.2.zip` into the launcher and enable the module and its dependencies. This unsigned local test candidate requires development module
 loading. It is not a signed store release; see VALIDATION.md for test limits.
 
 Native reload timing covers catapults, trebuchets, mangonels, both ballistas,
@@ -130,7 +130,9 @@ The original projectile YAML format (`units: ...`) remains supported.
 - `interval` enables automatic fire, using the native projectile or arrows for
   units without one unless a projectile is selected. For the twelve native shooters
   listed above, it controls starts of volleys on their native
-  firing frame. Reload proceeds during the interval, then waits before release.
+  firing frame. Reload proceeds during the interval. Trebuchets wait in their
+  loaded pose before the swing and allow time for that swing before release;
+  other shooters retain their release gate.
   Short intervals cannot cut the native animation cycle short. The mangonel
   retains seven projectiles when `count` is omitted.
 - These twelve unit types use native animation timing by default. Horse archers

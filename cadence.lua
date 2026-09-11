@@ -1,4 +1,4 @@
--- Native-animation cadence: reload during the interval and hold at release.
+-- Native-animation cadence: preserve native cycles and delay at safe poses.
 local M = {}
 local constants = require('constants')
 local native_crews = constants.native_reload_crews
@@ -68,6 +68,37 @@ function M.resolve(locate, config)
     assert(result[23] == 2, 'unsupported crossbow release cycle')
     end
     return result
+end
+
+function M.resolve_trebuchet_rest(locate, release_cycle)
+    if not release_cycle then return nil end
+    -- The trebuchet's firing phase already starts its swing. The loaded pose
+    -- is the LAST reload-script entry, before state 2 advances to state 4.
+    local site = locate('69 DB 90 04 00 00 8B 83 ? ? ? ? 0F BE 80 ? ? ? ? 3B C2 89 83 ? ? ? ? 7F 1A 5F 5E')
+    local script = core.readInteger(site + 15)
+    assert(script >= 0x400000 and script < 0x4000000, 'invalid trebuchet reload script')
+    local finish
+    for index = 1, 99 do
+        if core.readByte(script + index) == 0 then finish = index; break end
+    end
+    assert(core.readByte(site + 0x65) == 0x0F and core.readByte(site + 0x66) == 0xBE
+        and core.readByte(site + 0x67) == 0x88, 'unsupported trebuchet body script')
+    local body = core.readInteger(site + 0x68)
+    assert(body >= 0x400000 and body < 0x4000000, 'invalid trebuchet body script')
+    assert(finish and finish > 1 and core.readByte(body + finish - 1) == 23
+        and core.readByte(body + finish) == 0,
+        'unsupported trebuchet loaded pose')
+    -- ECX=2 is loaded before the state dispatch and written to the firing
+    -- phase's frame delay. Validate that path before deriving its lead time.
+    local speed = locate('B9 ? ? ? ? 66 3B C1 0F 85 ? ? ? ? C7 86 ? ? ? ? 05 00 00 00 89 96 ? ? ? ? 66 89 96 ? ? ? ?')
+    local attack = speed + 14 + core.readInteger(speed + 10)
+    assert(attack >= 0x400000 and attack < 0x700000
+        and core.readInteger(speed + 1) == 2
+        and core.readInteger(attack) == 0x00043D66
+        and core.readSmallInteger(attack + 10) % 65536 == 0x8E89
+        and core.readInteger(attack + 12) == core.readInteger(speed + 16),
+        'unsupported trebuchet firing speed')
+    return {cycle=finish-1, lead=release_cycle * (core.readInteger(speed + 1) + 1)}
 end
 
 -- Tick cached interval/crew eligibility is used by the later animation pass.
@@ -291,9 +322,8 @@ configuredAnimationHold:
     add esp, 16
     test eax, eax
     jnz ca_hold
-    ; If the cooldown has elapsed, check whether this is the release transition
-    ; using a synthetic block, then validate the selected target before native
-    ; code can consume ammunition.
+    ; At a loaded/release transition, use a synthetic block to validate the
+    ; selected target before native code starts the swing or consumes ammunition.
     mov eax, [CURUNIT]
     push eax
     call PROFILE
@@ -334,9 +364,9 @@ ca_hold:
 -- shouldHold(unitID, releaseCycle, remaining, blocked) -> bool
 -- remaining is a shot-to-shot cooldown, decremented once per simulation tick.
 -- blocked covers hold-fire/crew/target/queued-volley gating. Caller has resolved
--- a supported native attack profile. Return true only at the transition INTO
--- the release frame. Let reload/wind-up proceed until that point; do not freeze
--- movement, the recoil after a shot, or an unconfigured native cow order.
+-- a supported native attack profile. Trebuchets wait at the loaded reload pose
+-- and start the swing early enough to release on time. Retain the release gate
+-- for late eligibility changes. Do not freeze movement, recoil or native cows.
 M.hold_code = [[
 shouldHold:
     push ebx
@@ -352,6 +382,16 @@ shouldHold:
     movzx ecx, word [eax+0x8E]
     cmp ecx, MAXTYPES
     jae nh_no
+    xor ebx, ebx               ; remaining ticks allowed before this transition
+    cmp ecx, 40
+    jne nh_attack
+    cmp word [eax+0x2C0], 2
+    jne nh_attack
+    cmp dword [eax+0x2B0], TREBRESTCYCLE
+    jne nh_no
+    mov ebx, TREBRELEASELEAD
+    jmp nh_transition
+nh_attack:
     mov ecx, [NATIVEATTACKT+ecx*4]
     cmp word [eax+0x2C0], cx
     jne nh_no
@@ -361,6 +401,7 @@ shouldHold:
     dec ecx
     cmp ecx, [eax+0x2B0]
     jne nh_no
+nh_transition:
     mov ecx, [eax+0x40]
     inc ecx
     mov edx, [eax+0x3C]
@@ -369,7 +410,7 @@ shouldHold:
     jle nh_no
     cmp dword [esp+20], 0
     jne nh_yes
-    cmp dword [esp+16], 0
+    cmp dword [esp+16], ebx
     jle nh_no
 nh_yes:
     mov eax, 1

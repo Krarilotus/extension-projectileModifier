@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.8.2 (test candidate)
+
+- Fix trebuchets waiting mid-swing during a configured reload interval. Wait
+  in the final loaded pose of the reload phase and reserve the native swing
+  time, retaining shot-to-shot intervals and the minimum complete cycle.
+- Resolve and validate the loaded pose and firing speed from the executable.
+  Preserve late release checks, stone accounting and independent native cows.
+- Add both-executable regressions for loaded waits and uninterrupted swings,
+  plus save/load and missing-crew recovery. No configuration changes required.
+
 ## 1.8.1 (unreleased test candidate)
 
 - Require UI 1.0.1, which fixes the menu-array overrun observed at game startup.

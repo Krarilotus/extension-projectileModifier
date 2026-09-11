@@ -1,5 +1,34 @@
 # Validation — unreleased work
 
+## Trebuchet animation follow-up, 1.8.2
+
+All **91 Python/Lua/x86 tests passed**, together with **23 GUI/archive checks**.
+The artillery suite and remaining 74 tests ran separately; the four focused
+trebuchet regressions also passed after the final signature-boundary check.
+
+The reviewer clip exposed a gap in the earlier timing tests: correct release
+times and ammunition did not prove that the waiting pose was appropriate.
+The native trebuchet releases at firing-script index 3 (body pose 27). Holding
+immediately before it leaves body pose 26 mid-swing. The loaded resting pose
+is body pose 23 at reload-script index 35, before state 2 enters state 4.
+
+The corrected gate waits there. The native firing phase uses three ticks per
+script entry, so it starts with nine cooldown ticks left and releases on time.
+Eligibility is checked at the loaded gate and again at release for late changes.
+Movement, recoil and native cow orders bypass the configured reload wait.
+
+Regression coverage compares all native body frames and their durations in
+the initial and subsequent swings, checks 400-tick shot spacing, stone stock,
+save/load while waiting and crew recovery. Both original 1.41 executables run
+inside the native harness. Rendering this correction in a live game remains
+an acceptance check; the supplied clip documents the previous failure.
+
+Tester check: set `Trebuchet: {interval: 400}` (also try 1800), retain three
+engineers and a valid target. After reloading, the loaded arm should wait down,
+then swing and recoil continuously. Repeat at interval 1, with ordinary cow
+orders, and after saving/loading during the wait. The vanilla YAML and existing
+Reconquista configuration need no new fields for this fix.
+
 ## Live startup follow-up, 1.8.1
 
 All **87 Python/Lua/x86 tests passed** with signed framework memory reads
