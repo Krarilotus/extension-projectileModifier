@@ -4,3 +4,6 @@ config_help: vanilla-projectiles.yml aus dem Modul-ZIP nach ucp/resources/custom
   und hier auswählen. Ausgelassene Einstellungen bleiben unverändert; ein leerer Pfad bewirkt keine Änderungen.
   Die UCP-Regeln für erforderliche und vorgeschlagene Werte gelten für die gesamte Dateiauswahl. Nach Änderungen
   das Spiel neu starten.
+tags.behavior: Verhalten
+tags.textures: Texturen
+tags.tools: Werkzeuge
