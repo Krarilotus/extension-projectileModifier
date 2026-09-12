@@ -270,6 +270,11 @@ seconds). Live normal Crusader loads and retains three successive wall volleys.
 The attempted GUI target changes did not change the recorded native order, so
 live retargeting acceptance is still pending; see
 [the bounded live trace](tests/evidence/native-retarget-attempt.json).
+The UI attempts omitted `screenshotId`, so clicks on the scaled game capture
+landed at different coordinates. Supplying it closed the game normally at
+20:12:34 CEST; the desktop was released immediately and the original test ZIP
+restored with its hash verified. The target-selection attempts must be repeated
+with correctly scaled input. They are not evidence of a game-command defect.
 No existing save was overwritten. Resource/render lifecycle ownership, automatic threat targeting,
 required replay enrollment, complete runtime diagnostic localization and the
 remaining multiplayer/performance/GUI acceptance still prevent completion.

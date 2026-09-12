@@ -110,5 +110,6 @@
     }
   ],
   "discarded_run": "The first attempt disassembled the engine through the wrong native control. Reloaded existing w.sav; no save overwritten. Attack Here was subsequently identified, but camera scrolling interfered with the target selection. Right-click/left-click attempts at the friendly wall did not change the native order.",
-  "desktop": "Input stopped on expired assert. Released at 20:00:21 CEST. Own game PID33460 still open; normal exit queued behind tunnelers-engineers."
+  "input_error": "Coordinate calls omitted screenshotId. The scaled game capture and input coordinates did not agree; the exit confirmation succeeded immediately when screenshotId was supplied. Target selection attempts are invalid acceptance evidence and must be repeated with screenshot-scaled input.",
+  "desktop": "Own game PID33460 closed normally at 20:12:34 CEST and desktop released immediately. Original module ZIP restored and SHA256 verified as c3f03e3e2472015cf24946e035fa5aaa38fd2c6448bb79022c52e6d22906508f. Config and existing saves unchanged. Native error log contains no errors."
 }
