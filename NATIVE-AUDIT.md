@@ -21,7 +21,7 @@ optional threat priorities and investigation of reported monk targeting.
 | No separate OFF controls for simple corrections | One file picker exists; previous automatic bug corrections were not exposed separately. | Open; preserve the user's compact, file-based interface and explicit existing choices. |
 | Redundant legacy settings | `suppress_default`, `sync_to_animation`, `sync_max_wait`, `preload` and unit/tile aliases require a semantic/caller audit before removal. | Open; do not break existing presets or silently reinterpret omitted fields. |
 | Coverage is narrower than declared acceptance | Automated native evidence uses one normal and one Extreme 1.41 image; live evidence is normal Crusader. | Other applicable variants, actual all-locale GUI, paired multiplayer, replay and performance remain open. |
-| Recorder world capture omits projectile-owned state | Inspected `ucp-recorder-compatibility/code/world-capture.lua` exports Automarket and Legacy explicitly; it does not invoke this module's `serializeSimulationState`. | Open; coordinate an owner-side extension-state capture change in the existing recorder work. Do not duplicate its capture or replay machinery. |
+| Recorder integration does not enroll projectile-owned state | Existing optional save registration and `serializeSimulationState` do not enroll this provider in required captures. | Open consumer integration; reuse existing Map PR3 and Recorder fork PR3, coordinated in Corax34/ucp_recorder#47. No competing capture implementation. |
 | Stale UI dependency warning | UI 1.0.1 is now in the 3.0.7 store at the same `d3a807c...` commit bundled earlier. | Public and package documentation needs reconciliation; UI upstream PR6 alone is not store availability evidence. |
 
 The monk symptom is **not yet reproduced**. In isolated native tests on both
@@ -60,12 +60,18 @@ Resolution of these unit/accuracy bindings precedes allocation, resource loading
 and patch installation; later sprite/decorative bindings still need the separate
 ownership correction described above.
 
-Six focused native-binding tests pass on the reference images, including the
+The first six focused native-binding tests passed on the reference images, including the
 real framework cache Lua, ambiguous/missing/occupied sites, conflicting operands,
 wrong opcode/cursor/branch/capacity, synthetic operand relocation, conditional
 accuracy hook ownership and effective decoration-profile activation. Synthetic
 relocation proves decoder behavior only, not support for another game build.
-The existing explicit-ground last-stone regression passes on both images.
+The full 112-test regression suite then passed at `099a271` in 815.893 seconds,
+but live startup exposed an assumption missing from that suite: RPS's upper bound
+is checked after scanning a whole memory region. The earlier-duplicate check
+therefore rejected its own selected site. A seventh binding test reproduces the
+failure before the correction. The check now rejects only a hit strictly below
+the selected site; the later-match check remains in place. This is a consumer
+bound check using the existing scanner, not another scan implementation.
 All 23 GUI component/archive checks pass. These use the real launcher discovery
 and category resolver with substituted native I/O, not the installed GUI.
 
@@ -74,6 +80,11 @@ The isolated native installation uses framework 3.0.7 developer revision
 `data/cache.lua` and `data/version.lua` match the inspected checkout after newline
 normalization. This checks the actual dependency used by prior live tests, not
 just the current source branch.
+
+The actual native scanner owner is RPS 1.5.2 (`dll/Directory.Build.props`), exposed
+by `dll/core/initialization/ucp-internal.cpp:RPS_initializeLuaAPI`. Inspected
+[`AOB::Scan` at v1.5.2](https://github.com/gynt/RuntimePatchingSystem/blob/v1.5.2/AOB.cpp):
+it scans the current VirtualQuery region before testing `address > max`.
 
 ## Further native/owner evidence
 
@@ -98,6 +109,19 @@ the launcher supports nine locales independently. `dll/core/Core.cpp` currently
 shows Lua failures with `MessageBoxA`. Adding UTF-8 strings to the module alone
 does not establish correct non-ASCII error rendering. The launcher/runtime locale
 handoff and diagnostic display must be solved through their owners.
+
+The resource prerequisite is tracked in
+[gmResourceModifier issue 6](https://github.com/UnofficialCrusaderPatch/ucp_gmResourceModifier/issues/6).
+Recorder state support already has a reusable draft: Map Extensions
+[PR3](https://github.com/gynt/ucp-extension-map-extensions/pull/3) at `04449b7`
+extends `registerSection` with required provider options and read-only callbacks;
+Recorder [fork PR3](https://github.com/Krarilotus/ucp_recorder/pull/3) at `7b6217f`
+uses that API in the existing initial/frozen captures and checkpoint boundaries.
+Both implementations and the real framework proxy regression were inspected.
+The projectile consumer still needs validate/capture/integrity plus cheap paired
+boundary observation, required registration and actual acceptance. Coordination
+is in [existing issue 47](https://github.com/Corax34/ucp_recorder/issues/47#issuecomment-5646119542).
+Those owner branches were not modified.
 
 ## Completion gates
 

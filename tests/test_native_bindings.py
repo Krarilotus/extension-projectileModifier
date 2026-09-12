@@ -13,6 +13,20 @@ class NativeBindingTests(unittest.TestCase):
         end = code.index(b'---Hook game code', start)
         h.lua.execute(code[start:end])
 
+    def test_rps_region_scan_may_return_the_requested_upper_bound_or_beyond(self):
+        # RPS v1.5.2 AOB::Scan checks max only after scanning a complete
+        # VirtualQuery region. Model a region containing the selected site:
+        # a search ending at that site can still return it (or a later match).
+        for extreme in (False, True):
+            h = Harness(extreme)
+            def region_scan(pattern, start=0x400000, end=0x700000):
+                try: return h.scan(pattern, start, 0x700000)
+                except RuntimeError: return 0
+            h.lua.globals().core.scanForAOB = region_scan
+            self.use_framework_cache(h)
+            h.enable({'Catapult': {'count': 3}})
+            self.assertEqual(h.blobs['tickHook'][2]['UNITARRAY'], h.base)
+
     def test_framework_cache_resolves_both_native_layouts(self):
         for extreme in (False, True):
             h = Harness(extreme); self.use_framework_cache(h)

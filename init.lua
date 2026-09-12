@@ -22,7 +22,9 @@ local function locate(pattern)
     -- module changes code. Check both sides without bypassing discovery/cache.
     if address > 0x400000 then
         local found, duplicate = pcall(core.scanForAOB, pattern, 0x400000, address)
-        assert(not found or type(duplicate) ~= 'number' or duplicate <= 0,
+        -- RPS checks the upper bound after scanning a memory region, so the
+        -- result may be the selected site itself. Only an earlier hit conflicts.
+        assert(not found or type(duplicate) ~= 'number' or duplicate <= 0 or duplicate >= address,
             '[custom-projectiles] ambiguous native signature: ' .. pattern)
     end
     local found, duplicate = pcall(core.scanForAOB, pattern, address + 1, 0x700000)
