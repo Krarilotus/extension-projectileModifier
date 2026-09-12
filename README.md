@@ -9,7 +9,7 @@ UI 1.0.0 has a native menu-array overrun that can crash startup.
 UI 1.0.1 is available in the 3.0.7 store. The tester bundle's companion uses
 the same source commit `d3a807cfee70308f707ea81ddb92ac8b1d375bd9`.
 
-The [native integration audit](NATIVE-AUDIT.md) records the remaining work;
+The [native integration audit](https://github.com/Krarilotus/extension-projectileModifier/blob/1d1b291/NATIVE-AUDIT.md) records the remaining work;
 this branch does not replace the published 1.8.6 tester archive.
 
 ## Installation and use
