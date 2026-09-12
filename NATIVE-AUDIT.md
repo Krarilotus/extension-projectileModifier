@@ -176,6 +176,26 @@ registration, package identity, boundary observation and live multiplayer/replay
 acceptance remain unfinished. The internal package contains 47 files/100861
 bytes, 132 bytes above the config-owner parent; no archive was uploaded.
 
+Live normal Crusader acceptance subsequently passed at `a938089`, with Map
+Extensions `04449b7` Lua files and the existing 1.0.0 `luamemzip.dll` (unchanged
+native ABI, SHA256 `a4dfd1beb49b09f8e2c52ad680101bd8843c9c008988268610442b7b85e1cc7c`).
+The game loaded existing `w.sav`, wrote a separate `v.sav`, and reloaded it through
+the native menu. Every saved custom ZIP entry matches the read-back entry byte for
+byte. The manifest has `providers: []`, as expected: this is optional-section
+preflight acceptance, not required-provider enrollment.
+
+The 30.010-second post-reload trace contains 280 samples. Catapult 121 retained
+wall order 23; stones 12 -> 11 -> 10 coincided with three-pebble volleys at clocks
+37667 and 38368. All six kind-4 projectiles moved through 11-18 sampled positions
+and disappeared before the trace ended. Its lowered reload pause remained phase
+2/cycle 12. Normal exit succeeded, error log contained only its header, and the
+desktop was released at 16:02:57 CEST. Exact pre-test config/module bytes were
+restored and the temporary Map Extensions package removed from the test install.
+[Trace summary](tests/evidence/native-save-a938089.json) and
+[native screenshot](tests/evidence/native-save-a938089.png) retain the evidence.
+This does not cover native Extreme, changed-target rotation, damage attribution,
+multiplayer or recorder replay.
+
 Further inspected identity ownership: framework `extensions/loader.lua` and
 `environment.lua` load module files; native `ModuleHandleManager::verifyZipFile`
 hashes secure ZIPs, but does not expose that identity to consumers and skips this

@@ -1,0 +1,147 @@
+{
+  "source": "a938089",
+  "map_source": "04449b7f7b38dccf52e376a5fe62cc230fa5f596",
+  "framework": "3.0.7 developer 77c6accf14a55fb95434fe6ffd96516e005568b5",
+  "game": "normal SHC 1.41",
+  "game_sha256": "3bb0a8c1e72331b3a30a5aa93ed94beca0081b476b04c1960e26d5b45387ac5a",
+  "config": "reconquista-projectiles-1.8.4.yml unchanged",
+  "restored_existing_save": "w.sav",
+  "new_save": "v.sav",
+  "read_write_entries_identical": true,
+  "projectile_entry_bytes": {
+    "projectileModifier/format": 1,
+    "projectileModifier/config": 1748,
+    "projectileModifier/seed.bin": 4,
+    "projectileModifier/cooldown.bin": 10000,
+    "projectileModifier/lastpos.bin": 10000,
+    "projectileModifier/movement.bin": 10000,
+    "projectileModifier/pending.bin": 10000,
+    "projectileModifier/pending-cooldown.bin": 10000,
+    "projectileModifier/sync-wait.bin": 10000,
+    "projectileModifier/uid.bin": 10000,
+    "projectileModifier/identity.bin": 10000,
+    "projectileModifier/profile.bin": 10000,
+    "projectileModifier/weapon-cycle.bin": 10000,
+    "projectileModifier/weapon-tick.bin": 10000,
+    "projectileModifier/weapon-phase.bin": 10000,
+    "projectileModifier/entity-variant.bin": 12000,
+    "projectileModifier/entity-uid.bin": 12000,
+    "projectileModifier/entity-type.bin": 12000,
+    "projectileModifier/variant-gm.bin": 136,
+    "projectileModifier/decoration-variant.bin": 12000,
+    "projectileModifier/decoration-uid.bin": 12000,
+    "projectileModifier/decoration-gm.bin": 136
+  },
+  "required_manifest": "version: 1\nproviders: []\n",
+  "post_reload_samples": 280,
+  "seconds": 30.01,
+  "orders": [
+    23
+  ],
+  "ammo": [
+    {
+      "clock": 37613,
+      "stones": 12
+    },
+    {
+      "clock": 37667,
+      "stones": 11
+    },
+    {
+      "clock": 38368,
+      "stones": 10
+    }
+  ],
+  "phases_cycles": {
+    "2:12": 219,
+    "4:0": 2,
+    "4:1": 2,
+    "4:2": 1,
+    "4:4": 2,
+    "4:5": 2,
+    "4:6": 1,
+    "4:8": 2,
+    "4:9": 1,
+    "4:10": 2,
+    "4:12": 2,
+    "4:13": 1,
+    "0:15": 1,
+    "8:0": 2,
+    "2:0": 3,
+    "2:1": 3,
+    "2:2": 3,
+    "2:3": 3,
+    "2:4": 3,
+    "2:5": 3,
+    "2:6": 3,
+    "2:7": 3,
+    "2:8": 3,
+    "2:9": 3,
+    "2:10": 3,
+    "2:11": 3,
+    "4:3": 1,
+    "4:7": 1,
+    "4:11": 1,
+    "4:14": 1
+  },
+  "projectiles": [
+    {
+      "slot": 36,
+      "uid": 10334,
+      "kind": 4,
+      "first_clock": 37667,
+      "last_clock": 37757,
+      "positions": 14,
+      "last_sample": 528256.143
+    },
+    {
+      "slot": 37,
+      "uid": 10335,
+      "kind": 4,
+      "first_clock": 37667,
+      "last_clock": 37752,
+      "positions": 13,
+      "last_sample": 528256.037
+    },
+    {
+      "slot": 38,
+      "uid": 10336,
+      "kind": 4,
+      "first_clock": 37667,
+      "last_clock": 37744,
+      "positions": 11,
+      "last_sample": 528255.822
+    },
+    {
+      "slot": 33,
+      "uid": 10657,
+      "kind": 4,
+      "first_clock": 38368,
+      "last_clock": 38462,
+      "positions": 15,
+      "last_sample": 528274.648
+    },
+    {
+      "slot": 34,
+      "uid": 10658,
+      "kind": 4,
+      "first_clock": 38368,
+      "last_clock": 38454,
+      "positions": 13,
+      "last_sample": 528274.431
+    },
+    {
+      "slot": 35,
+      "uid": 10659,
+      "kind": 4,
+      "first_clock": 38368,
+      "last_clock": 38470,
+      "positions": 18,
+      "last_sample": 528274.863
+    }
+  ],
+  "all_recorded_projectiles_gone_before_trace_end": true,
+  "error_log": "header only",
+  "desktop_released": "2026-09-12T16:02:57+02:00",
+  "limits": "No required-provider enrollment, native Extreme, retarget transition, damage attribution, multiplayer or replay acceptance."
+}
