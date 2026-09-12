@@ -123,71 +123,30 @@ function M.prepare(definitions, decorations)
     return resources
 end
 
--- Called inside the real GM loader, before gmResourceModifier snapshots the
--- headers and initializes its replacers. Validate the entire reservation first.
-function M.clone(resources, renderer, addresses, bind)
-    local first=core.readInteger(renderer+0x4C)
-    local next_image=core.readInteger(renderer+0x48)
-    check(first>=1 and first+#resources<=240, 'no free GM slots remain')
-    local sum=1
-    for gm=0,239 do
-        local count=core.readInteger(renderer+0x51C+gm*5208+12)
-        check(count<=66000, 'corrupt native image count')
-        if gm>=first then check(count==0, 'GM slot already owned by another extension') end
-        sum=sum+count
-    end
-    check(sum==next_image and next_image<=66000, 'native image layout is incompatible')
-    local cursor=next_image
-    for i,asset in ipairs(resources) do
-        local spec=M.sheets[asset.gm]
-        local header=renderer+0x51C+asset.gm*5208
-        check(core.readInteger(header+12)==spec.count and core.readInteger(header+20)==spec.kind,
-            'base sheet was changed incompatibly by another extension')
-        local source=core.readInteger(addresses.first+asset.gm*4)
-        check(source>=1 and source+spec.count<=next_image, 'invalid native sheet offset')
-        asset.slot=first+i-1; asset.first=cursor; asset.source=source
-        cursor=cursor+spec.count
-    end
-    check(cursor<=66000, 'custom sheets exceed the 66000-image capacity')
-    local function copy(to,from,length) core.writeBytes(to,core.readBytes(from,length)) end
-    for _,asset in ipairs(resources) do
-        local count=M.sheets[asset.gm].count
-        copy(renderer+0x51C+asset.slot*5208,renderer+0x51C+asset.gm*5208,5208)
-        for _,item in ipairs({{addresses.headers,16},{addresses.offsets,4},{addresses.sizes,4}}) do
-            copy(item[1]+asset.first*item[2],item[1]+asset.source*item[2],count*item[2])
-        end
-        core.writeInteger(addresses.first+asset.slot*4,asset.first)
-        bind(asset)
-    end
-    core.writeInteger(renderer+0x48,cursor)
-    core.writeInteger(renderer+0x4C,first+#resources)
-    core.writeInteger(addresses.count,first+#resources)
-end
-
-function M.install(resources, locate, bind)
+-- Sheet admission and resource lifetime belong to gmResourceModifier. No
+-- consumer loader hook or native metadata allocation is installed here.
+function M.install(resources, bind)
     if #resources==0 then return end
     local modifier=assert(modules.gmResourceModifier, '[custom-projectiles] gmResourceModifier is required for custom sprites')
-    local loader=locate('53 55 8B 6C 24 0C 56 57 8B D9')
-    local addresses={
-        first=core.readInteger(loader+0x72), count=core.readInteger(loader+0x36),
-        headers=core.readInteger(locate('C1 E0 04 81 C1 ? ? ? 00 50 51')+5),
-        sizes=core.readInteger(locate('89 14 BD ? ? ? 00 EB 53')+3),
-        offsets=core.readInteger(locate('8B 2C BD ? ? ? 00 03 D7 3B FA')+3),
-    }
-    check(core.readByte(loader+0x6F)==0x89 and core.readByte(loader+0x35)==0xA3, 'unsupported GM loader')
+    check(modifier.ReserveGm and modifier.GetReservedGm,
+        'gmResourceModifier 0.3.0 is required for inherited sprite sheets')
     for _,asset in ipairs(resources) do
-        asset.resource=modifier:LoadGm1Resource(asset.path)
-        check(type(asset.resource)=='number' and asset.resource>=0, 'failed to load '..asset.path)
+        local resource=modifier:LoadGm1Resource(asset.path)
+        check(type(resource)=='number' and resource>=0, 'failed to load '..asset.path)
+        asset.reservation=modifier:ReserveGm(asset.gm,resource)
+        check(asset.reservation>=0, 'failed to reserve '..asset.path)
     end
-    local original, initialized
-    original=core.hookCode(function(renderer, filenames)
-        check(not initialized, 'GM loader unexpectedly ran twice')
-        original(renderer,filenames)
-        M.clone(resources,renderer,addresses,function(asset)
-            check(modifier:SetGm(asset.slot,-1,asset.resource,-1), 'failed to queue '..asset.path)
-            bind(asset)
-        end)
-        initialized=true
-    end,loader,2,1,6)
+    hooks.registerHookCallback('afterInit',function()
+        -- Resolve the complete result before exposing any variant. Ordinary
+        -- errors in afterInit are caught; the framework fatal logger terminates.
+        for _,asset in ipairs(resources) do
+            asset.slot=modifier:GetReservedGm(asset.reservation)
+            if asset.slot<0 then
+                log(FATAL, '[custom-projectiles] Required custom sprite sheets were not admitted by gmResourceModifier. Check their inherited layouts and available sheet/image capacity.')
+                return
+            end
+        end
+        for _,asset in ipairs(resources) do bind(asset) end
+    end)
 end
 return M

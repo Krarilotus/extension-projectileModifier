@@ -40,35 +40,33 @@ class SpriteResourcesTests(unittest.TestCase):
 
     def prepare(self,extreme=False):
         h=Harness(extreme);m=self.module(h)
+        (ROOT/'tests/output').mkdir(parents=True,exist_ok=True)
         directory=tempfile.TemporaryDirectory(dir=ROOT/'tests/output')
         self.addCleanup(directory.cleanup)
         asset=Path(directory.name)/'arrow.gm1';asset.write_bytes(gm1())
         path=asset.relative_to(ROOT).as_posix()
         h.lua.globals().sha=h.lua.table_from({b'sha256':lambda b:hashlib.sha256(b).hexdigest().encode()})
-        requests=[];hooks=[]
+        requests=[];callbacks=[]
         h.lua.globals().load_resource=lambda path:1
-        h.lua.globals().set_resource=lambda *args:requests.append(args) or True
-        h.lua.execute(b'modules.gmResourceModifier={LoadGm1Resource=function(self,p) return load_resource(p) end, SetGm=function(self,...) return set_resource(...) end}')
-        # Execute the production loader callback after a fixture for the native
-        # loader's output; the actual game's file IO is outside Unicorn.
-        h.lua.globals().core.hookCode=lambda callback,address,count,abi,size:hooks.append((callback,address,count,abi,size)) or (lambda *args:None)
+        h.lua.globals().reserve_resource=lambda base,resource:requests.append((base,resource)) or 0
+        h.lua.globals().get_reserved=lambda token:207
+        h.lua.globals().register_after=lambda hook,callback:callbacks.append((hook,callback))
+        h.lua.execute(b"modules.gmResourceModifier={LoadGm1Resource=function(self,p) return load_resource(p) end, ReserveGm=function(self,b,r) return reserve_resource(b,r) end, GetReservedGm=function(self,t) return get_reserved(t) end}; hooks={registerHookCallback=function(h,f) register_after(h,f) end}")
+        def unexpected_hook(*args):raise AssertionError('consumer installed a private resource loader hook')
+        h.lua.globals().core.hookCode=unexpected_hook
         config={'projectiles':{'test_arrow':{'inherits':'arrow','sprites':path}},
                 'units':{'Catapult':{'projectile':'test_arrow','count':1}}}
         h.module.apply(h.config(config))
         h.v={k:v for _,_,values in h.blobs.values() for k,v in values.items()}
         for owner in range(9):h.put(h.v['TEAMTBL']+owner*4,owner)
-        callback,loader,count,abi,size=hooks[0]
-        self.assertEqual((count,abi,size),(2,1,6))
-        renderer=0x3000000
-        first=h.get(loader+0x72);h.put(renderer+0x4c,207);h.put(renderer+0x48,60185)
-        # Headers are ordered exactly as gmResourceModifier enumerates them.
-        h.put(renderer+0x51c+5208+12,60000)
-        h.put(renderer+0x51c+34*5208+12,184);h.put(renderer+0x51c+34*5208+20,2)
-        h.put(first+34*4,60001)
-        callback(renderer,0)
-        self.assertEqual(requests,[(207,-1,1,-1)])
+        self.assertEqual(requests,[(34,1)])
+        self.assertEqual(len(callbacks),1)
+        self.assertEqual(callbacks[0][0],b'afterInit')
+        self.assertEqual(h.get(h.v['VARIANTGM']+4),0)
+        # The owner host suite exercises actual admission and SetGm. This
+        # consumer boundary receives the completed owner's stable native ID.
+        callbacks[0][1]()
         self.assertEqual(h.get(h.v['VARIANTGM']+4),207)
-        self.assertEqual(h.get(renderer+0x48),60369)
         state=h.get(h.v['FIREPROJ']+0x416)
         data=bytes(h.uc.mem_read(h.spawner,0x500));offset=data.index(b'\x80\xbc\x01')
         validity=h.get(h.spawner+offset+3)
@@ -96,20 +94,21 @@ class SpriteResourcesTests(unittest.TestCase):
                 h.call(h.v['SPRITEALL'],registers={r.UC_X86_REG_EDX:1})
                 self.assertEqual(h.get(h.v['ENTITYVARIANT']+25*4),0)
 
-    def test_slots_capacity_and_atomic_validation(self):
-        h=Harness();m=self.module(h)
-        renderer=0x3000000;addresses=h.config({'first':0x3200000,'headers':0x3300000,'offsets':0x3500000,'sizes':0x3600000,'count':0x3201000})
-        resources=h.config([{'gm':34}])
-        h.put(renderer+0x4c,239);h.put(renderer+0x48,65900)
-        h.put(renderer+0x51c+5208+12,65715)
-        h.put(renderer+0x51c+34*5208+12,184);h.put(renderer+0x51c+34*5208+20,2)
-        h.put(0x3200000+34*4,65716)
-        before=bytes(h.uc.mem_read(renderer,240*5208+0x51c))
-        with self.assertRaisesRegex(LuaError,'capacity'):m.clone(resources,renderer,addresses,lambda a:None)
-        self.assertEqual(before,bytes(h.uc.mem_read(renderer,len(before))))
-        h.put(renderer+0x48,60185);h.put(renderer+0x51c+5208+12,60000);h.put(0x3200000+34*4,60001)
-        h.put(renderer+0x51c+239*5208+12,1)
-        with self.assertRaisesRegex(LuaError,'owned'):m.clone(resources,renderer,addresses,lambda a:None)
+    def test_failed_admission_exposes_no_partial_variant_layout(self):
+        h=Harness();m=self.module(h);callbacks=[];bound=[];fatal=[];reservations=[]
+        h.lua.globals().load_resource=lambda path:1
+        h.lua.globals().reserve_resource=lambda base,resource:reservations.append((base,resource)) or len(reservations)-1
+        h.lua.globals().get_reserved=lambda token:207 if token==0 else -1
+        h.lua.globals().register_after=lambda hook,callback:callbacks.append(callback)
+        h.lua.globals().fatal_message=lambda level,message:fatal.append((level,message))
+        h.lua.execute(b"FATAL=-3; log=function(l,m) fatal_message(l,m) end; modules.gmResourceModifier={LoadGm1Resource=function(self,p) return load_resource(p) end, ReserveGm=function(self,b,r) return reserve_resource(b,r) end, GetReservedGm=function(self,t) return get_reserved(t) end}; hooks={registerHookCallback=function(h,f) register_after(h,f) end}")
+        m.install(h.config([{'gm':34,'path':'a.gm1'},{'gm':135,'path':'b.gm1'}]),lambda asset:bound.append(asset))
+        self.assertEqual(bound,[])
+        callbacks[0]()
+        self.assertEqual(bound,[])
+        self.assertEqual(len(fatal),1)
+        self.assertEqual(fatal[0][0],-3)
+        self.assertEqual(h.writes,[])
 
     def test_all_inherited_projectile_kinds_select_the_matching_sheet(self):
         for extreme in [False,True]:

@@ -7,7 +7,7 @@ game: [SHC==1.41, SHCE==1.41]
 dependencies:
   framework: '>=3.0.7'
   map-extensions: '^1.0.0'
-  gmResourceModifier: '^0.2.0'
+  gmResourceModifier: '^0.3.0'
   protocol: '^1.0.0'
   ui: '^1.0.1'
 meta:

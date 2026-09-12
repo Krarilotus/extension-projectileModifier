@@ -278,3 +278,31 @@ with correctly scaled input. They are not evidence of a game-command defect.
 No existing save was overwritten. Resource/render lifecycle ownership, automatic threat targeting,
 required replay enrollment, complete runtime diagnostic localization and the
 remaining multiplayer/performance/GUI acceptance still prevent completion.
+
+## Inherited-sheet owner correction in progress
+
+The consumer now calls `gmResourceModifier:ReserveGm` and consumes
+`GetReservedGm` through the framework's existing `afterInit` callback (the same
+lifecycle used by aiSwapper). Its private `sprite_resources.clone`, memory-copy
+helper, rescans of GM arrays and nested native loader hook are removed. The
+`locate` argument to `sprites.install` is removed with its only use. The owner
+dependency becomes `^0.3.0`; there is no fallback to the old private loader.
+
+The owner change is isolated at `ucp-gm-inherited-sheets`, based on 019039a and
+coordinated in gmResourceModifier issue 6. It admits a complete reservation batch
+before constructing the existing Replacers, uses their existing original/reset
+state and SetGm reference counts, and preserves queued texture replacement order.
+The native loader remains called exactly once. No capacities are expanded.
+
+Consumer failure resolves the entire batch before exposing variant IDs. A missing
+required sheet uses the existing framework fatal logger: `luaLog` reaches
+`VLOG_F`, whose pinned loguru 4adaa185 implementation aborts at FATAL; ordinary
+afterInit assertions are caught. Actual fatal-path acceptance remains outstanding.
+
+Six consumer sprite tests pass, including native inherited projectile kinds,
+normal/Extreme flight, saved continuation and no partially exposed layout on
+owner admission failure. Six owner host scenarios and its real-framework binding
+tests on the two reference families plus official PL/EFIGS files also pass. These
+do not replace real rendering, multiplayer, save/replay and GUI acceptance.
+The consumer's GM1 validation/hash read and full entity render scans still remain;
+they are explicitly unfinished and this is not a completed PR/release update.
