@@ -22,7 +22,7 @@ optional threat priorities and investigation of reported monk targeting.
 | Redundant legacy settings | `suppress_default`, `sync_to_animation`, `sync_max_wait`, `preload` and unit/tile aliases require a semantic/caller audit before removal. | Open; do not break existing presets or silently reinterpret omitted fields. |
 | Coverage is narrower than declared acceptance | Automated native evidence uses one normal and one Extreme 1.41 image; live evidence is normal Crusader. | Other applicable variants, actual all-locale GUI, paired multiplayer, replay and performance remain open. |
 | Recorder integration does not enroll projectile-owned state | Existing optional save registration and `serializeSimulationState` do not enroll this provider in required captures. | Open consumer integration; reuse existing Map PR3 and Recorder fork PR3, coordinated in Corax34/ucp_recorder#47. No competing capture implementation. |
-| Stale UI dependency warning | UI 1.0.1 is now in the 3.0.7 store at the same `d3a807c...` commit bundled earlier. | Public and package documentation needs reconciliation; UI upstream PR6 alone is not store availability evidence. |
+| Stale UI dependency warning | UI 1.0.1 is now in the 3.0.7 store at the same `d3a807c...` commit bundled earlier. | README and store PR31 corrected; published tester ZIPs remain unchanged. |
 
 The monk symptom is **not yet reproduced**. In isolated native tests on both
 reference EXEs, an enemy Monk (type 37), Priest, spearman and archer were selected
@@ -80,6 +80,29 @@ The isolated native installation uses framework 3.0.7 developer revision
 `data/cache.lua` and `data/version.lua` match the inspected checkout after newline
 normalization. This checks the actual dependency used by prior live tests, not
 just the current source branch.
+
+After the scanner correction, all ten focused regressions passed in 38.633
+seconds: seven binding tests, omitted/cow scatter, explicit-zero scatter and the
+manual-ground last-stone case. No wider gameplay changes followed the full suite.
+
+Live normal Crusader at `fdcc38a` passed startup and loaded the existing `w.sav`
+wall attack with unchanged Reconquista configuration. A read-only 45.1-second
+trace (420 samples) recorded catapult slot 121 retaining order 23, with stones
+12 -> 11 -> 10 -> 9. Each debit coincided with three new native mangonel pebbles;
+the three groups appeared at native clocks 37666, 38367 and 39068 (701 ticks
+apart, consistent with configured 700 at 10 Hz sampling). Every pebble moved
+through 13-19 sampled positions and disappeared after its flight. 330 samples
+showed reload phase 2/cycle 12. The wall visibly took damage.
+
+The test ZIP SHA256 was
+`3b0b41b65cad1fc19666452441b82d19257314ee2e6b5770b9b53c3744663d0c`.
+It is an internal package under the old version label, never uploaded or supplied
+as another 1.8.6 release. The process exited normally, error log contained only
+its header, and the desktop was released at 15:23:41 CEST. Evidence is retained
+in `tests/output/live-bindings-fdcc38a.jsonl`, `native-binding-live-summary.json`
+and `native-binding-fdcc38a.png`. This trace does not prove damage attribution:
+the sampled entity+0xA0 field is zero for these artillery shots. It also does not
+cover retargeting, live Extreme, multiplayer, replay or installed-GUI locales.
 
 The actual native scanner owner is RPS 1.5.2 (`dll/Directory.Build.props`), exposed
 by `dll/core/initialization/ucp-internal.cpp:RPS_initializeLuaAPI`. Inspected

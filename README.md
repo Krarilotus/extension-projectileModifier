@@ -6,9 +6,11 @@ Requires UCP 3.0.7+, Crusader/Extreme 1.41 and the declared map-extensions,
 gmResourceModifier, protocol and ui dependencies (the launcher resolves them).
 The ui dependency requires version 1.0.1 or later and launcher 1.0.12 or later.
 UI 1.0.0 has a native menu-array overrun that can crash startup.
-Until [the UI fix](https://github.com/gynt/ucp-extension-ui/pull/6) reaches the
-store, import its unsigned `ui-1.0.1.zip` before this candidate. The tester bundle
-includes that dependency built from commit `d3a807cfee70308f707ea81ddb92ac8b1d375bd9`.
+UI 1.0.1 is available in the 3.0.7 store. The tester bundle's companion uses
+the same source commit `d3a807cfee70308f707ea81ddb92ac8b1d375bd9`.
+
+The [native integration audit](NATIVE-AUDIT.md) records the remaining work;
+this branch does not replace the published 1.8.6 tester archive.
 
 ## Installation and use
 
