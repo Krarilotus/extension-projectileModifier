@@ -36,6 +36,9 @@ class Harness:
         g.register = lambda n,s: self.sections.__setitem__(n,s)
         c = g.core
         c.scanForAOB = self.scan
+        # Cached discovery is owned by the framework; native tests use its
+        # scan boundary. Dedicated binding tests exercise the real cache Lua.
+        c.AOBScan = self.scan
         # Match UCP's signed native int/short API, including opcode bit patterns.
         c.readInteger = lambda a: int.from_bytes(self.uc.mem_read(a,4),'little',signed=True)
         c.readSmallInteger = lambda a: int.from_bytes(self.uc.mem_read(a,2),'little',signed=True)

@@ -5,7 +5,6 @@
     <file src="definition.yml" />
     <file src="options.yml" />
     <file src="init.lua" />
-    <file src="addresses.lua" />
     <file src="constants.lua" />
     <file src="templates.lua" />
     <file src="cadence.lua" />

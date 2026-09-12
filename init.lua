@@ -1,4 +1,3 @@
-local addresses = require("addresses")
 local constants = require("constants")
 local templates = require("templates")
 local configuration = require('configuration')
@@ -12,13 +11,20 @@ local unit_names       = constants.unit_names
 local projectile_names = constants.projectile_names
 local MAX_TYPES        = constants.MAX_UNIT_TYPES
 local MAX_PROFILES     = MAX_TYPES * 2
-local MAX_UNITS        = addresses.max_units
+local MAX_UNITS
 
 local function resolve(native_cadence, config)
 local function locate(pattern)
-    local ok, address = pcall(core.scanForAOB, pattern, 0x400000, 0x700000)
+    local ok, address = pcall(core.AOBScan, pattern)
     assert(ok and type(address) == 'number' and address >= 0x400000 and address < 0x700000,
         '[custom-projectiles] unsupported executable or conflicting module at signature: ' .. pattern)
+    -- A still-valid cached site need not be the first match after another
+    -- module changes code. Check both sides without bypassing discovery/cache.
+    if address > 0x400000 then
+        local found, duplicate = pcall(core.scanForAOB, pattern, 0x400000, address)
+        assert(not found or type(duplicate) ~= 'number' or duplicate <= 0,
+            '[custom-projectiles] ambiguous native signature: ' .. pattern)
+    end
     local found, duplicate = pcall(core.scanForAOB, pattern, address + 1, 0x700000)
     assert(not found or type(duplicate) ~= 'number' or duplicate <= 0,
         '[custom-projectiles] ambiguous native signature: ' .. pattern)
@@ -37,8 +43,17 @@ local acquire_target_addr = locate("83 EC 40 53 56 57 8B 7C 24 50 69 FF 90 04 00
 -- Native scatter is applied BEFORE the projectile dispatcher: one routine for
 -- ground aim, followed by a second height-dependent error stage. Override both
 -- only when accuracy is explicitly configured (including zero).
-local ground_aim_addr = locate("51 8B 44 24 08 8B 54 24 0C 69 C0 90 04 00 00 53 55 56 8D 34 08")
-local aim_error_addr = locate("0F B7 86 CE 06 00 00 0F B7 8E D6 06 00 00 66 3B C1")
+local function accuracy_profile(profile)
+    return profile.inaccuracy ~= nil or profile.inaccuracy_tiles ~= nil
+end
+local ground_aim_addr, aim_error_addr
+for _, cfg in pairs(config.units) do
+    if configuration.any_profile(cfg, accuracy_profile) then
+        ground_aim_addr = locate("51 8B 44 24 08 8B 54 24 0C 69 C0 90 04 00 00 53 55 56 8D 34 08")
+        aim_error_addr = locate("0F B7 86 CE 06 00 00 0F B7 8E D6 06 00 00 66 3B C1")
+        break
+    end
+end
 
 -- Inside UnitsState::updateUnits, reached once per tick for every living unit.
 local unit_tick_addr = locate("83 C2 01 89 16 8B 15 ? ? ? ? 69 D2 90 04 00 00 33 C9 66 89 8C 32 AE 09 00 00")
@@ -91,12 +106,30 @@ local AIC_STRIDE = constants.AIC_FIELD_COUNT * 4
 local aic_cow_addr = aic_array_base - AIC_STRIDE
                      + constants.AIC_COW_THROW_INTERVAL * 4
 
-local unit_array_base = addresses.unit_array_base_addr
-assert(core.readInteger(fire_projectile_addr + 0x23) - 0x3B0 == unit_array_base,
+-- The two native artillery dispatch paths read the same cow-mode field.
+-- Decode their operands; never choose a unit-array VA by executable family.
+assert(core.readSmallInteger(fire_projectile_addr + 0x20) % 65536 == 0x8366
+    and core.readByte(fire_projectile_addr + 0x22) == 0xB8
+    and core.readByte(fire_projectile_addr + 0x27) == 0
+    and core.readSmallInteger(fire_projectile_addr + 0x12A) % 65536 == 0x8366
+    and core.readByte(fire_projectile_addr + 0x12C) == 0xBF
+    and core.readByte(fire_projectile_addr + 0x131) == 0,
+    '[custom-projectiles] unit array does not match this executable')
+local unit_array_base = core.readInteger(fire_projectile_addr + 0x23) - 0x3B0
+assert(core.readInteger(fire_projectile_addr + 0x12D) - 0x3B0 == unit_array_base
+    and unit_array_base >= 0x700000 and unit_array_base % 4 == 0,
     '[custom-projectiles] unit array does not match this executable')
 local unit_state_this = unit_array_base - 0x614
 local current_unit_id_addr = core.readInteger(unit_tick_addr + 7)
-assert(core.readInteger(unit_tick_addr + 0x3A4) == MAX_UNITS,
+-- Verify the loop limit, cursor store and branch back to this update loop.
+assert(core.readSmallInteger(unit_tick_addr + 0x3A2) % 65536 == 0xFA81
+    and core.readSmallInteger(unit_tick_addr + 0x3A8) % 65536 == 0x1589
+    and core.readInteger(unit_tick_addr + 0x3AA) == current_unit_id_addr
+    and core.readSmallInteger(unit_tick_addr + 0x3AE) % 65536 == 0x8C0F
+    and unit_tick_addr + 0x3B4 + core.readInteger(unit_tick_addr + 0x3B0) == unit_tick_addr - 24,
+    '[custom-projectiles] unit array does not match this executable')
+local unit_capacity = core.readInteger(unit_tick_addr + 0x3A4)
+assert(unit_capacity == (data.version.isExtreme() and 10000 or 2500),
     '[custom-projectiles] unsupported unit-array capacity modification')
 return {locate=locate, fire=fire_projectile_addr, acquire=acquire_target_addr, tick=unit_tick_addr,
     animation=animation_addr, releaseCycles=release_cycles, catapultRest=catapult_rest, trebuchetRest=trebuchet_rest, horse=horse_addr,
@@ -105,7 +138,7 @@ return {locate=locate, fire=fire_projectile_addr, acquire=acquire_target_addr, t
     rows=tile_rows_addr, flags=tile_flags_addr, terrain=terrain_height_addr,
     teams=team_table_addr, buildings=building_base_addr, aic=aic_array_base,
     playerAic=player_aic_addr, cow=aic_cow_addr, units=unit_array_base,
-    this=unit_state_this, current=current_unit_id_addr}
+    this=unit_state_this, current=current_unit_id_addr, capacity=unit_capacity}
 end
 
 -- Private tables, non-overlapping scratch and persistent per-unit firing state.
@@ -273,10 +306,11 @@ local function install(config)
     local has_decorations = next(config.decorations or {}) ~= nil
     local profile_count = MAX_TYPES * 2
     for _, cfg in pairs(config.units) do profile_count = profile_count + 2 * #(cfg.near_decorations or {}) end
+    local native = resolve(cadence.required(config), config)
+    MAX_UNITS = native.capacity
     layout(profile_count)
     local resources = sprites.prepare(config.projectiles or {}, config.decorations)
     for _, spec in pairs(config.projectiles or {}) do variant_by_id[spec.id] = spec end
-    local native = resolve(cadence.required(config), config)
     local native_decorations = has_decorations and decorations.resolve(native.locate)
     release_cycles = native.releaseCycles or {}
     local fire_projectile_addr, acquire_target_addr, unit_tick_addr = native.fire, native.acquire, native.tick
@@ -522,7 +556,9 @@ local function install(config)
     values.CHECKATTACHED = assemble_blob(templates.attach_code, values)
     values.ISBOARDED = assemble_blob(templates.board_code, values)
     values.ISAIOWNED = assemble_blob(templates.aiowned_code, values)
-    values.ACCURACYSET = assemble_blob(templates.accuracy_set_code, values)
+    if native.groundAim then
+        values.ACCURACYSET = assemble_blob(templates.accuracy_set_code, values)
+    end
     values.WANTSCOW = assemble_blob(templates.aicow_code, values)
     values.CHOOSEAMMO = assemble_blob(templates.ammo_code, values)
     values.SYNCREADY = assemble_blob(templates.sync_code, values)
@@ -550,10 +586,13 @@ local function install(config)
     values.RESUME = unit_tick_addr + 5
     local tick_hook = assemble_blob(templates.tick_hook_code, values)
 
-    values.RESUME = native.groundAim + 5
-    local ground_hook = assemble_blob(templates.ground_aim_hook_code, values)
-    values.RESUME = native.aimError + 7
-    local accuracy_hook = assemble_blob(templates.aim_error_hook_code, values)
+    local ground_hook, accuracy_hook
+    if native.groundAim then
+        values.RESUME = native.groundAim + 5
+        ground_hook = assemble_blob(templates.ground_aim_hook_code, values)
+        values.RESUME = native.aimError + 7
+        accuracy_hook = assemble_blob(templates.aim_error_hook_code, values)
+    end
     local animation_hook
     if native.animation then
         values.RESUME = native.animation + 18
@@ -641,12 +680,14 @@ local function install(config)
     core.writeCode(unit_tick_addr, {
         0xE9, core.itob(core.getRelativeAddress(unit_tick_addr, tick_hook, -5))
     })
-    core.writeCode(native.groundAim, {
-        0xE9, core.itob(core.getRelativeAddress(native.groundAim, ground_hook, -5))
-    })
-    core.writeCode(native.aimError, {
-        0xE9, core.itob(core.getRelativeAddress(native.aimError, accuracy_hook, -5)), 0x90, 0x90
-    })
+    if native.groundAim then
+        core.writeCode(native.groundAim, {
+            0xE9, core.itob(core.getRelativeAddress(native.groundAim, ground_hook, -5))
+        })
+        core.writeCode(native.aimError, {
+            0xE9, core.itob(core.getRelativeAddress(native.aimError, accuracy_hook, -5)), 0x90, 0x90
+        })
+    end
     if native.animation then
         local animation_site = native.animation + 11
         core.writeCode(animation_site, {

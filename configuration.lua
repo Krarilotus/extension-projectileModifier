@@ -1,6 +1,19 @@
 -- Validate the whole configuration before resolving or patching native code.
 local constants = require('constants')
 local M = {}
+
+-- Inspect effective profiles after validate() has merged sparse overrides.
+-- Initialization consumers share this traversal so conditional capabilities
+-- include fortification and decoration profiles consistently.
+function M.any_profile(cfg, predicate)
+    if predicate(cfg) then return true end
+    if cfg.on_fortification and predicate(cfg.on_fortification) then return true end
+    for _, rule in ipairs(cfg.near_decorations or {}) do
+        if predicate(rule.ground) or predicate(rule.fortified) then return true end
+    end
+    return false
+end
+
 M.numbers = {
     count = {1, 64, 1}, cow_count = {1, 64, 1}, spread = {0, 800, 0}, inaccuracy = {0, 800, 0},
     spread_tiles = {0, 100, 0}, inaccuracy_tiles = {0, 100, 0},
