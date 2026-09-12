@@ -31,3 +31,6 @@ units:
     preload_poll: 5
     sync_to_animation: false
     sync_max_wait: 40
+  Catapult:
+    interval: 700
+    turn_before_shot: true

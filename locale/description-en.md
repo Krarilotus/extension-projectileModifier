@@ -4,7 +4,7 @@ Configure all 77 unit types in YAML. Regular and cow ammunition are independent.
 
 Cluster thresholds apply only to AI; human attack orders remain available.
 
-Copy vanilla-projectiles.yml from the module ZIP into ucp/resources/custom-projectiles/, edit the copy and select it here. Omitted settings stay unchanged; an empty path makes no changes. UCP required/suggested rules apply to the selected file as a whole. Restart the game after changes.
+Copy vanilla-projectiles.yml from the module ZIP into ucp/resources/custom-projectiles/, edit the copy and select it here. Omitted settings stay unchanged; an empty path makes no changes. UCP required/suggested rules apply to the selected file as a whole. Restart the game after changes. With native reload timing, turn_before_shot: false disables turning toward manual targets.
 
 Custom sprites: add a name under projectiles with inherits and sprites (a complete matching GM1 sheet). Decorations: define decorations, then near_decorations rules for units; place them through the brazier button. See README.md and examples/custom-sprites-and-decorations.yml for formats. Use valid walls or towers; manor houses do not support braziers.
 

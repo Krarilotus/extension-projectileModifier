@@ -216,3 +216,60 @@ the existing behavior until explicitly configured. Any verified eligibility or
 retargeting correction needs an ON default and OFF baseline without another
 overwhelming Customizations panel. Existing file schemas and saved RNG order must
 remain compatible unless an explicit user option changes behavior.
+
+
+## Human siege retargeting correction
+
+The existing cooldown hook could preserve a loaded pose while a human changed
+its attack order, then release at the new position without rotating. The
+correction stays in `cadence.configuredAnimationHold`; no siege handler,
+projectile dispatcher, command handler or additional animation site is patched.
+
+Reuse review (base `506358a`; framework `02a7a6bc`, native reference images as
+recorded in the test harness):
+
+| Responsibility | Existing owner and decision |
+| --- | --- |
+| Human/native order precedence | `templates.manualOrder`, already used by cadence and dispatch. Reused without changing automatic selection or its RNG. |
+| Point-facing direction and camera adjustment | Native `UnitsState::setUnitFacingDirectionForTargetXandY`, already bound for hunters. Its binding is renamed `FACEPOINT` and shared; UCP AOB context now includes argument reads, tile/facing offsets, direction call and `ret 12`. |
+| Facing a moving unit | Native `UnitsState::setUnitFacingDirectionTowardsTarget`, thiscall `(unit ID, target ID)`, `ret 8`. UCP AOB resolves its ID check and both verified stride operands. The existing order's ID/UID is checked before calling it. |
+| Building aim position | Native siege state 8 uses the building centre. The generic native building-facing routine instead uses its corner, so it is not equivalent. A bounded read of the existing building ID/UID, tile and width supplies the same centre to the point-facing owner. No building search or target eligibility implementation is introduced. |
+| Turn timing and reload progress | Existing native animation clock, phase and cycle. Retain phase/cycle and delay its clock for the native six-tick direction step; no private turn timer, target cache or new save block. |
+| Configuration | Existing validated effective profiles, including fortification/decorations, own `turn_before_shot`. The native writer defaults omitted values ON and preserves explicit false. One immutable profile table is added, not per-unit persistent state. |
+| UI and translations | The user's explicit file-only configuration direction takes precedence over adding a separate checkbox. Keep the existing file picker under Legacy's Balance Changes category, with the OFF instruction in all nine locale help/preview catalogs. No Legacy edits. |
+
+The correction is limited to human attack orders during native reload/firing
+phases. Initial state-8 aiming, movement, native cow phases, pending accepted
+volleys and automatic target selection keep their existing owners. Turning does
+not call `ACQUIRE` or consume RNG. It uses the selected unit's current tile, and
+wall/ground commands use the native stored target tiles.
+
+New regression coverage includes changing a ground target from east to west,
+unit/ground/building/wall retargets during the loaded cooldown, save/load during
+the direction steps, absence of target queries while turning, unchanged module
+RNG and an explicit OFF baseline. Normal and Extreme pass the focused checks.
+The changed-target test and framework-cache binding test also pass against the
+official PL and EFIGS executables for both families. All four official images
+have identical mapped section contents to their corresponding reference family;
+their whole-file identities differ. This is native instruction execution in the
+harness, not live language-asset or multiplayer acceptance.
+
+All 23 GUI component/archive tests pass, including the installed Legacy category
+resolver and all nine locale catalogs. They caught help/preview drift and a
+PowerShell stdin encoding conversion in the first generated translation pass;
+both are corrected and the ZIP was regenerated with intact UTF-8. This does not
+replace actual installed-GUI checks. The current internal archive is 47 files,
+103598 bytes, SHA256
+`873654d30a79bf6e494de74afd610a6c7d7d084be6262c0a8dede0b9b8d8d473`.
+It is not a published replacement for the existing 1.8.6 tester download.
+
+The full suite passes: 121 tests in 964.040 seconds. The expanded changed-ground
+case covers all five siege engines on both families, and loaded-turn checks
+assert six ticks between direction steps (two expanded tests pass in 100.863
+seconds). Live normal Crusader loads and retains three successive wall volleys.
+The attempted GUI target changes did not change the recorded native order, so
+live retargeting acceptance is still pending; see
+[the bounded live trace](tests/evidence/native-retarget-attempt.json).
+No existing save was overwritten. Resource/render lifecycle ownership, automatic threat targeting,
+required replay enrollment, complete runtime diagnostic localization and the
+remaining multiplayer/performance/GUI acceptance still prevent completion.

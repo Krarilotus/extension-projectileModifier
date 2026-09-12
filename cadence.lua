@@ -339,7 +339,7 @@ nt_hunterface:
     push edx
     push ebx
     mov ecx, UNITSTATE
-    call HUNTERFACE
+    call FACEPOINT
     pop eax
 nt_restore:
     push eax
@@ -383,6 +383,104 @@ configuredAnimationHold:
     add esp, 4
     cmp eax, MAXPROFILES
     jae ca_pass
+    ; Turn human siege orders at native frame boundaries, including cooldown.
+    ; This reads the existing order and calls the native direction owner. It
+    ; never reacquires a shot, consumes RNG or replaces native target policy.
+    cmp dword [TURNBEFORET+eax*4], 0
+    je ca_cadence
+    cmp dword [PENDINGT+ebx*4], 0
+    jg ca_cadence
+    imul esi, ebx, 0x490
+    add esi, UNITARRAY
+    movzx ecx, word [esi+0x8E]
+    cmp dword [NATIVESTARTT+ecx*4], 8
+    jne ca_cadence
+    cmp word [esi+0x3B0], 0
+    jne ca_cadence
+    cmp word [esi+0x2C0], 2
+    je ca_turnclock
+    cmp word [esi+0x2C0], 4
+    jne ca_cadence
+ca_turnclock:
+    mov ecx, [esi+0x40]
+    inc ecx
+    mov edx, [esi+0x3C]
+    add edx, [esi+0x44]
+    cmp ecx, edx
+    jle ca_cadence
+    push eax
+    push ebx
+    call MANUALORDER
+    add esp, 4
+    test eax, eax
+    pop eax
+    jz ca_cadence
+    movzx ecx, word [esi+0x39C]
+    cmp ecx, 22
+    je ca_cadence               ; native cow phases already turn
+    push eax                   ; effective profile
+    cmp ecx, 4
+    jne ca_turnpoint
+    movzx edx, word [esi+0x39E]
+    cmp edx, 1
+    jl ca_turnskip
+    cmp edx, MAXUNITS
+    jae ca_turnskip
+    imul ecx, edx, 0x490
+    mov ecx, [ecx+UNITARRAY+0x98]
+    cmp ecx, [esi+0x3A0]
+    jne ca_turnskip             ; do not follow a recycled native target slot
+    push edx
+    push ebx
+    mov ecx, UNITSTATE
+    call FACEUNIT
+    jmp ca_turned
+ca_turnpoint:
+    movsx edx, word [esi+0x3EA]
+    movsx edi, word [esi+0x3E8]
+    cmp ecx, 9
+    jne ca_facexy
+    ; Native siege state 8 aims at a building's centre, whereas the generic
+    ; native building-facing function aims at its corner. Supply that centre
+    ; to the existing point-facing API, retaining the native UID check.
+    movzx ecx, word [esi+0x336]
+    test ecx, ecx
+    jz ca_turnskip
+    cmp ecx, MAXBLD
+    jae ca_turnskip
+    imul ecx, ecx, 0x32C
+    add ecx, BLDBASE
+    mov eax, [ecx+0xD8]
+    cmp eax, [esi+0x3A0]
+    jne ca_turnskip
+    mov eax, [ecx+0xF8]
+    cdq
+    sub eax, edx
+    sar eax, 1
+    movsx edi, word [ecx+0xEE]
+    movsx edx, word [ecx+0xF0]
+    add edi, eax
+    add edx, eax
+ca_facexy:
+    push edx
+    push edi
+    push ebx
+    mov ecx, UNITSTATE
+    call FACEPOINT
+ca_turned:
+    test eax, eax
+    jz ca_turnskip
+    ; Reuse the native animation clock for the six-tick aiming step. Holding
+    ; the phase/cycle keeps the loaded pose and all progress through reloading.
+    mov edx, [esi+0x3C]
+    add edx, [esi+0x44]
+    sub edx, 5
+    mov [esi+0x40], edx
+    pop eax
+    jmp ca_hold
+ca_turnskip:
+    pop eax
+ca_cadence:
     mov edx, eax
     mov ecx, [NATIVECYCLET+eax*4]
     test ecx, ecx

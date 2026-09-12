@@ -1,5 +1,6 @@
 balance_changes: Balance Changes
 config_file: Файл настроек снарядов (YAML)
-config_help: Скопируйте vanilla-projectiles.yml из ZIP модуля в ucp/resources/custom-projectiles/, отредактируйте
+config_help: 'Скопируйте vanilla-projectiles.yml из ZIP модуля в ucp/resources/custom-projectiles/, отредактируйте
   копию и выберите её здесь. Пропущенные настройки не меняются; пустой путь не вносит изменений. Правила UCP для
   обязательных и рекомендуемых значений применяются ко всему выбранному файлу. После изменений перезапустите игру.
+  При штатной перезарядке turn_before_shot: false отключает поворот к целям, выбранным вручную.'

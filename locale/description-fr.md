@@ -4,7 +4,7 @@ Configurez les 77 types d’unités en YAML. Munitions normales et vaches sont i
 
 Le seuil de regroupement ne concerne que l’IA ; les joueurs peuvent toujours donner leurs ordres d’attaque.
 
-Copiez vanilla-projectiles.yml depuis le ZIP du module dans ucp/resources/custom-projectiles/, modifiez la copie et sélectionnez-la ici. Les réglages omis restent inchangés ; un chemin vide ne modifie rien. Les règles UCP de valeurs requises ou suggérées portent sur le fichier choisi dans son ensemble. Relancez le jeu après les modifications.
+Copiez vanilla-projectiles.yml depuis le ZIP du module dans ucp/resources/custom-projectiles/, modifiez la copie et sélectionnez-la ici. Les réglages omis restent inchangés ; un chemin vide ne modifie rien. Les règles UCP de valeurs requises ou suggérées portent sur le fichier choisi dans son ensemble. Relancez le jeu après les modifications. Avec le rechargement natif, turn_before_shot: false désactive la rotation vers les cibles choisies manuellement.
 
 Images personnalisées : ajoutez un nom sous projectiles avec inherits et sprites (fichier GM1 complet compatible). Définissez decorations et les règles near_decorations des unités ; placez-les via le bouton brasero. Formats : README.md et examples/custom-sprites-and-decorations.yml. Placez-les sur des murs ou tours valides ; les manoirs n’acceptent pas de braseros.
 

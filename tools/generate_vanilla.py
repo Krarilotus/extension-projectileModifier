@@ -61,6 +61,7 @@ HEADER='''# yaml-language-server: $schema=./projectile-config.schema.json
 #   ai_cow_vs_units: false       # Automatic unit shots; checks owner's AIC cow flag.
 #   preload: false               # Check targets more often when already loaded.
 #   preload_poll: 5              # 1..60000 ticks between loaded target checks.
+#   turn_before_shot: true       # Face human attack orders while reloading; false disables this correction.
 #   sync_to_animation: true      # Default for catapult/trebuchet/mangonel/ballistas:
 #                               # native release frame; interval cannot cut the cycle.
 #                               # Also foot archers/crossbowmen/slingers/firethrowers.

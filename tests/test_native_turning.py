@@ -95,3 +95,102 @@ class NativeTurningTests(unittest.TestCase):
                                 traces.append(trace)
                             self.assertEqual(traces[0],traces[1])
                             self.assertTrue(any(row[1] for row in traces[1]) or (dx,dy)==(0,-4))
+
+    def test_changed_ground_target_is_faced_before_next_release(self):
+        for extreme in (False, True):
+            for name, kind, handler in SIEGE:
+                with self.subTest(extreme=extreme, unit=name):
+                    h, a, tick = manual_tests.ManualReleaseTests().prepare(
+                        name, kind, handler, 5, extreme, interval=700)
+                    h.put(a+0x362, 20, 2)
+                    first = None
+                    for t in range(1400):
+                        queued, shots = tick()
+                        self.assertFalse(queued)
+                        if not shots:
+                            continue
+                        if first is None:
+                            first = t
+                            self.assertEqual(h.get(a+0x2b4, 2), 2)
+                            # Native command coordinates: select ground west of the engine.
+                            site = h.scan(b'B9 ? ? ? ? 66 C7 84 37 9E 09 00 00 FF FF E8')
+                            h.put(h.get(site+1)+0xc0+400*40+36, 1, 1)
+                            h.put(a+0x3e8, 36, 2)
+                            h.put(a+0x3ea, 40, 2)
+                        else:
+                            self.assertGreaterEqual(t-first, 700)
+                            self.assertEqual(h.get(a+0x2b4, 2), 6,
+                                'the engine must face its newly accepted target before firing')
+                            self.assertTrue(all(s[6:8] == (288, 320) for s in shots))
+                            break
+                    else:
+                        self.fail('both shots must reach the native release')
+
+    def test_turning_during_loaded_cooldown_uses_no_target_query_and_survives_save(self):
+        observer = projectile_tests.NativeTests()
+        for extreme in (False, True):
+            for name, kind, handler in SIEGE[:2]:
+                for order in (4, 5, 9, 23):
+                    with self.subTest(extreme=extreme, unit=name, order=order):
+                        h, a, tick = manual_tests.ManualReleaseTests().prepare(
+                            name, kind, handler, order, extreme, interval=700)
+                        h.put(a+0x362, 20, 2)
+                        rest = (2, 12 if kind == 39 else 35)
+                        for _ in range(650):
+                            tick()
+                            if (h.get(a+0x362, 2) == 19 and
+                                (h.get(a+0x2c0, 2), h.get(a+0x2b0)) == rest):
+                                break
+                        else:
+                            self.fail('the native reload must reach its loaded hold')
+                        if order == 4:
+                            h.unit(3, 37, owner=2, x=36, y=40)
+                            h.put(a+0x39e, 3, 2); h.put(a+0x3a0, 3)
+                        elif order == 9:
+                            b = h.v['BLDBASE']+0x32c
+                            h.put(b+0xee, 35, 2); h.put(b+0xf0, 39, 2)
+                        else:
+                            h.put(a+0x3e8, 36, 2); h.put(a+0x3ea, 40, 2)
+                        acquisitions = []
+                        token = h.uc.hook_add(UC_HOOK_CODE, lambda *args: acquisitions.append(1),
+                            begin=h.v['ACQUIRE'], end=h.v['ACQUIRE'])
+                        seed = h.get(h.v['SEED'])
+                        try:
+                            def advance(count):
+                                trace = []
+                                for _ in range(count):
+                                    self.assertEqual(tick(), ([], []))
+                                    self.assertEqual((h.get(a+0x2c0, 2),h.get(a+0x2b0)), rest)
+                                    trace.append((h.get(a+0x2b4, 2),h.get(a+0x54, 2),h.get(a+0x40)))
+                                return trace
+                            start = advance(9)
+                            self.assertNotEqual(start[-1][0], 2, 'turn while the long cooldown is still active')
+                            saved = observer.state_handle(h); state = h.sections[b'projectileModifier']
+                            state.serialize(state, saved)
+                            native = bytes(h.uc.mem_read(a, 0x490))
+                            first = advance(24)
+                            self.assertEqual(first[-1][0], 6)
+                            turns = [i for i in range(1,len(start+first))
+                                     if (start+first)[i][0] != (start+first)[i-1][0]]
+                            self.assertGreaterEqual(len(turns), 3)
+                            self.assertEqual({b-a for a,b in zip(turns,turns[1:])}, {6})
+                            h.uc.mem_write(a, native); state.deserialize(state, saved)
+                            self.assertEqual(first, advance(24))
+                            self.assertEqual(acquisitions, [], 'turning must not reroll or replace the target')
+                            self.assertEqual(h.get(h.v['SEED']), seed)
+                            self.assertGreater(h.get(h.v['COOLDOWNT']+4), 300)
+                        finally:
+                            h.uc.hook_del(token)
+
+    def test_explicit_off_retains_previous_manual_turning_behavior(self):
+        for extreme in (False, True):
+            h, a, tick = manual_tests.ManualReleaseTests().prepare(
+                'Catapult', 39, 0x568320, 5, extreme, interval=700, turn_before_shot=False)
+            h.put(a+0x362, 20, 2)
+            for _ in range(200): tick()
+            h.put(a+0x3e8, 36, 2)
+            for _ in range(40): tick()
+            self.assertEqual(h.get(a+0x2b4, 2), 2)
+            self.assertEqual(h.get(h.v['TURNBEFORET']+39*4), 0)
+            self.assertEqual(h.v['FACEPOINT'], 0)
+            self.assertEqual(h.v['FACEUNIT'], 0)

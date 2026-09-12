@@ -205,6 +205,7 @@ completion and validation; Lua also checks cross-field comparisons.
 | `ai_cow_vs_units` | Boolean; automatic unit-targeted shots use cows if the owner's AIC enables them; default false; does not enforce the AIC cow interval |
 | `preload` | Boolean; more frequent target searches after reload; default false |
 | `preload_poll` | 1–60000 ticks, default 5; ordinary retries take at most 20 ticks |
+| `turn_before_shot` | Defaults true for human siege engines using native reload timing. Turns toward the current attack order while reloading, before firing. False preserves the previous module behavior. Native cow shots and automatic targeting keep their existing paths. |
 | `sync_to_animation` | Boolean; native reload timing defaults on for the twelve shooters listed above. False selects the independent timer. Other units default false; true uses their legacy bounded animation wait. |
 | `sync_max_wait` | 1–60000 ticks, default 40; only the legacy animation wait, never a bypass of a native firing frame |
 | `suppress_default` | Boolean; defaults true with any interval, false otherwise; unchanged native cow orders remain available |

@@ -1,0 +1,114 @@
+{
+  "scope": "Live normal Crusader startup, existing wall shots and native save reload only; changed target was not accepted by the attempted UI commands, so live retargeting remains unverified.",
+  "module_sha256": "873654d30a79bf6e494de74afd610a6c7d7d084be6262c0a8dede0b9b8d8d473",
+  "samples": 513,
+  "seconds": 55.052000000025146,
+  "unit_changes": [
+    {
+      "clock": 37342,
+      "order": 23,
+      "target": [
+        50,
+        196
+      ],
+      "facing": 5,
+      "stones": 12,
+      "phase": 2,
+      "cycle": 12
+    },
+    {
+      "clock": 37668,
+      "order": 23,
+      "target": [
+        50,
+        196
+      ],
+      "facing": 5,
+      "stones": 11,
+      "phase": 4,
+      "cycle": 10
+    },
+    {
+      "clock": 38366,
+      "order": 23,
+      "target": [
+        50,
+        196
+      ],
+      "facing": 5,
+      "stones": 10,
+      "phase": 4,
+      "cycle": 9
+    },
+    {
+      "clock": 39068,
+      "order": 23,
+      "target": [
+        50,
+        196
+      ],
+      "facing": 5,
+      "stones": 9,
+      "phase": 4,
+      "cycle": 10
+    }
+  ],
+  "pebbles": [
+    {
+      "slot": 36,
+      "uid": 10342,
+      "first_clock": 37668,
+      "distinct_positions": 16
+    },
+    {
+      "slot": 37,
+      "uid": 10343,
+      "first_clock": 37668,
+      "distinct_positions": 13
+    },
+    {
+      "slot": 38,
+      "uid": 10344,
+      "first_clock": 37668,
+      "distinct_positions": 13
+    },
+    {
+      "slot": 33,
+      "uid": 10683,
+      "first_clock": 38366,
+      "distinct_positions": 17
+    },
+    {
+      "slot": 34,
+      "uid": 10684,
+      "first_clock": 38366,
+      "distinct_positions": 17
+    },
+    {
+      "slot": 35,
+      "uid": 10685,
+      "first_clock": 38366,
+      "distinct_positions": 19
+    },
+    {
+      "slot": 65,
+      "uid": 12168,
+      "first_clock": 39068,
+      "distinct_positions": 17
+    },
+    {
+      "slot": 66,
+      "uid": 12169,
+      "first_clock": 39068,
+      "distinct_positions": 17
+    },
+    {
+      "slot": 67,
+      "uid": 12170,
+      "first_clock": 39068,
+      "distinct_positions": 18
+    }
+  ],
+  "discarded_run": "The first attempt disassembled the engine through the wrong native control. Reloaded existing w.sav; no save overwritten. Attack Here was subsequently identified, but camera scrolling interfered with the target selection. Right-click/left-click attempts at the friendly wall did not change the native order.",
+  "desktop": "Input stopped on expired assert. Released at 20:00:21 CEST. Own game PID33460 still open; normal exit queued behind tunnelers-engineers."
+}

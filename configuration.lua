@@ -29,7 +29,7 @@ M.numbers = {
 M.booleans = {
     suppress_default = true, random_targets = true, attached_ignore_crew = true,
     attached_stop_when_boarded = true, ai_cow_vs_units = true, ai_only = true,
-    preload = true, sync_to_animation = true,
+    preload = true, sync_to_animation = true, turn_before_shot = true,
 }
 M.units = {}
 for id, name in ipairs(constants.unit_names) do

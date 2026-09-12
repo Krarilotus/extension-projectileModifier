@@ -1,6 +1,7 @@
 balance_changes: Balance Changes
 config_file: Geschosskonfigurationsdatei (YAML)
-config_help: vanilla-projectiles.yml aus dem Modul-ZIP nach ucp/resources/custom-projectiles/ kopieren, dort bearbeiten
+config_help: 'vanilla-projectiles.yml aus dem Modul-ZIP nach ucp/resources/custom-projectiles/ kopieren, dort bearbeiten
   und hier auswählen. Ausgelassene Einstellungen bleiben unverändert; ein leerer Pfad bewirkt keine Änderungen.
   Die UCP-Regeln für erforderliche und vorgeschlagene Werte gelten für die gesamte Dateiauswahl. Nach Änderungen
-  das Spiel neu starten.
+  das Spiel neu starten. Bei nativer Nachladezeit deaktiviert turn_before_shot: false das Drehen zu manuell gewählten
+  Zielen.'

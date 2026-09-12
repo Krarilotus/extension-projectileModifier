@@ -1,5 +1,6 @@
 balance_changes: Balance Changes
 config_file: Mermi yapılandırma dosyası (YAML)
-config_help: Modül ZIP dosyasındaki vanilla-projectiles.yml dosyasını ucp/resources/custom-projectiles/ klasörüne
+config_help: 'Modül ZIP dosyasındaki vanilla-projectiles.yml dosyasını ucp/resources/custom-projectiles/ klasörüne
   kopyalayın, kopyayı düzenleyip burada seçin. Atlanan ayarlar değişmez; boş yol hiçbir değişiklik yapmaz. UCP zorunlu
   ve önerilen değer kuralları seçilen dosyanın tamamına uygulanır. Değişikliklerden sonra oyunu yeniden başlatın.
+  Yerel yeniden doldurma zamanlamasında turn_before_shot: false, elle seçilen hedeflere dönmeyi kapatır.'
