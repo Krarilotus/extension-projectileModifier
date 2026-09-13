@@ -4,3 +4,6 @@ config_help: Copiez vanilla-projectiles.yml depuis le ZIP du module dans ucp/res
   la copie et sélectionnez-la ici. Les réglages omis restent inchangés ; un chemin vide ne modifie rien. Les règles
   UCP de valeurs requises ou suggérées portent sur le fichier choisi dans son ensemble. Relancez le jeu après les
   modifications.
+tags.behavior: Comportement
+tags.textures: Textures
+tags.tools: Outils

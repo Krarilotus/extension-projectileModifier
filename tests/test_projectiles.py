@@ -502,6 +502,8 @@ class ConfigTests(unittest.TestCase):
     def test_every_gui_string_is_localized_and_categories_match_legacy(self):
         options=(ROOT/'options.yml').read_text(encoding='utf-8')
         keys=set(re.findall(r'\{\{([^}]+)\}\}',options))
+        definition=yaml.safe_load((ROOT/'definition.yml').read_text(encoding='utf-8'))
+        keys.update('tags.' + tag for tag in definition.get('tags', []))
         languages=yaml.safe_load((ROOT.parent/'UCP3-GUI/resources/lang/languages.yaml').read_text(encoding='utf-8'))
         self.assertEqual(set(languages),{p.stem for p in (ROOT/'locale').glob('*.yml')})
         for lang in languages:

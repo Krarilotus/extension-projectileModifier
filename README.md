@@ -12,6 +12,76 @@ the same source commit `d3a807cfee70308f707ea81ddb92ac8b1d375bd9`.
 The [native integration audit](https://github.com/Krarilotus/extension-projectileModifier/blob/1d1b291/NATIVE-AUDIT.md) records the remaining work;
 this branch does not replace the published 1.8.6 tester archive.
 
+## Quick configuration guide
+
+In VS Code, install the **YAML extension by Red Hat**. Keep
+`projectile-config.schema.json` beside your editable YAML and put this on its
+first line for completion, allowed values and validation:
+
+```yaml
+# yaml-language-server: $schema=./projectile-config.schema.json
+```
+
+Use the schema from the **same module build** as your configuration. The detailed
+field table below explains every supported setting; the schema also catches
+misspelled names and invalid types. Additional cross-field checks run at startup.
+
+**Automatic attack is per unit type**, under `units`, not a separate GUI category.
+The only GUI control is the file picker in **Customizations ? Balance Changes**.
+A setting under `Catapult` applies to all catapults (or AI-owned catapults only
+with `ai_only: true`), not one individually selected catapult.
+
+| What you want | What to edit |
+|---|---|
+| Change ordinary ammunition | `projectile`; omit `cow_projectile` to leave cows alone |
+| Change cow ammunition separately | `cow_projectile` and `cow_count` |
+| More shots in one volley | `count`; `spread` offsets additional simultaneous shots |
+| Longer time between volleys | `interval`, measured in simulation ticks, not milliseconds; game speed changes real elapsed time |
+| Fire only while standing | `interval_standing: 700`, `interval_moving: 0` |
+| A fallback rate for other stances | `interval`; moving/standing/docked overrides take precedence; zero on an override holds fire |
+| Automatically search for buildings | `targets: [buildings, units]`; first kind that finds a target wins; boulders alone do not enable building searches |
+| Search distance | `range` in tiles for the module's automatic search; this is not the native manual-order range override |
+| Exact aim | `inaccuracy: 0` and `spread: 0`; moving targets can still move before impact |
+| An eighth-tile aim-error radius | `inaccuracy: 1`; **8 native coordinate units = 1 tile**; use whole numbers |
+| Restrict changes to AI owners | `ai_only: true`; this controls whose settings change, not an autonomous-fire toggle |
+| Different behavior on walls | Put sparse overrides under `on_fortification` |
+| Fire near a decoration | Add an ordered `near_decorations` rule; see the GM1 example below |
+
+This complete example replaces catapult stones with three mangonel pebbles,
+leaves cow ammunition unchanged, and enables automatic building-then-unit
+searches while stationary:
+
+```yaml
+# yaml-language-server: $schema=./projectile-config.schema.json
+units:
+  Catapult:
+    projectile: mangonel_pebble
+    count: 3
+    interval_standing: 700
+    interval_moving: 0
+    targets: [buildings, units]
+    range: 30
+    inaccuracy: 0
+    spread: 0
+```
+
+Keep native animation synchronization enabled for siege engines. A short interval
+cannot skip native aiming/reload/firing frames; turning or missing crew may delay
+release. A human's explicit native attack order takes priority over automatic
+search priorities. `cluster` adds a density threshold for AI owners.
+
+**Build distinction:** the existing 1.8.6 tester uses omission or `{}` to leave
+settings alone. The follow-up development branch adds `native` for dynamic rules,
+`auto_targeting: false` to disable autonomous attacks per unit type while retaining
+human manual orders, and `strict_range`. Those fields require that follow-up
+build and its schema; they are not supported by the old downloadable 1.8.6 ZIP.
+Neither source merging nor committing the pending movement/aiming fixes publishes
+a tested release. See [VALIDATION.md](VALIDATION.md) for acceptance limits.
+
+Only `units`, `projectiles` and `decorations` belong at the top of a projectile
+file. Do not paste GitHub workflow keys (`name`, `on`) or UCP `config-sparse`
+wrappers into it. Use spaces for indentation and restart the game after edits.
+
 ## Installation and use
 
 Import `custom-projectiles-1.8.6.zip` into the launcher and enable the module and its dependencies. This unsigned local test candidate requires development module
