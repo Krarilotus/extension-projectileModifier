@@ -1,6 +1,7 @@
 -- Native-animation cadence: preserve native cycles and delay at safe poses.
 local M = {}
 local constants = require('constants')
+local configuration = require('configuration')
 local native_crews = constants.native_reload_crews
 
 -- Raw unit types, independent of the base/fortification profile selection.
@@ -9,17 +10,13 @@ M.attack_states = {[6]=10, [22]=6, [23]=6, [39]=4, [40]=4, [41]=4,
 M.start_states = {[6]=10, [22]=4, [23]=4, [39]=8, [40]=8, [41]=8,
     [61]=8, [70]=4, [72]=4, [74]=4, [76]=4, [77]=8}
 
+local function native_profile(profile)
+    return profile.interval and profile.sync_to_animation ~= false
+end
+
 local function enabled(config, name)
     if config == nil then return true end
-    local cfg = config.units[name] or {}
-    local wall = cfg.on_fortification or {}
-    for _, rule in ipairs(cfg.near_decorations or {}) do
-        for _, profile in ipairs({rule.ground, rule.fortified}) do
-            if profile.interval and profile.sync_to_animation ~= false then return true end
-        end
-    end
-    return (cfg.interval and cfg.sync_to_animation ~= false)
-        or (wall.interval and wall.sync_to_animation ~= false)
+    return configuration.any_profile(config.units[name] or {}, native_profile)
 end
 
 function M.required(config)

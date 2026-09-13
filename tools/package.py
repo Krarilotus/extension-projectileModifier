@@ -15,7 +15,7 @@ generate()  # Reject missing/stale localization before building.
 generate_vanilla()
 (ROOT/'projectile-config.schema.json').write_text(
     json.dumps(build_schema(), ensure_ascii=False, indent=2)+'\n', encoding='utf-8', newline='\n')
-files=['definition.yml','options.yml','init.lua','addresses.lua','constants.lua',
+files=['definition.yml','options.yml','init.lua','constants.lua',
        'templates.lua','cadence.lua','mounted.lua','hunter.lua','configuration.lua','state.lua','example-projectiles.yml',
        'sprite_resources.lua','sprite_runtime.lua',
        'decorations.lua','decoration_runtime.lua','decoration_ui.lua','ui/decorations.lua',

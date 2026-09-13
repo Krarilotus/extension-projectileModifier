@@ -1,4 +1,3 @@
-local addresses = require("addresses")
 local constants = require("constants")
 local templates = require("templates")
 local configuration = require('configuration')
@@ -9,16 +8,24 @@ local decorations = require('decorations')
 local namespace = {}
 
 local unit_names       = constants.unit_names
-local projectile_names = constants.projectile_names
 local MAX_TYPES        = constants.MAX_UNIT_TYPES
 local MAX_PROFILES     = MAX_TYPES * 2
-local MAX_UNITS        = addresses.max_units
+local MAX_UNITS
 
 local function resolve(native_cadence, config)
 local function locate(pattern)
-    local ok, address = pcall(core.scanForAOB, pattern, 0x400000, 0x700000)
+    local ok, address = pcall(core.AOBScan, pattern)
     assert(ok and type(address) == 'number' and address >= 0x400000 and address < 0x700000,
         '[custom-projectiles] unsupported executable or conflicting module at signature: ' .. pattern)
+    -- A still-valid cached site need not be the first match after another
+    -- module changes code. Check both sides without bypassing discovery/cache.
+    if address > 0x400000 then
+        local found, duplicate = pcall(core.scanForAOB, pattern, 0x400000, address)
+        -- RPS checks the upper bound after scanning a memory region, so the
+        -- result may be the selected site itself. Only an earlier hit conflicts.
+        assert(not found or type(duplicate) ~= 'number' or duplicate <= 0 or duplicate >= address,
+            '[custom-projectiles] ambiguous native signature: ' .. pattern)
+    end
     local found, duplicate = pcall(core.scanForAOB, pattern, address + 1, 0x700000)
     assert(not found or type(duplicate) ~= 'number' or duplicate <= 0,
         '[custom-projectiles] ambiguous native signature: ' .. pattern)
@@ -37,8 +44,17 @@ local acquire_target_addr = locate("83 EC 40 53 56 57 8B 7C 24 50 69 FF 90 04 00
 -- Native scatter is applied BEFORE the projectile dispatcher: one routine for
 -- ground aim, followed by a second height-dependent error stage. Override both
 -- only when accuracy is explicitly configured (including zero).
-local ground_aim_addr = locate("51 8B 44 24 08 8B 54 24 0C 69 C0 90 04 00 00 53 55 56 8D 34 08")
-local aim_error_addr = locate("0F B7 86 CE 06 00 00 0F B7 8E D6 06 00 00 66 3B C1")
+local function accuracy_profile(profile)
+    return profile.inaccuracy ~= nil or profile.inaccuracy_tiles ~= nil
+end
+local ground_aim_addr, aim_error_addr
+for _, cfg in pairs(config.units) do
+    if configuration.any_profile(cfg, accuracy_profile) then
+        ground_aim_addr = locate("51 8B 44 24 08 8B 54 24 0C 69 C0 90 04 00 00 53 55 56 8D 34 08")
+        aim_error_addr = locate("0F B7 86 CE 06 00 00 0F B7 8E D6 06 00 00 66 3B C1")
+        break
+    end
+end
 
 -- Inside UnitsState::updateUnits, reached once per tick for every living unit.
 local unit_tick_addr = locate("83 C2 01 89 16 8B 15 ? ? ? ? 69 D2 90 04 00 00 33 C9 66 89 8C 32 AE 09 00 00")
@@ -91,12 +107,30 @@ local AIC_STRIDE = constants.AIC_FIELD_COUNT * 4
 local aic_cow_addr = aic_array_base - AIC_STRIDE
                      + constants.AIC_COW_THROW_INTERVAL * 4
 
-local unit_array_base = addresses.unit_array_base_addr
-assert(core.readInteger(fire_projectile_addr + 0x23) - 0x3B0 == unit_array_base,
+-- The two native artillery dispatch paths read the same cow-mode field.
+-- Decode their operands; never choose a unit-array VA by executable family.
+assert(core.readSmallInteger(fire_projectile_addr + 0x20) % 65536 == 0x8366
+    and core.readByte(fire_projectile_addr + 0x22) == 0xB8
+    and core.readByte(fire_projectile_addr + 0x27) == 0
+    and core.readSmallInteger(fire_projectile_addr + 0x12A) % 65536 == 0x8366
+    and core.readByte(fire_projectile_addr + 0x12C) == 0xBF
+    and core.readByte(fire_projectile_addr + 0x131) == 0,
+    '[custom-projectiles] unit array does not match this executable')
+local unit_array_base = core.readInteger(fire_projectile_addr + 0x23) - 0x3B0
+assert(core.readInteger(fire_projectile_addr + 0x12D) - 0x3B0 == unit_array_base
+    and unit_array_base >= 0x700000 and unit_array_base % 4 == 0,
     '[custom-projectiles] unit array does not match this executable')
 local unit_state_this = unit_array_base - 0x614
 local current_unit_id_addr = core.readInteger(unit_tick_addr + 7)
-assert(core.readInteger(unit_tick_addr + 0x3A4) == MAX_UNITS,
+-- Verify the loop limit, cursor store and branch back to this update loop.
+assert(core.readSmallInteger(unit_tick_addr + 0x3A2) % 65536 == 0xFA81
+    and core.readSmallInteger(unit_tick_addr + 0x3A8) % 65536 == 0x1589
+    and core.readInteger(unit_tick_addr + 0x3AA) == current_unit_id_addr
+    and core.readSmallInteger(unit_tick_addr + 0x3AE) % 65536 == 0x8C0F
+    and unit_tick_addr + 0x3B4 + core.readInteger(unit_tick_addr + 0x3B0) == unit_tick_addr - 24,
+    '[custom-projectiles] unit array does not match this executable')
+local unit_capacity = core.readInteger(unit_tick_addr + 0x3A4)
+assert(unit_capacity == (data.version.isExtreme() and 10000 or 2500),
     '[custom-projectiles] unsupported unit-array capacity modification')
 return {locate=locate, fire=fire_projectile_addr, acquire=acquire_target_addr, tick=unit_tick_addr,
     animation=animation_addr, releaseCycles=release_cycles, catapultRest=catapult_rest, trebuchetRest=trebuchet_rest, horse=horse_addr,
@@ -105,7 +139,7 @@ return {locate=locate, fire=fire_projectile_addr, acquire=acquire_target_addr, t
     rows=tile_rows_addr, flags=tile_flags_addr, terrain=terrain_height_addr,
     teams=team_table_addr, buildings=building_base_addr, aic=aic_array_base,
     playerAic=player_aic_addr, cow=aic_cow_addr, units=unit_array_base,
-    this=unit_state_this, current=current_unit_id_addr}
+    this=unit_state_this, current=current_unit_id_addr, capacity=unit_capacity}
 end
 
 -- Private tables, non-overlapping scratch and persistent per-unit firing state.
@@ -199,24 +233,9 @@ local persistent
 local release_cycles
 local variant_by_id = {}
 
-local function unit_type_id(name)
-    local index = table.find(unit_names, name)
-    if index == nil then
-        log(WARNING, "[custom-projectiles] unknown unit name: " .. tostring(name))
-    end
-    return index
-end
-
 local function projectile_id(value)
-    if type(value) == "number" then
-        if variant_by_id[value] then return variant_by_id[value].base end
-        return math.floor(value)
-    end
-    local id = projectile_names[value]
-    if id == nil then
-        log(WARNING, "[custom-projectiles] unknown projectile name: " .. tostring(value))
-    end
-    return id
+    -- Validation has resolved names; custom IDs retain their native base type.
+    return variant_by_id[value] and variant_by_id[value].base or value
 end
 
 local function set_entry(table_offset, type_id, value)
@@ -226,21 +245,9 @@ end
 -- Writes the four target-kind slots for one unit type. Order is priority order:
 -- the first kind that finds something wins, the rest are not consulted.
 local function set_targets(type_id, list)
-    if type(list) == "string" then list = { list } end
-    local slot = 0
-    for _, name in ipairs(list) do
-        local kind = constants.target_kinds[name]
-        if kind == nil then
-            log(WARNING, "[custom-projectiles] unknown target kind: " .. tostring(name))
-        elseif slot >= 4 then
-            log(WARNING, "[custom-projectiles] more than four target kinds listed, ignoring " .. tostring(name))
-        else
-            core.writeByte(data_addr + OFF_ORDER + 4 * type_id + slot, kind)
-            slot = slot + 1
-        end
-    end
-    for i = slot, 3 do
-        core.writeByte(data_addr + OFF_ORDER + 4 * type_id + i, 0)
+    for slot = 1, 4 do
+        core.writeByte(data_addr + OFF_ORDER + 4 * type_id + slot - 1,
+            constants.target_kinds[list[slot]] or 0)
     end
 end
 
@@ -273,10 +280,11 @@ local function install(config)
     local has_decorations = next(config.decorations or {}) ~= nil
     local profile_count = MAX_TYPES * 2
     for _, cfg in pairs(config.units) do profile_count = profile_count + 2 * #(cfg.near_decorations or {}) end
+    local native = resolve(cadence.required(config), config)
+    MAX_UNITS = native.capacity
     layout(profile_count)
     local resources = sprites.prepare(config.projectiles or {}, config.decorations)
     for _, spec in pairs(config.projectiles or {}) do variant_by_id[spec.id] = spec end
-    local native = resolve(cadence.required(config), config)
     local native_decorations = has_decorations and decorations.resolve(native.locate)
     release_cycles = native.releaseCycles or {}
     local fire_projectile_addr, acquire_target_addr, unit_tick_addr = native.fire, native.acquire, native.tick
@@ -482,11 +490,11 @@ local function install(config)
             apply_unit(name, config.units[name])
             local rules = config.units[name].near_decorations or {}
             if config.units[name].on_fortification or #rules > 0 then
-                local id = unit_type_id(name)
+                local id = configuration.units[name]
                 apply_unit(name, config.units[name].on_fortification or config.units[name], id + MAX_TYPES)
                 core.writeInteger(data_addr + OFF_FORTIFIED + id * 4, 1)
             end
-            local id = unit_type_id(name)
+            local id = configuration.units[name]
             for _, rule in ipairs(rules) do
                 apply_unit(name, rule.ground, next_profile)
                 apply_unit(name, rule.fortified, next_profile + 1)
@@ -522,7 +530,9 @@ local function install(config)
     values.CHECKATTACHED = assemble_blob(templates.attach_code, values)
     values.ISBOARDED = assemble_blob(templates.board_code, values)
     values.ISAIOWNED = assemble_blob(templates.aiowned_code, values)
-    values.ACCURACYSET = assemble_blob(templates.accuracy_set_code, values)
+    if native.groundAim then
+        values.ACCURACYSET = assemble_blob(templates.accuracy_set_code, values)
+    end
     values.WANTSCOW = assemble_blob(templates.aicow_code, values)
     values.CHOOSEAMMO = assemble_blob(templates.ammo_code, values)
     values.SYNCREADY = assemble_blob(templates.sync_code, values)
@@ -550,10 +560,13 @@ local function install(config)
     values.RESUME = unit_tick_addr + 5
     local tick_hook = assemble_blob(templates.tick_hook_code, values)
 
-    values.RESUME = native.groundAim + 5
-    local ground_hook = assemble_blob(templates.ground_aim_hook_code, values)
-    values.RESUME = native.aimError + 7
-    local accuracy_hook = assemble_blob(templates.aim_error_hook_code, values)
+    local ground_hook, accuracy_hook
+    if native.groundAim then
+        values.RESUME = native.groundAim + 5
+        ground_hook = assemble_blob(templates.ground_aim_hook_code, values)
+        values.RESUME = native.aimError + 7
+        accuracy_hook = assemble_blob(templates.aim_error_hook_code, values)
+    end
     local animation_hook
     if native.animation then
         values.RESUME = native.animation + 18
@@ -641,12 +654,14 @@ local function install(config)
     core.writeCode(unit_tick_addr, {
         0xE9, core.itob(core.getRelativeAddress(unit_tick_addr, tick_hook, -5))
     })
-    core.writeCode(native.groundAim, {
-        0xE9, core.itob(core.getRelativeAddress(native.groundAim, ground_hook, -5))
-    })
-    core.writeCode(native.aimError, {
-        0xE9, core.itob(core.getRelativeAddress(native.aimError, accuracy_hook, -5)), 0x90, 0x90
-    })
+    if native.groundAim then
+        core.writeCode(native.groundAim, {
+            0xE9, core.itob(core.getRelativeAddress(native.groundAim, ground_hook, -5))
+        })
+        core.writeCode(native.aimError, {
+            0xE9, core.itob(core.getRelativeAddress(native.aimError, accuracy_hook, -5)), 0x90, 0x90
+        })
+    end
     if native.animation then
         local animation_site = native.animation + 11
         core.writeCode(animation_site, {
@@ -675,48 +690,19 @@ local function install(config)
         building_base_addr, aic_array_base, data_addr, volley_addr))
 end
 
--- Every key this module understands. Anything else in a unit entry is a typo,
--- and silently ignoring it makes for a long evening.
-local KNOWN_KEYS = {
-    projectile = true, count = true, cow_projectile = true, cow_count = true, on_fortification = true, near_decorations = true, spread = true,
-    interval = true, interval_moving = true, interval_standing = true,
-    suppress_default = true, targets = true, range = true,
-    wall_min_distance = true, require_manned = true,
-    random_targets = true, shoot_height = true,
-    stagger_min = true, stagger_max = true,
-    density_min = true, density_radius = true,
-    attached_interval = true, attached_ignore_crew = true,
-    attached_stop_when_boarded = true, attached_board_radius = true,
-    ai_cow_vs_units = true,
-    inaccuracy = true, inaccuracy_tiles = true, spread_tiles = true,
-    ai_only = true,
-    preload = true, preload_poll = true,
-    sync_to_animation = true, sync_max_wait = true,
-}
-
+-- Only configuration.validate's normalized effective profiles reach this writer.
 apply_unit = function(name, cfg, profile)
-    local id = profile or unit_type_id(name)
-    if id == nil then return end
-
-    for key, _ in pairs(cfg) do
-        if not KNOWN_KEYS[key] then
-            log(WARNING, string.format(
-                "[custom-projectiles] '%s': unknown setting '%s' (check for a comma where a colon belongs)",
-                name, tostring(key)))
-        end
-    end
+    local id = profile or configuration.units[name]
 
     if cfg["projectile"] ~= nil then
         local pid = projectile_id(cfg["projectile"])
-        if pid ~= nil then
-            set_entry(OFF_REMAP, id, pid)
-            set_entry(OFF_FORCED, id, pid)
-            if variant_by_id[cfg.projectile] then set_entry(OFF_SPRITE,id,cfg.projectile-256) end
-        end
+        set_entry(OFF_REMAP, id, pid)
+        set_entry(OFF_FORCED, id, pid)
+        if variant_by_id[cfg.projectile] then set_entry(OFF_SPRITE,id,cfg.projectile-256) end
     end
 
     if cfg["count"] ~= nil then
-        set_entry(OFF_COUNT, id, math.max(1, math.floor(cfg["count"])))
+        set_entry(OFF_COUNT, id, cfg["count"])
     end
     if cfg.cow_projectile ~= nil then
         set_entry(OFF_COWREMAP, id, projectile_id(cfg.cow_projectile))
@@ -725,37 +711,33 @@ apply_unit = function(name, cfg, profile)
     if cfg.cow_count ~= nil then set_entry(OFF_COWCOUNT, id, cfg.cow_count) end
 
     if cfg["spread"] ~= nil then
-        set_entry(OFF_SPREAD, id, math.max(0, math.floor(cfg["spread"])))
+        set_entry(OFF_SPREAD, id, cfg["spread"])
     end
 
     -- Same two values in tiles, since that is how everything else is measured.
     if cfg["spread_tiles"] ~= nil then
-        set_entry(OFF_SPREAD, id, math.max(0, math.floor(cfg["spread_tiles"] * 8)))
+        set_entry(OFF_SPREAD, id, cfg["spread_tiles"] * 8)
     end
 
     if cfg["interval"] ~= nil then
-        local native_cycle = release_cycles[unit_type_id(name)]
+        local native_cycle = release_cycles[configuration.units[name]]
         if native_cycle and cfg.sync_to_animation ~= false then
             set_entry(OFF_NATIVECYCLE, id, native_cycle)
         end
-        local interval = math.max(1, math.floor(cfg["interval"]))
+        local interval = cfg["interval"]
         set_entry(OFF_INTERVAL, id, interval)
         -- Both states inherit it until told otherwise.
         set_entry(OFF_IMOVE, id, interval)
         set_entry(OFF_ISTAND, id, interval)
-        -- A forced shooter needs something to throw; default to an arrow.
-        if cfg["projectile"] == nil then
-            set_entry(OFF_FORCED, id, projectile_names.arrow)
-        end
     end
 
     -- These override `interval` for one state only. 0 means "hold fire".
     if cfg["interval_moving"] ~= nil then
-        set_entry(OFF_IMOVE, id, math.max(0, math.floor(cfg["interval_moving"])))
+        set_entry(OFF_IMOVE, id, cfg["interval_moving"])
     end
 
     if cfg["interval_standing"] ~= nil then
-        set_entry(OFF_ISTAND, id, math.max(0, math.floor(cfg["interval_standing"])))
+        set_entry(OFF_ISTAND, id, cfg["interval_standing"])
     end
 
     if cfg["targets"] ~= nil then
@@ -763,17 +745,17 @@ apply_unit = function(name, cfg, profile)
     end
 
     if cfg["range"] ~= nil then
-        set_entry(OFF_RANGE, id, math.max(1, math.floor(cfg["range"])))
+        set_entry(OFF_RANGE, id, cfg["range"])
     end
 
     if cfg["wall_min_distance"] ~= nil then
-        set_entry(OFF_WALLMIN, id, math.max(0, math.floor(cfg["wall_min_distance"])))
+        set_entry(OFF_WALLMIN, id, cfg["wall_min_distance"])
     end
 
     -- Behaviour once a siege tower has fixed itself to a wall and turned into
     -- the structure soldiers climb.
     if cfg["attached_interval"] ~= nil then
-        set_entry(OFF_ATTINT, id, math.max(0, math.floor(cfg["attached_interval"])))
+        set_entry(OFF_ATTINT, id, cfg["attached_interval"])
     end
 
     if cfg["attached_ignore_crew"] ~= nil then
@@ -785,15 +767,10 @@ apply_unit = function(name, cfg, profile)
     end
 
     if cfg["attached_board_radius"] ~= nil then
-        local r = math.max(0, math.floor(cfg["attached_board_radius"]))
+        local r = cfg["attached_board_radius"]
         set_entry(OFF_ATTBR2, id, r * r)
     end
 
-    -- An AI lord whose character file permits cows sends one instead of a rock
-    -- when the shot is aimed at troops.
-    -- Keep the weapon loaded while idle and check often, so the shot goes off
-    -- as soon as something walks into range.
-    -- Aiming error applied to every projectile, including the first.
     -- Restrict everything this module does for the unit type to AI-owned units.
     if cfg["ai_only"] ~= nil then
         set_entry(OFF_AIONLY, id, cfg["ai_only"] == true and 1 or 0)
@@ -801,12 +778,12 @@ apply_unit = function(name, cfg, profile)
 
     if cfg["inaccuracy"] ~= nil then
         set_entry(OFF_INACCSET, id, 1)
-        set_entry(OFF_INACC, id, math.max(0, math.floor(cfg["inaccuracy"])))
+        set_entry(OFF_INACC, id, cfg["inaccuracy"])
     end
 
     if cfg["inaccuracy_tiles"] ~= nil then
         set_entry(OFF_INACCSET, id, 1)
-        set_entry(OFF_INACC, id, math.max(0, math.floor(cfg["inaccuracy_tiles"] * 8)))
+        set_entry(OFF_INACC, id, cfg["inaccuracy_tiles"] * 8)
     end
 
     if cfg["preload"] ~= nil then
@@ -814,7 +791,7 @@ apply_unit = function(name, cfg, profile)
     end
 
     if cfg["preload_poll"] ~= nil then
-        set_entry(OFF_PRELPOLL, id, math.max(1, math.floor(cfg["preload_poll"])))
+        set_entry(OFF_PRELPOLL, id, cfg["preload_poll"])
     end
 
     if cfg["sync_to_animation"] ~= nil then
@@ -822,7 +799,7 @@ apply_unit = function(name, cfg, profile)
     end
 
     if cfg["sync_max_wait"] ~= nil then
-        set_entry(OFF_SYNCMAX, id, math.max(1, math.floor(cfg["sync_max_wait"])))
+        set_entry(OFF_SYNCMAX, id, cfg["sync_max_wait"])
     end
 
     if cfg["ai_cow_vs_units"] ~= nil then
@@ -830,21 +807,21 @@ apply_unit = function(name, cfg, profile)
     end
 
     if cfg["density_min"] ~= nil then
-        set_entry(OFF_DMIN, id, math.max(1, math.floor(cfg["density_min"])))
+        set_entry(OFF_DMIN, id, cfg["density_min"])
     end
 
     if cfg["density_radius"] ~= nil then
-        set_entry(OFF_DRAD, id, math.max(1, math.floor(cfg["density_radius"])))
+        set_entry(OFF_DRAD, id, cfg["density_radius"])
     end
 
     -- Staggering: stagger_max > 0 spreads a volley out instead of releasing it
     -- in one tick. The wait before each projectile is rolled per shot.
     if cfg["stagger_min"] ~= nil then
-        set_entry(OFF_STAGMIN, id, math.max(0, math.floor(cfg["stagger_min"])))
+        set_entry(OFF_STAGMIN, id, cfg["stagger_min"])
     end
 
     if cfg["stagger_max"] ~= nil then
-        local hi = math.max(0, math.floor(cfg["stagger_max"]))
+        local hi = cfg["stagger_max"]
         set_entry(OFF_STAGMAX, id, hi)
         -- A max on its own still needs a sane floor.
         if cfg["stagger_min"] == nil and hi > 0 then
@@ -853,18 +830,15 @@ apply_unit = function(name, cfg, profile)
     end
 
     if cfg["random_targets"] ~= nil then
-        local on = cfg["random_targets"]
-        set_entry(OFF_MULTI, id, (on == true or on == 1 or on == "true") and 1 or 0)
+        set_entry(OFF_MULTI, id, cfg["random_targets"] and 1 or 0)
     end
 
     if cfg["shoot_height"] ~= nil then
-        set_entry(OFF_HEIGHT, id, math.max(0, math.floor(cfg["shoot_height"])))
+        set_entry(OFF_HEIGHT, id, cfg["shoot_height"])
     end
 
     if cfg["require_manned"] ~= nil then
-        local crew = cfg["require_manned"]
-        if crew == true then crew = 1 elseif crew == false then crew = 0 end
-        set_entry(OFF_MANNED, id, math.max(0, math.floor(crew)))
+        set_entry(OFF_MANNED, id, cfg["require_manned"])
     end
 
     if cfg["suppress_default"] == true then
