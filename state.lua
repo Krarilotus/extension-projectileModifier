@@ -11,6 +11,9 @@ local function canonical(value)
 end
 function M.new(blocks, config, profile_count, rebuild)
     local state = {blocks=blocks, config=canonical(config)}
+    local limits = {cooldown=60000, movement=20, pending=63, ['pending-cooldown']=60000, ['sync-wait']=60000, profile=(profile_count or 160)-1,
+        ['weapon-cycle']=40, ['weapon-tick']=1, ['weapon-phase']=6,
+        ['entity-variant']=33, ['entity-type']=255, ['decoration-variant']=33}
     function state:initialize()
         for _, block in ipairs(self.blocks) do
             if not block[4] then core.setMemory(block[2], 0, block[3]) end
@@ -25,9 +28,12 @@ function M.new(blocks, config, profile_count, rebuild)
             handle:put(block[1] .. '.bin', core.readString(block[2], block[3]))
         end
     end
-    function state:deserialize(handle)
-        if not handle:exists('format') then self:initialize(); return end
-        assert(handle:get('format') == '5', '[custom-projectiles] unsupported saved state format; start a new match with this version')
+    -- Map Extensions calls this before restoring any extension. Direct restores
+    -- use the same validator; no pending state is retained between callbacks.
+    function state:validate(handle)
+        local present = handle:exists('format')
+        if not present and not handle.required then return end
+        assert(present and handle:get('format') == '5', '[custom-projectiles] unsupported saved state format; start a new match with this version')
         assert(handle:get('config') == self.config, '[custom-projectiles] saved projectile settings differ; restore the settings used for this save')
         local pending = {}
         for i, block in ipairs(self.blocks) do
@@ -39,9 +45,6 @@ function M.new(blocks, config, profile_count, rebuild)
                 assert(bytes==core.readString(block[2],block[3]),
                     '[custom-projectiles] saved graphics-slot layout differs; restore the same extensions and sprite configuration')
             end
-            local limits = {cooldown=60000, movement=20, pending=63, ['pending-cooldown']=60000, ['sync-wait']=60000, profile=(profile_count or 160)-1,
-                ['weapon-cycle']=40, ['weapon-tick']=1, ['weapon-phase']=6,
-                ['entity-variant']=33, ['entity-type']=255, ['decoration-variant']=33}
             if limits[block[1]] then
                 for offset = 1, #bytes, 4 do
                     local a,b,c,d = bytes:byte(offset, offset+3)
@@ -51,6 +54,11 @@ function M.new(blocks, config, profile_count, rebuild)
             end
             pending[i] = bytes
         end
+        return pending
+    end
+    function state:deserialize(handle)
+        local pending = self:validate(handle)
+        if not pending then self:initialize(); return end
         for i, block in ipairs(self.blocks) do
             local bytes = {}
             for j = 1, #pending[i] do bytes[j] = pending[i]:byte(j) end

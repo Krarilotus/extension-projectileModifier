@@ -146,6 +146,67 @@ boundary observation, required registration and actual acceptance. Coordination
 is in [existing issue 47](https://github.com/Corax34/ucp_recorder/issues/47#issuecomment-5646119542).
 Those owner branches were not modified.
 
+## Save validation consumer correction
+
+Related to projectile issue #6. `state.lua` validated only in `deserialize`.
+Map Extensions PR3 at `04449b7f7b38dccf52e376a5fe62cc230fa5f596` already calls
+every section's optional `validate` callback before its first extension restore.
+The consumer now exposes its existing validator at that boundary, and direct
+deserialization calls the same function. No validation cache, alternate save
+dispatcher, native hook, serializer or per-tick work is added. The fixed field
+limits are constructed once per state provider instead of once per saved block.
+
+The real `mapextensions.callbacks.afterReadSav`, `required.validate` and handle
+implementations reproduced an earlier section being restored before invalid
+projectile state failed. With this correction, invalid format/configuration,
+length, field range, graphics layout and a missing final block all fail before
+that restore. Only ZIP/native I/O is substituted in this test; it is not a live
+game load. Four focused tests pass in 10.123 seconds, including read-only
+validation and byte-identical format-5 round trips for normal and Extreme layouts.
+Six existing continuation tests pass in 22.573 seconds: stagger/scatter RNG,
+atomic malformed restore, trebuchet reload/crew wait, native custom-sprite flight
+and identity, and decoration/fortification restoration.
+
+Old saves without a required manifest retain the existing missing-section
+initialization behavior. A read handle marked required cannot silently initialize
+if its format is absent. No new diagnostics, config fields or GUI controls are
+introduced. Map Extensions 1.0.0 still ignores this additional callback; global
+preflight requires the existing owner PR to land. Source required-provider
+registration, package identity, boundary observation and live multiplayer/replay
+acceptance remain unfinished. The internal package contains 47 files/100861
+bytes, 132 bytes above the config-owner parent; no archive was uploaded.
+
+Live normal Crusader acceptance subsequently passed at `a938089`, with Map
+Extensions `04449b7` Lua files and the existing 1.0.0 `luamemzip.dll` (unchanged
+native ABI, SHA256 `a4dfd1beb49b09f8e2c52ad680101bd8843c9c008988268610442b7b85e1cc7c`).
+The game loaded existing `w.sav`, wrote a separate `v.sav`, and reloaded it through
+the native menu. Every saved custom ZIP entry matches the read-back entry byte for
+byte. The manifest has `providers: []`, as expected: this is optional-section
+preflight acceptance, not required-provider enrollment.
+
+The 30.010-second post-reload trace contains 280 samples. Catapult 121 retained
+wall order 23; stones 12 -> 11 -> 10 coincided with three-pebble volleys at clocks
+37667 and 38368. All six kind-4 projectiles moved through 11-18 sampled positions
+and disappeared before the trace ended. Its lowered reload pause remained phase
+2/cycle 12. Normal exit succeeded, error log contained only its header, and the
+desktop was released at 16:02:57 CEST. Exact pre-test config/module bytes were
+restored and the temporary Map Extensions package removed from the test install.
+[Trace summary](tests/evidence/native-save-a938089.json) and
+[native screenshot](tests/evidence/native-save-a938089.png) retain the evidence.
+This does not cover native Extreme, changed-target rotation, damage attribution,
+multiplayer or recorder replay.
+
+Further inspected identity ownership: framework `extensions/loader.lua` and
+`environment.lua` load module files; native `ModuleHandleManager::verifyZipFile`
+hashes secure ZIPs, but does not expose that identity to consumers and skips this
+verification path in developer mode. `ExtensionHandle` owns file enumeration and
+access. AIC's `package-identity.lua` currently verifies its own generated file list;
+copying that implementation would add another private package verifier here.
+Required capture needs a content identity supplied through the loader/resource
+owner before claiming that integration complete. This is a distinct prerequisite
+from the read-only validation correction; no fingerprint or compatibility lock
+has been fabricated in this module.
+
 ## Completion gates
 
 No normal merge or final completion is claimed while avoidable scan/ownership
