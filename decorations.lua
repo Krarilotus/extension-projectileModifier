@@ -107,7 +107,9 @@ function M.resolve(locate)
     local near=locate('53 55 56 57 8B D9 BF 01 00 00 00 39 7B 04 7E 62')
     local click=locate('6A 45 B9 ? ? ? ? 89 2D ? ? ? ? 89 3D ? ? ? ? E8 ? ? ? ? 5E 5F 5D 5B 83 C4 08 C3')
     local queue=(click+24+core.readInteger(click+20))%4294967296
-    check(core.readInteger(queue)==0xF18B5653 and core.readSmallInteger(queue+4)==0x868B,
+    -- UCP returns signed int/short values; compare opcode bit patterns modulo
+    -- their width so signatures containing high bits work in the live runtime.
+    check(core.readInteger(queue)%4294967296==0xF18B5653 and core.readSmallInteger(queue+4)%65536==0x868B,
         'unsupported native command queue')
     check(core.readByte(near+0x27)==0x66 and core.readByte(near+0x2C)==0x37,
         'unsupported native proximity loop')

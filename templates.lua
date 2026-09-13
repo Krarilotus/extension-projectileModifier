@@ -556,10 +556,12 @@ h_checkcow:
 h_regular:
     cmp dword [NATIVECYCLET+eax*4], 0
     je h_unscheduled
+    lea ecx, [ebp+0x24]           ; original native dispatch arguments
+    push ecx
     push eax
     push dword [ebp+0x24]
     call NATIVERELEASE
-    add esp, 8
+    add esp, 12
     jmp h_block
 h_unscheduled:
     cmp dword [SUPPRESST+eax*4], 0
@@ -637,6 +639,44 @@ h_pass:
     jmp RESUME
 ]],
 
+-- A human's explicit native attack takes precedence over automatic search.
+manual_order_code = [[
+manualOrder:
+    push ebx
+    push dword [esp+8]
+    call ISAIOWNED
+    add esp, 4
+    test eax, eax
+    jnz mo_no
+    mov ebx, [esp+8]
+    imul ebx, ebx, 0x490
+    add ebx, UNITARRAY
+    movzx eax, word [ebx+0x8E]
+    cmp dword [NATIVESTARTT+eax*4], 0
+    je mo_no
+    movzx eax, word [ebx+0x39C]
+    cmp eax, 4
+    je mo_yes
+    cmp eax, 5
+    je mo_yes
+    cmp eax, 9
+    je mo_yes
+    cmp eax, 22
+    je mo_yes
+    cmp eax, 23
+    je mo_yes
+    cmp eax, 34                 ; native structure/entity order
+    jne mo_no
+mo_yes:
+    mov eax, 1
+    pop ebx
+    ret
+mo_no:
+    xor eax, eax
+    pop ebx
+    ret
+]],
+
 -- Target picking for forced shooters.
 --   pickTarget(unitID, unitType) -> eax = 1 when a target was set, 0 otherwise
 -- Saves the unit's own targeting fields first; restoreTarget puts them back so
@@ -653,28 +693,7 @@ pickTarget:
     add eax, UNITARRAY
     mov [S_UNITPTR], eax
     mov esi, eax
-    movzx ecx, word [esi+0x39C]
-    mov [S_SAVE0], ecx
-    movzx ecx, word [esi+0x336]
-    mov [S_SAVE1], ecx
-    movzx ecx, word [esi+0x39E]
-    mov [S_SAVE2], ecx
-    mov ecx, [esi+0x3A0]
-    mov [S_SAVE3], ecx
-    movzx ecx, word [esi+0x3E8]
-    mov [S_SAVE4], ecx
-    movzx ecx, word [esi+0x3EA]
-    mov [S_SAVE5], ecx
-    movzx ecx, word [esi+0x344]
-    mov [S_SAVE6], ecx
-    mov ecx, [esi+0xA0]
-    mov [S_SAVE7], ecx
-    mov ecx, [esi+0xBE]
-    mov [S_SAVEXY], ecx
-    movzx ecx, word [esi+0xC2]
-    mov [S_SAVEZ], ecx
-    mov ecx, [esi+0x3A8]
-    mov [S_SAVETILE], ecx
+    call pk_saveorder
     mov ecx, [ebp+0x08]
     mov [S_SELF], ecx
     mov dword [S_NCAND], 0
@@ -700,6 +719,39 @@ pk_teamok:
     mov eax, ecx
     imul eax, ecx
     mov [S_WMIN2], eax
+    ; Automatic policies must not replace a human's explicit attack order.
+    push dword [ebp+0x08]
+    call MANUALORDER
+    add esp, 4
+    test eax, eax
+    jz pk_policy
+pk_nativeorder:
+    push dword [ebp+0x08]
+    mov ecx, UNITSTATE
+    call ACQUIRE                ; native validity, range and target prediction
+    mov esi, [S_UNITPTR]
+    call pk_saveorder           ; keep native cleanup of stale/reused orders
+    test eax, eax
+    jz pk_fail                  ; native acquisition must accept the order
+    ; Native building/ground acquisition assumes its caller checked range.
+    ; Our scheduled path must still obey the configured range for those orders.
+    mov esi, [S_UNITPTR]
+    movsx eax, word [esi+0xBE]
+    movsx ecx, word [esi+0xB6]
+    sub eax, ecx
+    imul eax, eax
+    movsx ecx, word [esi+0xC0]
+    movsx edx, word [esi+0xB8]
+    sub ecx, edx
+    imul ecx, ecx
+    add eax, ecx
+    mov ecx, [S_R2]
+    shl ecx, 6                 ; squared tiles -> squared native eighth-tiles
+    cmp eax, ecx
+    ja pk_fail
+    mov eax, 2                 ; keep the chosen target; no random-target scan
+    jmp pk_out
+pk_policy:
     mov ebx, edx
     shl ebx, 2
     add ebx, ORDERT
@@ -732,6 +784,11 @@ pk_next:
     mov word [esi+0x39C], 9
     jmp pk_ok
 pk_cluster:
+    push dword [ebp+0x08]
+    call ISAIOWNED
+    add esp, 4
+    test eax, eax
+    jz pk_units                ; humans without an order use ordinary unit aim
     mov edx, [ebp+0x0C]
     mov ecx, [DRADT+edx*4]
     mov eax, ecx
@@ -788,6 +845,31 @@ pk_out:
     pop esi
     pop ebx
     pop ebp
+    ret
+
+pk_saveorder:
+    movzx ecx, word [esi+0x39C]
+    mov [S_SAVE0], ecx
+    movzx ecx, word [esi+0x336]
+    mov [S_SAVE1], ecx
+    movzx ecx, word [esi+0x39E]
+    mov [S_SAVE2], ecx
+    mov ecx, [esi+0x3A0]
+    mov [S_SAVE3], ecx
+    movzx ecx, word [esi+0x3E8]
+    mov [S_SAVE4], ecx
+    movzx ecx, word [esi+0x3EA]
+    mov [S_SAVE5], ecx
+    movzx ecx, word [esi+0x344]
+    mov [S_SAVE6], ecx
+    mov ecx, [esi+0xA0]
+    mov [S_SAVE7], ecx
+    mov ecx, [esi+0xBE]
+    mov [S_SAVEXY], ecx
+    movzx ecx, word [esi+0xC2]
+    mov [S_SAVEZ], ecx
+    mov ecx, [esi+0x3A8]
+    mov [S_SAVETILE], ecx
     ret
 
 ]],
@@ -1343,7 +1425,10 @@ t_identityok:
 automatic_code = [[
 automaticVolley:
     pushad
+    mov ebp, esp
     mov dword [S_FIRED], 0
+    cmp dword [ebp+36], 0       ; accepted native dispatch, or zero for a search
+    jne t_nativeaim
 
 t_try:
     cmp dword [NATIVECYCLET+edx*4], 0
@@ -1387,6 +1472,14 @@ t_notboarded:
     call ACQUIRE
     test eax, eax
     jz t_failed
+    jmp t_shoot
+t_nativeaim:
+    mov esi, [ebp+36]
+    mov eax, [esi]
+    imul eax, eax, 0x490
+    add eax, UNITARRAY
+    mov [S_UNITPTR], eax
+    mov dword [S_MODE], 3       ; keep the native shot's exact coordinates
 t_shoot:
     mov dword [S_EXPLICIT], 1
     mov eax, [S_ID]
@@ -1418,6 +1511,14 @@ t_cntok:
     mov ecx, 1                    ; staggering: one now, the rest queued below
 t_count:
     push ecx
+    mov ecx, [ebp+36]
+    test ecx, ecx
+    jz t_acquiredcoords
+    push dword [ecx+16]
+    push dword [ecx+12]
+    push dword [ecx+8]
+    jmp t_projectile
+t_acquiredcoords:
     movsx ecx, word [esi+0xC2]
     add ecx, 30
     push ecx
@@ -1425,6 +1526,7 @@ t_count:
     push ecx
     movsx ecx, word [esi+0xBE]
     push ecx
+t_projectile:
     push dword [S_PROJ]
     mov eax, [S_ID]
     push eax
@@ -1459,6 +1561,8 @@ t_pendingfired:
     call SETSTAGGER
     add esp, 8
 t_afterqueue:
+    cmp dword [ebp+36], 0
+    jne t_reset                 ; native aim/order was never replaced
     call RESTORETARGET
     jmp t_reset
 t_failed:
@@ -1636,7 +1740,36 @@ t_maincd:
     jg t_done
     mov dword [S_ONESHOT], 0
 t_try:
+    cmp dword [S_ONESHOT], 0
+    je t_search
+    cmp dword [NATIVECYCLET+edx*4], 0
+    je t_search
+    push eax
+    call MANUALORDER
+    add esp, 4
+    test eax, eax
+    jz t_search
+    ; Finish the accepted native volley, even if its stone was the last one.
+    ; The game retains the dispatch aim on the unit, including in native saves.
+    mov eax, [S_ID]
+    imul ecx, eax, 0x490
+    add ecx, UNITARRAY
+    movsx ebx, word [ecx+0xC2]
+    push ebx
+    movsx ebx, word [ecx+0xC0]
+    push ebx
+    movsx ebx, word [ecx+0xBE]
+    push ebx
+    push 0
+    push eax
+    push esp
     call AUTOVOLLEY
+    add esp, 24
+    jmp t_done
+t_search:
+    push 0
+    call AUTOVOLLEY
+    add esp, 4
     jmp t_done
 
 t_done:

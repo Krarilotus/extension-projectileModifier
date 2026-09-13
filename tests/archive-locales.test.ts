@@ -67,7 +67,9 @@ for(const lang of languages) {
       expect(await legacyHandle.doesEntryExist('locale/')).toBe(true);
       const locales=await readLocales(handle,definition.name,languages);
       expect(Object.keys(locales).sort()).toEqual([...languages].sort());
-      expect(Object.keys(locales[lang])).toHaveLength(3);
+      expect(Object.keys(locales[lang]).sort()).toEqual(
+        ['balance_changes','config_file','config_help',...definition.tags.map((tag:string)=>'tags.'+tag)].sort());
+      for(const tag of definition.tags) expect(locales[lang]['tags.'+tag].trim()).not.toBe('');
       const ui=(await readUISpec(handle)).options;
       const localized=applyLocale({ui} as any,locales[lang]);
       expect(JSON.stringify(localized)).not.toContain('{{');

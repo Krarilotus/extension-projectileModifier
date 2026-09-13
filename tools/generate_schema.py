@@ -20,6 +20,9 @@ def build_schema():
     target = dict(type='string', enum=sorted(constants.target_kinds.keys()))
     fields['targets'] = dict(oneOf=[target, dict(type='array', items=target,
                                                minItems=1, maxItems=4, uniqueItems=True)])
+    fields['targets']['description'] = 'Automatic search priorities. Cluster density applies only to AI owners. Human native shooters retain their current unit/building/ground/wall attack order within range; humans without an order treat cluster as units.'
+    fields['density_min']['description'] = 'Minimum enemy count for AI cluster targeting; human attack orders are not restricted by this threshold.'
+    fields['density_radius']['description'] = 'Radius in tiles for counting nearby enemies in an AI cluster.'
     fields['stagger_min']['description'] = 'Requires stagger_max; must not exceed it when staggering is enabled. Checked by the game loader.'
     fields['interval']['description'] = 'Optional fallback automatic-fire interval in simulation ticks. Applies only where no state interval overrides it.'
     fields['sync_to_animation']['description'] = 'Defaults to native firing-frame timing for catapult, trebuchet, mangonel, both ballistas, European/Arabian archers, horse archers, crossbowmen, slingers, firethrowers and hunters. Reload while waiting; never truncate the animation. Horse archers keep an independent bow clock while moving. Configured hunter shots use the native bow animation and retain other work states. False selects the independent timer. Other units default false; true uses the legacy bounded animation wait.'

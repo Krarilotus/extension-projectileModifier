@@ -1,5 +1,210 @@
 # Validation — unreleased work
 
+## Catapult lowered pause, 1.8.6
+
+All **106 Python/Lua/x86 tests passed** (750.162 seconds), together with all
+**23 GUI/archive checks**. The previously tested 1.8.5 native aiming correction
+remains covered by the full regression suite.
+
+The 1.8.5 catapult cooldown stopped at firing state 4/cycle 8, engine pose 22,
+with its arm already raised. A new regression reproduces that on both EXEs.
+Original reload scripts identify the final state 2/cycle 12 entry as engine
+pose 13 (arm lowered) and engineer pose 41. The cooldown now waits there and
+resumes 27 ticks before release, retaining the entire native swing and recoil.
+The existing release guard still handles eligibility changes during the swing.
+No new hooks, saved state, settings or changes to native animation scripts.
+
+The regression compares complete firing-phase traces at intervals 1 and 700
+in Crusader and Extreme. Every firing frame and duration matches; long-interval
+releases remain at ticks 117, 817 and 1517 with one stone per volley. Tests also
+cover cow/movement bypass, late eligibility checks, saved lowered waits and crew
+recovery. Missing crew delays firing until the complete swing can resume.
+Changed engine/engineer scripts or firing speed are rejected before patching.
+
+Live normal Crusader 1.41, 11 September: 1.8.6 with unchanged Reconquista YAML
+loaded the existing wall-order save. The catapult visibly waited with its arm
+lowered. Read-only observations recorded 240 samples at state 2/cycle 12,
+engine frame 102/engineer frame 326 (facing 5: poses 13/41). Two three-pebble
+volleys consumed stones 12->11->10, 17.840 seconds apart, at native clock values
+37667 and 38369 (702 sampled ticks, consistent with 700 at 10 Hz precision).
+The saved match subsequently lost the engine during enemy attack. The 516-sample
+record spans 55.847 seconds and ends when the game was closed normally; observer
+error 299 reflects process closure. Desktop released at 22:24:08 CEST.
+All six pebbles have 13-18 distinct observed flight positions; the UCP error
+log contains only its header.
+Rendered Extreme acceptance and the broader compatibility/multiplayer gates
+below remain open.
+
+## Native aiming correction, 1.8.5
+
+All **103 Python/Lua/x86 tests passed**: the 102-test full run (718.319 seconds)
+plus the added foot-facing comparison. All **23 GUI/archive checks passed**.
+
+The scheduler previously entered siege reload state 2 directly. Disassembly of
+the original catapult handler shows aiming state 8 calling the game's tile-facing
+helper (normal 1.41: 0x52FE90) on native animation steps, then entering reload
+only after alignment. All five siege handlers have this aiming stage. Skipping
+it explains the reported stationary facing while configured shots still fire.
+
+The correction enters state 8 and supplies its selected target fields. It does
+not patch the direction helper or siege handlers, implement direction math, or
+add per-unit state. Existing movement and cow states remain outside idle startup.
+Manual targets already acquired by the picker are not acquired again on entry.
+
+A differential regression compares native and configured aiming for five siege
+types, both original executables, eight target directions and four camera
+rotations (320 cases). It compares every step's state, world/display facing,
+body sprite and animation clock/delay until reload, and verifies no stone debit.
+The original direction helper and siege-handler bytes are also compared.
+Initial-shot expectations now include the native aiming stage; minimum-cycle
+baselines likewise enter native aiming before reload.
+
+The five native foot-shooter types also match original world/display facing on
+every tick through their first release in both executables (10 comparisons).
+
+Live normal Crusader 1.41, 11 September: the unchanged Reconquista preset passed
+catapult manual ground retargeting in two directions, with facing steps 3->4->5
+and 5->4->3->2 in native aiming state 8. Each target received two recorded
+three-pebble volleys, with 700-tick spacing within observation precision.
+The trebuchet retained its ground order after save/load and, after retargeting,
+turned 5->6->7->0->1 in its next native aiming phase, then fired toward the new
+target. An already-running cycle may finish before the next aiming phase; the
+module does not force rotation through an active native swing. Both engines
+consumed one stone per volley. The UCP error log was empty.
+
+Evidence uses native UI input and read-only process observations (2235 samples
+over 240.097 seconds); no firing/rotation instrumentation was injected. The game
+was closed normally and the desktop released before review. Extreme rendered
+play, independent cows, compatibility, long sessions and multiplayer remain open.
+
+## Native manual-release correction, 1.8.4
+
+All **100 Python/Lua/x86 tests passed**, together with **23 GUI/archive checks**.
+
+Reproduced the reported animation-without-projectile failure against published
+1.8.3: a valid trebuchet wall order with one stone and no alternative enemies
+reached firing state 4/cycle 3, emitted no projectile, refunded the stone and
+changed the order to 3. The earlier fixtures used 1000 stones and missed this.
+Native acquireShootTarget checks ammunition before accepting an artillery order;
+calling it again after the original handler debits its last stone is incorrect.
+
+Human native dispatch now passes its original coordinates into the existing
+volley routine. Automatic acquisition remains before release; the already
+accepted shot is not reacquired, redirected or charged again. Explicit human
+orders take precedence over every search policy. Queued native manual volleys
+reuse the game's saved unit aim. Runtime save format remains 5.
+
+New regressions execute original catapult/trebuchet handlers on both EXEs with
+one stone, no fallback enemies, and unit/ground/wall/building orders. They observe
+the native dispatch arguments, downstream projectile spawns, stock and order,
+and reject any acquisition call after the stone debit. Further checks cover the
+default units policy and a long staggered wall volley across native save/load.
+
+Live reviewer confirmation remains open. Test the existing Reconquista settings
+in a new match with 1.8.4: ground, wall and building commands with one stone left,
+then repeat after supplying more stones. Check regular volleys and native cows
+separately. This fix is established by native execution, not rendered gameplay.
+
+## Human cluster targeting follow-up, 1.8.3
+
+**97 Python/Lua/x86 tests passed**: the 96-test full run (607.824 seconds), plus
+the added all-twelve-shooters manual-acquisition check. The focused manual-order
+suite also passed after the final native-order cleanup change. All **23 GUI/
+archive checks passed**, including the nine revised localized previews.
+
+The supplied configuration contained GitHub workflow fields (`name` and `on`)
+at its root, causing the reported startup error before native hooks installed.
+Removing those fields makes it valid. Its artillery blocks also selected only
+clusters of at least 30 enemies, which previously restricted human orders too.
+
+The revised picker keeps the cluster threshold for AI owners. Human native
+shooters retain their chosen unit/building/ground/wall target; without such an
+order, human cluster searches behave like ordinary unit searches. Native target
+acquisition still validates the order, and a range guard prevents the scheduled
+building/ground path from bypassing configured range. Random targeting does not
+redirect a manual volley. No new runtime state or save-format change is needed.
+
+Focused regressions check manual acquisition for all twelve native shooter types
+and run the original catapult, trebuchet and mangonel updates
+on both EXEs, checking selected targets and 700/800/400-tick intervals. Further
+checks cover AI threshold blocking/recovery, manual building/ground/wall aim,
+range and target UID validation. These are native harness checks; live manual
+orders and multiplayer still need gameplay acceptance.
+
+Tester check: with 1.8.3 and the revised preset, order a human catapult to attack
+one enemy, then a building or valid ground/wall location in range. It must keep
+that target and fire three mangonel pebbles per regular volley, 700 simulation
+ticks apart. Native cows remain independent. For AI engines, compare 29 and 30
+clustered enemies, then remove/restore a target while the engine is loaded.
+
+## Trebuchet animation follow-up, 1.8.2
+
+All **91 Python/Lua/x86 tests passed**, together with **23 GUI/archive checks**.
+The artillery suite and remaining 74 tests ran separately; the four focused
+trebuchet regressions also passed after the final signature-boundary check.
+
+The reviewer clip exposed a gap in the earlier timing tests: correct release
+times and ammunition did not prove that the waiting pose was appropriate.
+The native trebuchet releases at firing-script index 3 (body pose 27). Holding
+immediately before it leaves body pose 26 mid-swing. The loaded resting pose
+is body pose 23 at reload-script index 35, before state 2 enters state 4.
+
+The corrected gate waits there. The native firing phase uses three ticks per
+script entry, so it starts with nine cooldown ticks left and releases on time.
+Eligibility is checked at the loaded gate and again at release for late changes.
+Movement, recoil and native cow orders bypass the configured reload wait.
+
+Regression coverage compares all native body frames and their durations in
+the initial and subsequent swings, checks 400-tick shot spacing, stone stock,
+save/load while waiting and crew recovery. Both original 1.41 executables run
+inside the native harness. Rendering this correction in a live game remains
+an acceptance check; the supplied clip documents the previous failure.
+
+Tester check: set `Trebuchet: {interval: 400}` (also try 1800), retain three
+engineers and a valid target. After reloading, the loaded arm should wait down,
+then swing and recoil continuously. Repeat at interval 1, with ordinary cow
+orders, and after saving/loading during the wait. The vanilla YAML and existing
+Reconquista configuration need no new fields for this fix.
+
+## Live startup follow-up, 1.8.1
+
+All **87 Python/Lua/x86 tests passed** with signed framework memory reads
+(561.888 seconds). All **23 GUI/archive checks passed** on retry; the initial
+archive setup exceeded its 10-second hook timeout during concurrent desktop
+testing. The native modal test additionally executes the input-reset routine
+on both EXEs and verifies button edges/state are consumed without moving the pointer.
+
+On 11 September, the isolated Crusader 1.41 game reproduced a startup crash in
+UI 1.0.0. UI 1.0.1 from upstream PR gynt/ucp-extension-ui#6 passed that point.
+The fixture also needed CFFI and LuaJIT's published option defaults.
+
+Live initialization then exposed an unsigned opcode comparison in this module.
+Normalizing the signed UCP reads fixed it; a regression checks both executables
+and still rejects changed instructions. The game reached Castle Builder with
+custom sprite resources loaded and the ordinary/custom brazier selector rendered.
+Live Crusader checks now pass for custom placement, removal and save/load:
+
+- A stone wall built through the game UI accepted the Training brazier. The
+  native command queue carried command 69 and the custom lockstep command.
+- Read-only diagnostics confirmed owner 1, custom GM slot 208, entity slot 25,
+  UID 1569 and position (239, 240, 98). Native demolition removed the brazier
+  while retaining the wall. Reloading the saved game restored the same identity,
+  position and custom GM slot.
+- Selecting the ordinary brazier then placed a separate entity using native
+  GM slot 138, without changing the custom brazier.
+- Earlier unsuccessful clicks targeted ground or manor-house type 40, which
+  the native predicate rejects. Runtime inspection confirmed build mode 148
+  remained selected; no placement-mode cancellation was established.
+
+The isolated fixture received test gold and a native stockpile stone gift before
+building the wall. These setup changes are not packaged. This live check does
+not establish construction-price behavior; both-EXE native tests cover that.
+Live proximity firing, edited-sheet appearance and Extreme rendering remain open.
+
+The UCP developer warning was accepted with the user's explicit authorization.
+There is no remaining consent blocker. Both-EXE gameplay, compatibility,
+multiplayer/replay and long-session acceptance remain open.
+
 ## Completed feature integration, 1.8.0
 
 **86 Python/Lua/x86 tests passed** in the final full run. All **23 GUI/archive checks passed** (13 component/qualifier and 10 archive/locale checks). The private Reconquista preset passes both the production Lua validator and editor schema.
@@ -54,10 +259,8 @@ The implementation checklist is complete. These release checks remain open:
 5. Repeat paired multiplayer and recorder/replay with identical YAML/assets;
    test intended Legacy/Rebalancer combinations and a long crowded match.
 
-Live testing was prepared in an isolated game copy. Its UCP developer-build
-security prompt awaits manual user handling; no security choice was automated.
-The shared desktop was released while waiting. No rendered, multiplayer or
-replay pass is claimed. This remains an unsigned draft test candidate.
+The subsequent live startup results are recorded above. Full rendered gameplay,
+multiplayer and replay acceptance remain open. This is an unsigned draft candidate.
 
 ## Historical foot-shooter reload integration, 1.7.0
 

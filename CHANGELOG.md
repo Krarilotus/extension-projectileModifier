@@ -1,5 +1,67 @@
 # Changelog
 
+## 1.8.6 (test candidate)
+
+- Move the catapult cooldown pause from the raised pre-release frame to the
+  final native reload pose, with the arm lowered. Resume early enough to run
+  the complete swing and retain the configured shot-to-shot interval.
+- Validate the original reload scripts and firing speed before installing hooks.
+  Native turning, cow shots, ammunition accounting and save format are unchanged.
+
+## 1.8.5 (test candidate)
+
+- Restore native aiming before siege reload. Configured catapults, trebuchets,
+  mangonels and both ballistas enter the original aiming state instead of skipping
+  directly into reload. The original handlers own turning, facing and frame timing.
+- Keep configured automatic target coordinates available to that native state;
+  preserve explicit human orders and avoid acquiring their accepted target twice.
+- No new hooks, rotation implementation, configuration fields or saved tables.
+  Shot intervals still include the native minimum aiming/reload/firing cycle.
+
+## 1.8.4 (test candidate)
+
+- Preserve the game's accepted human shot at native projectile dispatch. Do not
+  reacquire after the native catapult/trebuchet has consumed its last stone:
+  that rejected the shot and cleared wall, ground and building attack orders.
+- Human explicit orders take precedence over every automatic search policy,
+  including the default units policy. Native targeting, animation and stone
+  consumption remain in place; configured volleys use the native shot coordinates.
+- Finish staggered manual volleys with the accepted native aim, including after
+  save/load. No new configuration fields or persistent state are introduced.
+
+## 1.8.3 (test candidate)
+
+- Apply cluster-density targeting restrictions only to AI owners. Human native
+  shooters with a cluster policy retain their chosen unit, building, ground or
+  wall target, with native acquisition and configured range checks. Without an
+  order, human units use ordinary unit targeting instead of a density threshold.
+- Keep human manual volleys on the chosen target even with random targeting
+  enabled. Preserve AI search priorities, crew, ammunition and reload timing.
+- Document the targeting distinction in the schema, template and all nine GUI
+  previews. The projectile preset must contain only units/projectiles/decorations;
+  GitHub workflow fields such as name and on are not valid preset sections.
+
+## 1.8.2 (test candidate)
+
+- Fix trebuchets waiting mid-swing during a configured reload interval. Wait
+  in the final loaded pose of the reload phase and reserve the native swing
+  time, retaining shot-to-shot intervals and the minimum complete cycle.
+- Resolve and validate the loaded pose and firing speed from the executable.
+  Preserve late release checks, stone accounting and independent native cows.
+- Add both-executable regressions for loaded waits and uninterrupted swings,
+  plus save/load and missing-crew recovery. No configuration changes required.
+
+## 1.8.1 (unreleased test candidate)
+
+- Require UI 1.0.1, which fixes the menu-array overrun observed at game startup.
+- Compare native opcode signatures by their bit patterns. UCP's signed integer
+  reads previously caused decoration initialization to reject a valid executable.
+- Match signed UCP memory reads in the native regression harness.
+- Consume the decoration modal's closing click through the native mouse reset,
+  preventing the same click from reaching the map after selecting a build variant.
+- Clarify valid wall/tower placement in all nine localized previews; the native
+  manor house cannot hold braziers. Record live placement/removal/save-load checks.
+
 ## 1.8.0 (unreleased test candidate)
 
 - Complete native reload timing for horse archers and hunters. Mounted weapon

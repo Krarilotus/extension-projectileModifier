@@ -22,6 +22,8 @@ def generate():
     document=yaml.safe_dump(dict(meta=dict(version='1.0.0'), options=build_options()),
                             allow_unicode=True, sort_keys=False, width=110)
     keys=set(re.findall(r'\{\{([^}]+)\}\}', document))
+    definition=yaml.safe_load((ROOT/'definition.yml').read_text(encoding='utf-8'))
+    keys.update('tags.' + tag for tag in definition.get('tags', []))
     for lang in LANGUAGES:
         locale=yaml.safe_load((ROOT/'locale'/f'{lang}.yml').read_text(encoding='utf-8'))
         if set(locale)!=keys or any(not isinstance(v,str) or not v.strip() for v in locale.values()):

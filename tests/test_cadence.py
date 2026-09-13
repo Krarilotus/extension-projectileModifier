@@ -6,6 +6,96 @@ import test_projectiles as projectile_tests
 
 
 class CadenceTests(unittest.TestCase):
+    def test_trebuchet_rest_resolution_rejects_conflicting_native_data(self):
+        from harness import Harness
+        for extreme in [False,True]:
+            for changed in ['pose','branch']:
+                with self.subTest(extreme=extreme,changed=changed):
+                    h=Harness(extreme)
+                    if changed=='pose':
+                        site=h.scan(b'69 DB 90 04 00 00 8B 83 ? ? ? ? 0F BE 80 ? ? ? ? 3B C2 89 83 ? ? ? ? 7F 1A 5F 5E')
+                        h.put(h.get(site+0x68)+35,26,1)
+                        message='unsupported trebuchet loaded pose'
+                    else:
+                        site=h.scan(b'B9 ? ? ? ? 66 3B C1 0F 85 ? ? ? ? C7 86 ? ? ? ? 05 00 00 00 89 96 ? ? ? ? 66 89 96 ? ? ? ?')
+                        h.put(site+10,0x70000000)
+                        message='unsupported trebuchet firing speed'
+                    with self.assertRaisesRegex(Exception,message):
+                        h.enable({'Trebuchet':{'interval':400}})
+                    self.assertEqual(h.writes,[],'reject before installing hooks')
+
+    def test_trebuchet_cooldown_waits_loaded_then_runs_the_entire_swing(self):
+        for extreme in [False, True]:
+            with self.subTest(extreme=extreme):
+                h,a,tick=self.integrated('Trebuchet',40,0x569410,{'interval':400},extreme)
+                events=[]; swings=[]; current=[]; resting=[]
+                for t in range(1140):
+                    queued,shots=tick()
+                    self.assertFalse(queued)
+                    if shots: events.append(t)
+                    state=h.get(a+0x2c0,2)
+                    cycle=h.get(a+0x2b0)
+                    if state==4:
+                        current.append((cycle,h.get(a+0x74),bool(shots)))
+                    elif current:
+                        swings.append(current);current=[]
+                    if events and state==2 and cycle==35:
+                        resting.append(t)
+                        # Facing east renders the loaded body pose 23, not
+                        # firing pose 26 (the previous mid-swing hold point).
+                        self.assertEqual(h.get(a+0x74),(23-1)*8+7)
+                self.assertEqual(events,[235,635,1035])
+                self.assertEqual(len(swings),3)
+                self.assertEqual(swings[0],swings[1])
+                self.assertEqual(swings[0],swings[2])
+                self.assertGreater(len(resting),200)
+                self.assertEqual(h.get(a+0x362,2),997)
+
+    def test_trebuchet_loaded_gate_preserves_cows_and_late_release_checks(self):
+        for extreme in [False,True]:
+            setup=self.prepare('Trebuchet',40,27,0x569410,extreme)
+            _,h,v,*_=setup
+            a=h.unit(1,40)
+            for off,value,size in [(0x2c0,2,2),(0x2b0,35,4),(0x40,5,4),(0x44,5,4)]:
+                h.put(a+off,value,size)
+            def hold(remaining,blocked=0):
+                return h.call(v['SHOULDHOLD'],[1,v['RELEASECYCLE'],remaining,blocked])
+            self.assertEqual(hold(10),1)
+            self.assertEqual(hold(9),0)
+            self.assertEqual(hold(9,1),1)
+            h.put(a+0x3b0,1,2)
+            self.assertEqual(hold(400,1),0)
+            h.put(a+0x3b0,0,2);h.put(a+0x2b0,34)
+            self.assertEqual(hold(400,1),0)
+            h.put(a+0x2c0,4,2);h.put(a+0x2b0,1)
+            self.assertEqual(hold(3),0)
+            h.put(a+0x2b0,2)
+            self.assertEqual(hold(0),0)
+            self.assertEqual(hold(0,1),1)
+
+    def test_trebuchet_loaded_wait_survives_save_load_and_crew_loss(self):
+        observer=projectile_tests.NativeTests()
+        h,a,tick=self.integrated('Trebuchet',40,0x569410,{'interval':400})
+        for _ in range(530):tick()
+        self.assertEqual((h.get(a+0x2c0,2),h.get(a+0x2b0)),(2,35))
+        handle=observer.state_handle(h);state=h.sections[b'projectileModifier']
+        state.serialize(state,handle)
+        native=bytes(h.uc.mem_read(a,0x490))
+        first=[tick() for _ in range(121)]
+        h.uc.mem_write(a,native)
+        state.deserialize(state,handle)
+        self.assertEqual(first,[tick() for _ in range(121)])
+        self.assertTrue(any(shots for _,shots in first))
+        # After another reload, missing crew holds the same loaded pose even
+        # when the interval expires. Re-boarding permits the full swing.
+        for _ in range(300):tick()
+        h.put(a+0x3b4,0,2)
+        for _ in range(130):self.assertEqual(tick(),([],[]))
+        self.assertEqual((h.get(a+0x2c0,2),h.get(a+0x2b0)),(2,35))
+        h.put(a+0x3b4,3,2)
+        shots=[i for i in range(15) if tick()[1]]
+        self.assertEqual(shots,[9])
+
     def test_animation_hook_is_installed_only_when_needed(self):
         observer=projectile_tests.NativeTests()
         for settings in [{'count':3},{'interval':100,'sync_to_animation':False}]:
@@ -33,7 +123,8 @@ class CadenceTests(unittest.TestCase):
             queued,shots=tick()
             self.assertFalse(queued)
             if shots: events.append(t)
-        self.assertEqual(events,[99,420])
+        # Crew recovery resumes the complete native swing from the lowered pose.
+        self.assertEqual(events,[117,447])
 
     def test_native_crew_defaults_and_explicit_overrides(self):
         observer=projectile_tests.NativeTests()
@@ -48,14 +139,14 @@ class CadenceTests(unittest.TestCase):
                 self.assertEqual(h.get(a+0x2c0,2),0)
                 h.put(a+0x3b4,crew,2)
                 self.assertEqual(observer.tick(h,1),[])
-                self.assertEqual(h.get(a+0x2c0,2),2)
+                self.assertEqual(h.get(a+0x2c0,2),8)
         for extra in [{'require_manned':False},{'sync_to_animation':False}]:
             h=observer.prepare({'Catapult':dict(interval=250,**extra)})
             a=h.unit(1,39);h.unit(2,22,owner=2,x=44)
             self.assertEqual(h.get(h.v['MANNEDT']+39*4),0)
             shots=observer.tick(h,1)
             if 'sync_to_animation' in extra: self.assertEqual(len(shots),1)
-            else: self.assertEqual(h.get(a+0x2c0,2),2)
+            else: self.assertEqual(h.get(a+0x2c0,2),8)
 
     def test_next_reload_prepares_during_a_long_staggered_volley(self):
         h,a,tick=self.integrated('Catapult',39,0x568320,
@@ -65,8 +156,8 @@ class CadenceTests(unittest.TestCase):
             following,first=tick()
             if following: queued.append(t)
             if first: releases.append(t)
-        self.assertEqual(releases,[99,349])
-        self.assertEqual(queued[:63],list(range(102,289,3)))
+        self.assertEqual(releases,[117,367])
+        self.assertEqual(queued[:63],list(range(120,307,3)))
         self.assertEqual(h.get(a+0x362,2),998)
 
     def prepare(self, name, kind, frame, handler, extreme):
@@ -79,7 +170,13 @@ class CadenceTests(unittest.TestCase):
         handler += h.v['FIREPROJ']-0x532700
         release=lib.resolve(h.scan)[kind]
         self.assertGreater(release,0)
+        rest=lib.resolve_trebuchet_rest(h.scan,release if kind==40 else None)
+        cat=lib.resolve_catapult_rest(h.scan,release if kind==39 else None)
         values=dict(h.v, RELEASECYCLE=release, ANIMATIONDONE=end,
+                    CATRESTCYCLE=cat[b'cycle'] if cat else -1,
+                    CATRELEASELEAD=cat[b'lead'] if cat else 0,
+                    TREBRESTCYCLE=rest[b'cycle'] if rest else -1,
+                    TREBRELEASELEAD=rest[b'lead'] if rest else 0,
                     RESUME=animation+18, BLOCKEDT=h.allocate(h.v['MAXUNITS']*4))
         def assemble(code):
             used={k:v for k,v in values.items() if re.search(rb'\b'+k.encode()+rb'\b',code)}
@@ -96,8 +193,9 @@ class CadenceTests(unittest.TestCase):
         h.put(h.v['CURUNIT'],1)
         h.put(v['COOLDOWNT']+4,0)
         h.put(v['BLOCKEDT']+4,0)
-        for off,value,size in [(0x2c0,2,2),(0x3b4,2,2),(0x362,1000,2),
-                              (0xbe,352,2),(0xc0,320,2),(0x39c,5,2),(0x344,0xffff,2)]:
+        for off,value,size in [(0x2c0,8,2),(0x3b4,2,2),(0x362,1000,2),
+                              (0xbe,352,2),(0xc0,320,2),(0x3e8,44,2),(0x3ea,40,2),
+                              (0x39c,5,2),(0x344,0xffff,2)]:
             h.put(a+off,value,size)
         events=[]
         # Sound's device side effects are unrelated to animation/ammunition.
@@ -121,7 +219,7 @@ class CadenceTests(unittest.TestCase):
             if h.get(a+0x2c0,2)==0:
                 # Fixture supplies the next attack order; native code still
                 # performs its entire reload, release and recoil animations.
-                h.put(a+0x2c0,2,2); h.put(a+0x2b0,0)
+                h.put(a+0x2c0,8,2); h.put(a+0x2b0,0)
         return events,h.get(a+0x362,2)
 
     def test_artillery_delay_preserves_firing_frame_and_ammunition(self):
@@ -167,7 +265,7 @@ class CadenceTests(unittest.TestCase):
         a=h.unit(1,kind)
         h.unit(2,22,owner=2,x=44)
         for off,value,size in [(0x3b4,3 if kind==40 else 2,2),(0x362,1000,2),(0xbe,352,2),
-                              (0xc0,320,2),(0x39c,5,2),(0x344,0xffff,2)]:
+                              (0xc0,320,2),(0x39c,3,2),(0x344,0xffff,2)]:
             h.put(a+off,value,size)
         animation=h.blobs['configuredAnimationHold'][2]['RESUME']-18
         handler+=h.v['FIREPROJ']-0x532700
@@ -248,7 +346,7 @@ class CadenceTests(unittest.TestCase):
                     self.assertFalse(queued)
                     if shots: events.append(t)
                     if 300<=t<420: self.assertEqual(h.get(a+0x362,2),999)
-                self.assertEqual(events[0],99)
+                self.assertEqual(events[0],117)
                 self.assertGreaterEqual(len(events),2,events)
                 self.assertGreaterEqual(events[1],420,events)
                 self.assertEqual(1000-h.get(a+0x362,2),len(events))
@@ -262,7 +360,7 @@ class CadenceTests(unittest.TestCase):
         for t in range(450):
             queued,shots=tick()
             if queued or shots: events.append((t,[s[9] for s in queued+shots]))
-        self.assertEqual(events,[(99,[1]),(104,[1]),(349,[1]),(354,[1])])
+        self.assertEqual(events,[(117,[1]),(122,[1]),(367,[1]),(372,[1])])
         self.assertEqual(h.get(a+0x362,2),998)
         self.assertEqual(h.get(a+0x3b0,2),0)
 
@@ -272,6 +370,7 @@ class CadenceTests(unittest.TestCase):
             {'interval':250,'count':3,'stagger_max':3,'inaccuracy':8})
         for y in range(400): h.put(h.v['TILEROWS']+12*y,400*y)
         for _ in range(320): tick()
+        self.assertEqual((h.get(a+0x2c0,2),h.get(a+0x2b0)),(2,12))
         handle=observer.state_handle(h);state=h.sections[b'projectileModifier']
         state.serialize(state,handle)
         native=bytes(h.uc.mem_read(a,0x490))
