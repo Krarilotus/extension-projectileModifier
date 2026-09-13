@@ -158,7 +158,7 @@ return {locate=locate, fire=fire_projectile_addr, acquire=acquire_target_addr, t
 end
 
 -- Private tables, non-overlapping scratch and persistent per-unit firing state.
-local TABLE_BYTES, OFF_REENTRY, OFF_SEED, OFF_SCATY, OFF_REMAP, OFF_COUNT, OFF_SPREAD, OFF_INTERVAL, OFF_SUPPRESS, OFF_FORCED, OFF_COOLDOWN, OFF_ORDER, OFF_RANGE, OFF_WALLMIN, OFF_MULTI, OFF_HEIGHT, OFF_MANNED, OFF_BLDCLASS, OFF_SCRATCH, OFF_CANDS, OFF_IMOVE, OFF_ISTAND, OFF_LASTPOS, OFF_MOVECD, OFF_STAGMIN, OFF_STAGMAX, OFF_PENDING, OFF_PENDCD, OFF_DMIN, OFF_DRAD, OFF_ATTINT, OFF_ATTCREW, OFF_ATTBOARD, OFF_ATTBR2, OFF_AICOW, OFF_COWREMAP, OFF_COWCOUNT, OFF_PRELOAD, OFF_PRELPOLL, OFF_SYNC, OFF_SYNCMAX, OFF_SYNCWAIT, OFF_INACC, OFF_INACCSET, OFF_AIONLY, OFF_UID, OFF_IDENTITY, OFF_NATIVESEEN, OFF_FORTIFIED, OFF_PROFILESTATE, OFF_NATIVECYCLE, OFF_NATIVEINT, OFF_NATIVEBLOCK, OFF_NATIVEATTACK, OFF_NATIVESTART, OFF_WEAPONSEEN, OFF_WEAPONCYCLE, OFF_WEAPONTICK, OFF_WEAPONPHASE, OFF_SPRITE, OFF_COWSPRITE, OFF_CURRENTVARIANT, OFF_VARIANTGM, OFF_VARIANTBASEGM, OFF_VARIANTCOUNT, OFF_ENTITYVARIANT, OFF_ENTITYUID, OFF_ENTITYTYPE, OFF_DECORVARIANT, OFF_DECORUID, OFF_DECORGM, OFF_DECORGRID, OFF_DECORNEXT, OFF_DECORRULEMAP, OFF_DECORRULEST, OFF_TURNBEFORE, DATA_SIZE
+local TABLE_BYTES, OFF_REENTRY, OFF_SEED, OFF_SCATY, OFF_REMAP, OFF_COUNT, OFF_SPREAD, OFF_INTERVAL, OFF_SUPPRESS, OFF_FORCED, OFF_COOLDOWN, OFF_ORDER, OFF_RANGE, OFF_WALLMIN, OFF_MULTI, OFF_HEIGHT, OFF_MANNED, OFF_BLDCLASS, OFF_SCRATCH, OFF_CANDS, OFF_IMOVE, OFF_ISTAND, OFF_LASTPOS, OFF_MOVECD, OFF_STAGMIN, OFF_STAGMAX, OFF_PENDING, OFF_PENDCD, OFF_DMIN, OFF_DRAD, OFF_ATTINT, OFF_ATTCREW, OFF_ATTBOARD, OFF_ATTBR2, OFF_AICOW, OFF_COWREMAP, OFF_COWCOUNT, OFF_PRELOAD, OFF_PRELPOLL, OFF_SYNC, OFF_SYNCMAX, OFF_SYNCWAIT, OFF_INACC, OFF_INACCSET, OFF_AIONLY, OFF_UID, OFF_IDENTITY, OFF_NATIVESEEN, OFF_FORTIFIED, OFF_PROFILESTATE, OFF_NATIVECYCLE, OFF_NATIVEINT, OFF_NATIVEBLOCK, OFF_NATIVEATTACK, OFF_NATIVESTART, OFF_WEAPONSEEN, OFF_WEAPONCYCLE, OFF_WEAPONTICK, OFF_WEAPONPHASE, OFF_SPRITE, OFF_COWSPRITE, OFF_CURRENTVARIANT, OFF_VARIANTGM, OFF_VARIANTBASEGM, OFF_VARIANTCOUNT, OFF_ENTITYVARIANT, OFF_ENTITYUID, OFF_ENTITYTYPE, OFF_DECORVARIANT, OFF_DECORUID, OFF_DECORGM, OFF_DECORGRID, OFF_DECORNEXT, OFF_DECORRULEMAP, OFF_DECORRULEST, OFF_TURNBEFORE, OFF_STRICTRANGE, OFF_AUTOTARGET, OFF_RELEASECYCLE, DATA_SIZE
 local function layout(profile_count)
     MAX_PROFILES = profile_count
     TABLE_BYTES = MAX_PROFILES * 4
@@ -237,7 +237,10 @@ local function layout(profile_count)
     OFF_DECORRULEMAP = OFF_DECORNEXT + 3000*4
     OFF_DECORRULEST = OFF_DECORRULEMAP + MAX_TYPES*408
     OFF_TURNBEFORE = OFF_DECORRULEST + MAX_TYPES*4
-    DATA_SIZE = OFF_TURNBEFORE + TABLE_BYTES
+    OFF_STRICTRANGE = OFF_TURNBEFORE + TABLE_BYTES
+    OFF_AUTOTARGET = OFF_STRICTRANGE + TABLE_BYTES
+    OFF_RELEASECYCLE = OFF_AUTOTARGET + TABLE_BYTES
+    DATA_SIZE = OFF_RELEASECYCLE + MAX_TYPES * 4
 
 end
 
@@ -296,6 +299,12 @@ local function install(config)
     local has_decorations = next(config.decorations or {}) ~= nil
     local profile_count = MAX_TYPES * 2
     for _, cfg in pairs(config.units) do profile_count = profile_count + 2 * #(cfg.near_decorations or {}) end
+    local manual_only = false
+    for _, cfg in pairs(config.units) do
+        if configuration.any_profile(cfg, function(profile) return profile.auto_targeting == false end) then
+            manual_only = true; break
+        end
+    end
     local native = resolve(cadence.required(config), config)
     MAX_UNITS = native.capacity
     layout(profile_count)
@@ -310,11 +319,14 @@ local function install(config)
     local unit_array_base, unit_state_this, current_unit_id_addr = native.units, native.this, native.current
     data_addr = core.allocate(DATA_SIZE, true)
     core.writeInteger(data_addr + OFF_SEED, 0x1D872B41)
+    for kind, cycle in pairs(release_cycles) do set_entry(OFF_RELEASECYCLE, kind, cycle) end
     for kind, phase in pairs(cadence.attack_states) do set_entry(OFF_NATIVEATTACK, kind, phase) end
     for kind, phase in pairs(cadence.start_states) do set_entry(OFF_NATIVESTART, kind, phase) end
 
     -- -1 in the remap table means "leave the game's choice alone".
     for i = 0, MAX_PROFILES - 1 do
+        set_entry(OFF_AUTOTARGET, i, 1)
+        set_entry(OFF_STRICTRANGE, i, 1)
         core.writeInteger(data_addr + OFF_REMAP + 4 * i, 0xFFFFFFFF)
         core.writeInteger(data_addr + OFF_COWREMAP + 4 * i, 0xFFFFFFFF)
         core.writeInteger(data_addr + OFF_RANGE + 4 * i, constants.DEFAULT_RANGE)
@@ -346,6 +358,7 @@ local function install(config)
     end
 
     local values = {
+        HASMANUALONLY = manual_only and 1 or 0,
         REENTRY       = data_addr + OFF_REENTRY,
         SEED          = data_addr + OFF_SEED,
         SCATY         = data_addr + OFF_SCATY,
@@ -380,6 +393,9 @@ local function install(config)
         FACEPOINT     = native.facePoint or 0,
         FACEUNIT      = native.faceUnit or 0,
         TURNBEFORET   = data_addr + OFF_TURNBEFORE,
+        STRICTRANGET  = data_addr + OFF_STRICTRANGE,
+        AUTOTARGETT   = data_addr + OFF_AUTOTARGET,
+        RELEASECYCLET = data_addr + OFF_RELEASECYCLE,
         SPRITET       = data_addr + OFF_SPRITE,
         COWSPRITET    = data_addr + OFF_COWSPRITE,
         CURRENTVARIANT = data_addr + OFF_CURRENTVARIANT,
@@ -442,6 +458,7 @@ local function install(config)
         S_VOLLEYCOUNT = data_addr + OFF_SCRATCH + 0xBC,
         S_PROFILE     = data_addr + OFF_SCRATCH + 0xC0,
         S_FIRED       = data_addr + OFF_SCRATCH + 0xC8,
+        S_RANGE8SQ    = data_addr + OFF_SCRATCH + 0xCC,
         S_SELF        = data_addr + OFF_SCRATCH + 0x50,
         S_ID          = data_addr + OFF_SCRATCH + 0x54,
         S_INTV        = data_addr + OFF_SCRATCH + 0x58,
@@ -562,6 +579,12 @@ local function install(config)
     volley_addr = assemble_blob(templates.volley_code, values)
     values.VOLLEY = volley_addr
     values.MANUALORDER = assemble_blob(templates.manual_order_code, values)
+    values.NATIVECONTEXT = assemble_blob(cadence.context_code, values)
+    local acquire_hook
+    if manual_only then
+        values.RESUME = acquire_target_addr + 6
+        acquire_hook = assemble_blob(templates.acquire_hook_code, values)
+    end
     values.PICKTARGET = assemble_blob(templates.pick_code, values)
     values.RESTORETARGET = assemble_blob(templates.restore_code, values)
     values.AUTOVOLLEY = assemble_blob(templates.automatic_code, values)
@@ -697,6 +720,11 @@ local function install(config)
             0x90, 0x90, 0x90, 0x90, 0x90
         })
     end
+    if acquire_hook then
+        core.writeCode(acquire_target_addr, {
+            0xE9, core.itob(core.getRelativeAddress(acquire_target_addr, acquire_hook, -5)), 0x90
+        })
+    end
     if spawn_site then
         core.writeCode(spawn_site, {0xE9,core.itob(core.getRelativeAddress(spawn_site,spawn_hook,-5)),0x90,0x90,0x90})
         core.writeCode(entity_site, {0xE9,core.itob(core.getRelativeAddress(entity_site,entity_hook,-5)),0x90})
@@ -712,6 +740,8 @@ end
 apply_unit = function(name, cfg, profile)
     local id = profile or configuration.units[name]
     set_entry(OFF_TURNBEFORE, id, cfg.turn_before_shot == false and 0 or 1)
+    set_entry(OFF_STRICTRANGE, id, cfg.strict_range == false and 0 or 1)
+    set_entry(OFF_AUTOTARGET, id, cfg.auto_targeting == false and 0 or 1)
 
     if cfg["projectile"] ~= nil then
         local pid = projectile_id(cfg["projectile"])

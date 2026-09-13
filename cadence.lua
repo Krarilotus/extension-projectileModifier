@@ -11,7 +11,7 @@ M.start_states = {[6]=10, [22]=4, [23]=4, [39]=8, [40]=8, [41]=8,
     [61]=8, [70]=4, [72]=4, [74]=4, [76]=4, [77]=8}
 
 local function native_profile(profile)
-    return profile.interval and profile.sync_to_animation ~= false
+    return profile.auto_targeting == false or (profile.interval and profile.sync_to_animation ~= false)
 end
 
 local function enabled(config, name)
@@ -129,6 +129,32 @@ function M.resolve_trebuchet_rest(locate, release_cycle)
     return {cycle=finish-1, lead=release_cycle * (core.readInteger(speed + 1) + 1)}
 end
 
+-- Classify the already admitted native aim: 1 human order, 2 corrected siege
+-- automatic aim, 0 legacy automatic selection. Share this decision between
+-- validation, native dispatch and stagger continuation; keep coordinates/UIDs
+-- with the native unit record rather than a second target cache.
+M.context_code = [[
+nativeContext:
+    push dword [esp+4]
+    call MANUALORDER
+    add esp, 4
+    test eax, eax
+    jnz nc_done
+    mov ecx, [esp+8]
+    cmp dword [NATIVECYCLET+ecx*4], 0
+    je nc_done
+    cmp dword [TURNBEFORET+ecx*4], 0
+    je nc_done
+    mov ecx, [esp+4]
+    imul ecx, ecx, 0x490
+    movzx ecx, word [ecx+UNITARRAY+0x8E]
+    cmp dword [NATIVESTARTT+ecx*4], 8
+    jne nc_done
+    mov eax, 2
+nc_done:
+    ret
+]]
+
 -- Tick cached interval/crew eligibility is used by the later animation pass.
 -- This prevents movement hysteresis from advancing twice in one simulation tick.
 M.release_code = [[
@@ -163,9 +189,10 @@ nativeRelease:
     push eax
     call CHECKATTACHED
     add esp, 4
+    push dword [S_PROFILE]
     push dword [S_ID]
-    call MANUALORDER
-    add esp, 4
+    call NATIVECONTEXT
+    add esp, 8
     test eax, eax
     jz nr_search
     mov eax, [ebp+44]            ; native code already acquired and charged this shot
@@ -373,16 +400,57 @@ configuredAnimationHold:
     jl ca_pass
     cmp ebx, MAXUNITS
     jae ca_pass
-    cmp dword [NATIVEINTT+ebx*4], -1
-    je ca_pass
-    imul eax, ebx, 0x490
-    cmp word [eax+UNITARRAY+0x8E], 74
-    je ca_pass                   ; bow routine owns a separate temporary clock
+    if HASMANUALONLY = 0
+        cmp dword [NATIVEINTT+ebx*4], -1
+        je ca_pass
+    end if
     push ebx
     call PROFILE
     add esp, 4
     cmp eax, MAXPROFILES
     jae ca_pass
+    imul esi, ebx, 0x490
+    add esi, UNITARRAY
+    cmp word [esi+0x8E], 74
+    je ca_pass                   ; bow routine owns a separate temporary clock
+    cmp dword [AUTOTARGETT+eax*4], 0
+    jne ca_scheduled
+    cmp dword [AIONLYT+eax*4], 0
+    je ca_manual
+    push eax
+    push ebx
+    call ISAIOWNED
+    add esp, 4
+    mov ecx, eax
+    pop eax
+    test ecx, ecx
+    jz ca_pass
+ca_manual:
+    push eax
+    push ebx
+    call MANUALORDER
+    add esp, 4
+    mov ecx, eax
+    pop eax
+    test ecx, ecx
+    jnz ca_scheduled
+    ; A retained native target can bypass acquisition during wind-up. Reuse
+    ; the release/loaded-pose gate, without installing an interval or a timer.
+    push eax
+    push 1
+    push 0
+    movzx ecx, word [esi+0x8E]
+    push dword [RELEASECYCLET+ecx*4]
+    push ebx
+    call SHOULDHOLD
+    add esp, 16
+    mov ecx, eax
+    pop eax
+    test ecx, ecx
+    jnz ca_hold
+ca_scheduled:
+    cmp dword [NATIVEINTT+ebx*4], -1
+    je ca_pass
     ; Turn human siege orders at native frame boundaries, including cooldown.
     ; This reads the existing order and calls the native direction owner. It
     ; never reacquires a shot, consumes RNG or replaces native target policy.
@@ -481,7 +549,7 @@ ca_turned:
 ca_turnskip:
     pop eax
 ca_cadence:
-    mov edx, eax
+    mov edi, eax                ; retain the effective profile across gate calls
     mov ecx, [NATIVECYCLET+eax*4]
     test ecx, ecx
     jz ca_pass
@@ -495,11 +563,7 @@ ca_cadence:
     jnz ca_hold
     ; At a loaded/release transition, use a synthetic block to validate the
     ; selected target before native code starts the swing or consumes ammunition.
-    mov eax, [CURUNIT]
-    push eax
-    call PROFILE
-    add esp, 4
-    mov ecx, [NATIVECYCLET+eax*4]
+    mov ecx, [NATIVECYCLET+edi*4]
     push 1
     push 0
     push ecx
@@ -510,10 +574,16 @@ ca_cadence:
     jz ca_pass
     cmp dword [PENDINGT+ebx*4], 0
     jg ca_hold
-    push dword [CURUNIT]
-    call PROFILE
-    add esp, 4
-    push eax
+    push edi
+    push ebx
+    call NATIVECONTEXT
+    add esp, 8
+    cmp eax, 2
+    je ca_pass
+    ; Automatic siege aim was admitted before native state 8 turned the body.
+    ; Do not pick another target while loaded or at release: after Halt this
+    ; would replace the old aim without another native aiming transition.
+    push edi
     push dword [CURUNIT]
     call NATIVETARGET
     add esp, 8

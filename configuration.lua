@@ -30,6 +30,7 @@ M.booleans = {
     suppress_default = true, random_targets = true, attached_ignore_crew = true,
     attached_stop_when_boarded = true, ai_cow_vs_units = true, ai_only = true,
     preload = true, sync_to_animation = true, turn_before_shot = true,
+    strict_range = true, auto_targeting = true,
 }
 M.units = {}
 for id, name in ipairs(constants.unit_names) do
@@ -62,7 +63,11 @@ local function validate_flat(config, variants)
         for key, value in pairs(cfg) do
             local field = path .. '.' .. tostring(key)
             local bounds = M.numbers[key]
-            if bounds then
+            if value == 'native' and (bounds or M.booleans[key] or key == 'targets'
+                or ((key == 'projectile' or key == 'cow_projectile') and not (variants and variants.native))) then
+                -- Explicit inheritance uses the same path as omission. Keep
+                -- native state-dependent behavior with its existing owner.
+            elseif bounds then
                 if key == 'require_manned' and type(value) == 'boolean' then value = value and 1 or 0 end
                 if type(value) ~= 'number' or value ~= value or value % 1 ~= 0
                     or value < bounds[1] or value > bounds[2] then
@@ -134,6 +139,25 @@ local function validate_flat(config, variants)
     return result
 end
 
+-- One merge owner for fortification and decoration profiles. An explicit
+-- native clears a configured parent value, while a concrete compatibility
+-- alias in the same override wins independent of Lua table iteration order.
+local function merge_fields(parent, fields)
+    local merged = {}
+    for key, value in pairs(parent) do merged[key] = value end
+    for key, value in pairs(fields) do merged[key] = value end
+    for _, key in ipairs({'spread', 'inaccuracy'}) do
+        local alias = key .. '_tiles'
+        if fields[key] ~= nil and (fields[alias] == nil or fields[alias] == 'native') then
+            merged[alias] = nil
+        end
+        if fields[alias] ~= nil and (fields[key] == nil or fields[key] == 'native') then
+            merged[key] = nil
+        end
+    end
+    return merged
+end
+
 function M.validate(config)
     object(config, 'config')
     local variants = require('sprite_resources').definitions(config.projectiles)
@@ -153,20 +177,15 @@ function M.validate(config)
         if settings.on_fortification ~= nil then
             object(settings.on_fortification, 'units.' .. tostring(name) .. '.on_fortification')
             for _, key in ipairs({'spread', 'inaccuracy'}) do
-                if settings.on_fortification[key] ~= nil and settings.on_fortification[key .. '_tiles'] ~= nil then
+                if settings.on_fortification[key] ~= nil and settings.on_fortification[key] ~= 'native'
+                    and settings.on_fortification[key .. '_tiles'] ~= nil and settings.on_fortification[key .. '_tiles'] ~= 'native' then
                     fail('units.' .. name .. '.on_fortification', 'use only one of ' .. key .. ' and ' .. key .. '_tiles')
                 end
             end
-            local merged = {}
-            for key, value in pairs(base) do merged[key] = value end
-            for key, value in pairs(settings.on_fortification) do
-                if key == 'on_fortification' then fail('units.' .. name, 'nested fortification overrides are not supported') end
-                merged[key] = value
-                -- An override may use a different unit system than its parent.
-                if key == 'spread' or key == 'inaccuracy' then merged[key .. '_tiles'] = nil end
-                if key == 'spread_tiles' then merged.spread = nil end
-                if key == 'inaccuracy_tiles' then merged.inaccuracy = nil end
+            if settings.on_fortification.on_fortification ~= nil then
+                fail('units.' .. name, 'nested fortification overrides are not supported')
             end
+            local merged = merge_fields(base, settings.on_fortification)
             if next(settings.on_fortification) ~= nil then fortified[name] = merged end
         end
     end
@@ -185,21 +204,15 @@ function M.validate(config)
         local rules = decorations.rules(settings.near_decorations, definitions, name)
         if #rules > 0 then
             local function effective(parent, fields)
-                local merged = {}
-                for key, value in pairs(parent) do merged[key] = value end
-                for key, value in pairs(fields) do
-                    merged[key] = value
-                    if key == 'spread' or key == 'inaccuracy' then merged[key .. '_tiles'] = nil end
-                    if key == 'spread_tiles' then merged.spread = nil end
-                    if key == 'inaccuracy_tiles' then merged.inaccuracy = nil end
-                end
+                local merged = merge_fields(parent, fields)
                 return validate_flat({units={[name]=merged}}, variants).units[name] or {}
             end
             for _, rule in ipairs(rules) do
                 -- Validate sparse fields as part of their effective profile,
                 -- so inherited interval/stagger dependencies remain meaningful.
                 for _, key in ipairs({'spread', 'inaccuracy'}) do
-                    if rule.fields[key] ~= nil and rule.fields[key .. '_tiles'] ~= nil then
+                    if rule.fields[key] ~= nil and rule.fields[key] ~= 'native'
+                        and rule.fields[key .. '_tiles'] ~= nil and rule.fields[key .. '_tiles'] ~= 'native' then
                         fail('units.' .. name .. '.near_decorations', 'use only one accuracy/spread unit system')
                     end
                 end

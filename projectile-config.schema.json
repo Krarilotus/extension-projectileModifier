@@ -340,283 +340,576 @@
       "additionalProperties": false,
       "properties": {
         "attached_board_radius": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 100
-        },
-        "attached_interval": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 60000,
-          "description": "Enables firing for a siege tower docked to a wall, overriding moving/standing intervals; 0 holds fire. Omission keeps the current moving/standing rate or fallback."
-        },
-        "count": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 64
-        },
-        "cow_count": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 64
-        },
-        "density_min": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 256,
-          "description": "Minimum enemy count for AI cluster targeting; human attack orders are not restricted by this threshold."
-        },
-        "density_radius": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 100,
-          "description": "Radius in tiles for counting nearby enemies in an AI cluster."
-        },
-        "inaccuracy": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 800,
-          "description": "Maximum random aim-error radius in whole native coordinate units: 1 = 1/8 tile, 8 = 1 tile. Explicit 0 removes native random error; omission preserves it. Separate spread still applies. Do not combine with inaccuracy_tiles."
-        },
-        "inaccuracy_tiles": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 100,
-          "description": "Compatibility alias in whole tiles, converted by multiplying by 8. Prefer inaccuracy for native 1/8-tile steps. Do not combine both fields."
-        },
-        "interval": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 60000,
-          "description": "Optional fallback automatic-fire interval in simulation ticks. Applies only where no state interval overrides it."
-        },
-        "interval_moving": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 60000,
-          "description": "Enables firing while moving; 0 holds fire. If omitted, use interval, or hold fire if neither is set."
-        },
-        "interval_standing": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 60000,
-          "description": "Enables firing while stopped, not specifically docked; 0 holds fire. If omitted, use interval, or hold fire if neither is set."
-        },
-        "preload_poll": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 60000
-        },
-        "range": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 100
-        },
-        "require_manned": {
           "anyOf": [
             {
               "type": "integer",
               "minimum": 0,
-              "maximum": 4
+              "maximum": 100
             },
             {
-              "type": "boolean"
+              "const": "native"
             }
           ],
-          "description": "Engineers currently aboard. Native reload defaults: trebuchet 3, other supported siege engines 2. Independent timer defaults 0. Explicit true means 1; false or 0 allows unmanned fire."
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "attached_interval": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 60000,
+              "description": "Enables firing for a siege tower docked to a wall, overriding moving/standing intervals; 0 holds fire. Omission keeps the current moving/standing rate or fallback."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Enables firing for a siege tower docked to a wall, overriding moving/standing intervals; 0 holds fire. Omission keeps the current moving/standing rate or fallback. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "count": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 64
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "cow_count": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 64
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "density_min": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 256,
+              "description": "Minimum enemy count for AI cluster targeting; human attack orders are not restricted by this threshold."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Minimum enemy count for AI cluster targeting; human attack orders are not restricted by this threshold. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "density_radius": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "description": "Radius in tiles for counting nearby enemies in an AI cluster."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Radius in tiles for counting nearby enemies in an AI cluster. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "inaccuracy": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 800,
+              "description": "Maximum random aim-error radius in whole native coordinate units: 1 = 1/8 tile, 8 = 1 tile. Explicit 0 removes native random error; omission preserves it. Separate spread still applies. Do not combine with inaccuracy_tiles."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Maximum random aim-error radius in whole native coordinate units: 1 = 1/8 tile, 8 = 1 tile. Explicit 0 removes native random error; omission preserves it. Separate spread still applies. Do not combine with inaccuracy_tiles. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "inaccuracy_tiles": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100,
+              "description": "Compatibility alias in whole tiles, converted by multiplying by 8. Prefer inaccuracy for native 1/8-tile steps. Do not combine both fields."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Compatibility alias in whole tiles, converted by multiplying by 8. Prefer inaccuracy for native 1/8-tile steps. Do not combine both fields. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "interval": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 60000,
+              "description": "Optional fallback automatic-fire interval in simulation ticks. Applies only where no state interval overrides it."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Optional fallback automatic-fire interval in simulation ticks. Applies only where no state interval overrides it. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "interval_moving": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 60000,
+              "description": "Enables firing while moving; 0 holds fire. If omitted, use interval, or hold fire if neither is set."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Enables firing while moving; 0 holds fire. If omitted, use interval, or hold fire if neither is set. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "interval_standing": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 60000,
+              "description": "Enables firing while stopped, not specifically docked; 0 holds fire. If omitted, use interval, or hold fire if neither is set."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Enables firing while stopped, not specifically docked; 0 holds fire. If omitted, use interval, or hold fire if neither is set. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "preload_poll": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 60000
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "range": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "require_manned": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 4
+                },
+                {
+                  "type": "boolean"
+                }
+              ],
+              "description": "Engineers currently aboard. Native reload defaults: trebuchet 3, other supported siege engines 2. Independent timer defaults 0. Explicit true means 1; false or 0 allows unmanned fire."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Engineers currently aboard. Native reload defaults: trebuchet 3, other supported siege engines 2. Independent timer defaults 0. Explicit true means 1; false or 0 allows unmanned fire. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "shoot_height": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 500
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 500
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "spread": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 800,
-          "description": "Additional simultaneous-shot spread per axis, in whole native coordinate units: 1 = 1/8 tile, 8 = 1 tile. Zero adds no spread. Independent of inaccuracy."
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 800,
+              "description": "Additional simultaneous-shot spread per axis, in whole native coordinate units: 1 = 1/8 tile, 8 = 1 tile. Zero adds no spread. Independent of inaccuracy."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Additional simultaneous-shot spread per axis, in whole native coordinate units: 1 = 1/8 tile, 8 = 1 tile. Zero adds no spread. Independent of inaccuracy. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "spread_tiles": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 100,
-          "description": "Compatibility alias in whole tiles, converted by multiplying by 8. Prefer spread for native 1/8-tile steps. Do not combine both fields."
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100,
+              "description": "Compatibility alias in whole tiles, converted by multiplying by 8. Prefer spread for native 1/8-tile steps. Do not combine both fields."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Compatibility alias in whole tiles, converted by multiplying by 8. Prefer spread for native 1/8-tile steps. Do not combine both fields. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "stagger_max": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 60000
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 60000
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "stagger_min": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 60000,
-          "description": "Requires stagger_max; must not exceed it when staggering is enabled. Checked by the game loader."
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 60000,
+              "description": "Requires stagger_max; must not exceed it when staggering is enabled. Checked by the game loader."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Requires stagger_max; must not exceed it when staggering is enabled. Checked by the game loader. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "sync_max_wait": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 60000,
-          "description": "Legacy animation wait only; never bypasses a native reload firing frame."
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 60000,
+              "description": "Legacy animation wait only; never bypasses a native reload firing frame."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Legacy animation wait only; never bypasses a native reload firing frame. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "wall_min_distance": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 100
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "ai_cow_vs_units": {
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "ai_only": {
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "attached_ignore_crew": {
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "attached_stop_when_boarded": {
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "auto_targeting": {
+          "anyOf": [
+            {
+              "type": "boolean",
+              "default": true,
+              "description": "False requires an explicit human attack order and disables module automatic search and native automatic acquisition for this unit. True preserves native acquisition and permits configured interval searches. Native leaves the game unchanged when no interval is configured."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "False requires an explicit human attack order and disables module automatic search and native automatic acquisition for this unit. True preserves native acquisition and permits configured interval searches. Native leaves the game unchanged when no interval is configured. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults.",
+          "default": true
         },
         "preload": {
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "random_targets": {
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "strict_range": {
+          "anyOf": [
+            {
+              "type": "boolean",
+              "default": true,
+              "description": "Check automatic targets at native coordinate precision, including building centres. False restores the old rounded tile checks. Does not clamp projectile scatter or change native manual range rules."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Check automatic targets at native coordinate precision, including building centres. False restores the old rounded tile checks. Does not clamp projectile scatter or change native manual range rules. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults.",
+          "default": true
         },
         "suppress_default": {
-          "type": "boolean",
-          "description": "Defaults true with an interval. False combines native and automatic shots only in independent timer mode; it cannot bypass native reload timing. Unchanged cow orders remain available."
+          "anyOf": [
+            {
+              "type": "boolean",
+              "description": "Defaults true with an interval. False combines native and automatic shots only in independent timer mode; it cannot bypass native reload timing. Unchanged cow orders remain available."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Defaults true with an interval. False combines native and automatic shots only in independent timer mode; it cannot bypass native reload timing. Unchanged cow orders remain available. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "sync_to_animation": {
-          "type": "boolean",
-          "description": "Defaults to native firing-frame timing for catapult, trebuchet, mangonel, both ballistas, European/Arabian archers, horse archers, crossbowmen, slingers, firethrowers and hunters. Reload while waiting; never truncate the animation. Horse archers keep an independent bow clock while moving. Configured hunter shots use the native bow animation and retain other work states. False selects the independent timer. Other units default false; true uses the legacy bounded animation wait."
+          "anyOf": [
+            {
+              "type": "boolean",
+              "description": "Defaults to native firing-frame timing for catapult, trebuchet, mangonel, both ballistas, European/Arabian archers, horse archers, crossbowmen, slingers, firethrowers and hunters. Reload while waiting; never truncate the animation. Horse archers keep an independent bow clock while moving. Configured hunter shots use the native bow animation and retain other work states. False selects the independent timer. Other units default false; true uses the legacy bounded animation wait."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Defaults to native firing-frame timing for catapult, trebuchet, mangonel, both ballistas, European/Arabian archers, horse archers, crossbowmen, slingers, firethrowers and hunters. Reload while waiting; never truncate the animation. Horse archers keep an independent bow clock while moving. Configured hunter shots use the native bow animation and retain other work states. False selects the independent timer. Other units default false; true uses the legacy bounded animation wait. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "turn_before_shot": {
-          "type": "boolean",
-          "default": true,
-          "description": "Turn native-timed human siege engines toward their current attack order during reloading and before release. Defaults true; false retains the previous module behavior. Native cow orders and automatic target selection remain owned by their existing paths."
+          "anyOf": [
+            {
+              "type": "boolean",
+              "default": true,
+              "description": "Turn native-timed human siege engines toward their current attack order during reloading and before release. Defaults true; false retains the previous module behavior. Native cow orders and automatic target selection remain owned by their existing paths."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Turn native-timed human siege engines toward their current attack order during reloading and before release. Defaults true; false retains the previous module behavior. Native cow orders and automatic target selection remain owned by their existing paths. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults.",
+          "default": true
         },
         "projectile": {
           "anyOf": [
             {
-              "enum": [
-                "arrow",
-                "arrow_untargeted",
-                "ballista_bolt",
-                "catapult_rock",
-                "cow",
-                "crossbow_bolt",
-                "crossbow_bolt_untargeted",
-                "fire_arrow",
-                "fire_arrow_untargeted",
-                "fire_ballista_bolt",
-                "firethrower_pot",
-                "firethrower_pot_untargeted",
-                "mangonel_pebble",
-                "slinger_stone",
-                "slinger_stone_untargeted",
-                "trebuchet_rock",
-                1,
-                2,
-                3,
-                4,
-                7,
-                20,
-                23,
-                24,
-                25,
-                33,
-                34,
-                35,
-                36,
-                37,
-                91,
-                92
-              ]
+              "anyOf": [
+                {
+                  "enum": [
+                    "arrow",
+                    "arrow_untargeted",
+                    "ballista_bolt",
+                    "catapult_rock",
+                    "cow",
+                    "crossbow_bolt",
+                    "crossbow_bolt_untargeted",
+                    "fire_arrow",
+                    "fire_arrow_untargeted",
+                    "fire_ballista_bolt",
+                    "firethrower_pot",
+                    "firethrower_pot_untargeted",
+                    "mangonel_pebble",
+                    "slinger_stone",
+                    "slinger_stone_untargeted",
+                    "trebuchet_rock",
+                    1,
+                    2,
+                    3,
+                    4,
+                    7,
+                    20,
+                    23,
+                    24,
+                    25,
+                    33,
+                    34,
+                    35,
+                    36,
+                    37,
+                    91,
+                    92
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_-]{0,47}$"
+                }
+              ],
+              "description": "Native projectile or a name defined in projectiles. The game loader rejects undefined variant names."
             },
             {
-              "type": "string",
-              "pattern": "^[a-z][a-z0-9_-]{0,47}$"
+              "const": "native"
             }
           ],
-          "description": "Native projectile or a name defined in projectiles. The game loader rejects undefined variant names."
+          "description": "Native projectile or a name defined in projectiles. The game loader rejects undefined variant names. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "cow_projectile": {
           "anyOf": [
             {
-              "enum": [
-                "arrow",
-                "arrow_untargeted",
-                "ballista_bolt",
-                "catapult_rock",
-                "cow",
-                "crossbow_bolt",
-                "crossbow_bolt_untargeted",
-                "fire_arrow",
-                "fire_arrow_untargeted",
-                "fire_ballista_bolt",
-                "firethrower_pot",
-                "firethrower_pot_untargeted",
-                "mangonel_pebble",
-                "slinger_stone",
-                "slinger_stone_untargeted",
-                "trebuchet_rock",
-                1,
-                2,
-                3,
-                4,
-                7,
-                20,
-                23,
-                24,
-                25,
-                33,
-                34,
-                35,
-                36,
-                37,
-                91,
-                92
-              ]
+              "anyOf": [
+                {
+                  "enum": [
+                    "arrow",
+                    "arrow_untargeted",
+                    "ballista_bolt",
+                    "catapult_rock",
+                    "cow",
+                    "crossbow_bolt",
+                    "crossbow_bolt_untargeted",
+                    "fire_arrow",
+                    "fire_arrow_untargeted",
+                    "fire_ballista_bolt",
+                    "firethrower_pot",
+                    "firethrower_pot_untargeted",
+                    "mangonel_pebble",
+                    "slinger_stone",
+                    "slinger_stone_untargeted",
+                    "trebuchet_rock",
+                    1,
+                    2,
+                    3,
+                    4,
+                    7,
+                    20,
+                    23,
+                    24,
+                    25,
+                    33,
+                    34,
+                    35,
+                    36,
+                    37,
+                    91,
+                    92
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_-]{0,47}$"
+                }
+              ],
+              "description": "Separate replacement for native siege cow ammunition and automatic AI cow shots. Omission preserves cows."
             },
             {
-              "type": "string",
-              "pattern": "^[a-z][a-z0-9_-]{0,47}$"
+              "const": "native"
             }
           ],
-          "description": "Separate replacement for native siege cow ammunition and automatic AI cow shots. Omission preserves cows."
+          "description": "Separate replacement for native siege cow ammunition and automatic AI cow shots. Omission preserves cows. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "targets": {
-          "oneOf": [
+          "anyOf": [
             {
-              "type": "string",
-              "enum": [
-                "buildings",
-                "cluster",
-                "fortifications",
-                "siege_towers",
-                "units",
-                "walls"
-              ]
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "buildings",
+                    "cluster",
+                    "fortifications",
+                    "siege_towers",
+                    "units",
+                    "walls"
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "buildings",
+                      "cluster",
+                      "fortifications",
+                      "siege_towers",
+                      "units",
+                      "walls"
+                    ]
+                  },
+                  "minItems": 1,
+                  "maxItems": 4,
+                  "uniqueItems": true
+                }
+              ],
+              "description": "Automatic search priorities. Cluster density applies only to AI owners. Human native shooters retain their current unit/building/ground/wall attack order within range; humans without an order treat cluster as units."
             },
             {
-              "type": "array",
-              "items": {
-                "type": "string",
-                "enum": [
-                  "buildings",
-                  "cluster",
-                  "fortifications",
-                  "siege_towers",
-                  "units",
-                  "walls"
-                ]
-              },
-              "minItems": 1,
-              "maxItems": 4,
-              "uniqueItems": true
+              "const": "native"
             }
           ],
-          "description": "Automatic search priorities. Cluster density applies only to AI owners. Human native shooters retain their current unit/building/ground/wall attack order within range; humans without an order treat cluster as units."
+          "description": "Automatic search priorities. Cluster density applies only to AI owners. Human native shooters retain their current unit/building/ground/wall attack order within range; humans without an order treat cluster as units. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "on_fortification": {
           "$ref": "#/$defs/override"
@@ -661,7 +954,19 @@
             "required": [
               "spread",
               "spread_tiles"
-            ]
+            ],
+            "properties": {
+              "spread": {
+                "not": {
+                  "const": "native"
+                }
+              },
+              "spread_tiles": {
+                "not": {
+                  "const": "native"
+                }
+              }
+            }
           }
         },
         {
@@ -669,7 +974,19 @@
             "required": [
               "inaccuracy",
               "inaccuracy_tiles"
-            ]
+            ],
+            "properties": {
+              "inaccuracy": {
+                "not": {
+                  "const": "native"
+                }
+              },
+              "inaccuracy_tiles": {
+                "not": {
+                  "const": "native"
+                }
+              }
+            }
           }
         }
       ],
@@ -684,283 +1001,576 @@
       "additionalProperties": false,
       "properties": {
         "attached_board_radius": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 100
-        },
-        "attached_interval": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 60000,
-          "description": "Enables firing for a siege tower docked to a wall, overriding moving/standing intervals; 0 holds fire. Omission keeps the current moving/standing rate or fallback."
-        },
-        "count": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 64
-        },
-        "cow_count": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 64
-        },
-        "density_min": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 256,
-          "description": "Minimum enemy count for AI cluster targeting; human attack orders are not restricted by this threshold."
-        },
-        "density_radius": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 100,
-          "description": "Radius in tiles for counting nearby enemies in an AI cluster."
-        },
-        "inaccuracy": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 800,
-          "description": "Maximum random aim-error radius in whole native coordinate units: 1 = 1/8 tile, 8 = 1 tile. Explicit 0 removes native random error; omission preserves it. Separate spread still applies. Do not combine with inaccuracy_tiles."
-        },
-        "inaccuracy_tiles": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 100,
-          "description": "Compatibility alias in whole tiles, converted by multiplying by 8. Prefer inaccuracy for native 1/8-tile steps. Do not combine both fields."
-        },
-        "interval": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 60000,
-          "description": "Optional fallback automatic-fire interval in simulation ticks. Applies only where no state interval overrides it."
-        },
-        "interval_moving": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 60000,
-          "description": "Enables firing while moving; 0 holds fire. If omitted, use interval, or hold fire if neither is set."
-        },
-        "interval_standing": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 60000,
-          "description": "Enables firing while stopped, not specifically docked; 0 holds fire. If omitted, use interval, or hold fire if neither is set."
-        },
-        "preload_poll": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 60000
-        },
-        "range": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 100
-        },
-        "require_manned": {
           "anyOf": [
             {
               "type": "integer",
               "minimum": 0,
-              "maximum": 4
+              "maximum": 100
             },
             {
-              "type": "boolean"
+              "const": "native"
             }
           ],
-          "description": "Engineers currently aboard. Native reload defaults: trebuchet 3, other supported siege engines 2. Independent timer defaults 0. Explicit true means 1; false or 0 allows unmanned fire."
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "attached_interval": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 60000,
+              "description": "Enables firing for a siege tower docked to a wall, overriding moving/standing intervals; 0 holds fire. Omission keeps the current moving/standing rate or fallback."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Enables firing for a siege tower docked to a wall, overriding moving/standing intervals; 0 holds fire. Omission keeps the current moving/standing rate or fallback. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "count": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 64
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "cow_count": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 64
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "density_min": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 256,
+              "description": "Minimum enemy count for AI cluster targeting; human attack orders are not restricted by this threshold."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Minimum enemy count for AI cluster targeting; human attack orders are not restricted by this threshold. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "density_radius": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "description": "Radius in tiles for counting nearby enemies in an AI cluster."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Radius in tiles for counting nearby enemies in an AI cluster. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "inaccuracy": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 800,
+              "description": "Maximum random aim-error radius in whole native coordinate units: 1 = 1/8 tile, 8 = 1 tile. Explicit 0 removes native random error; omission preserves it. Separate spread still applies. Do not combine with inaccuracy_tiles."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Maximum random aim-error radius in whole native coordinate units: 1 = 1/8 tile, 8 = 1 tile. Explicit 0 removes native random error; omission preserves it. Separate spread still applies. Do not combine with inaccuracy_tiles. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "inaccuracy_tiles": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100,
+              "description": "Compatibility alias in whole tiles, converted by multiplying by 8. Prefer inaccuracy for native 1/8-tile steps. Do not combine both fields."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Compatibility alias in whole tiles, converted by multiplying by 8. Prefer inaccuracy for native 1/8-tile steps. Do not combine both fields. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "interval": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 60000,
+              "description": "Optional fallback automatic-fire interval in simulation ticks. Applies only where no state interval overrides it."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Optional fallback automatic-fire interval in simulation ticks. Applies only where no state interval overrides it. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "interval_moving": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 60000,
+              "description": "Enables firing while moving; 0 holds fire. If omitted, use interval, or hold fire if neither is set."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Enables firing while moving; 0 holds fire. If omitted, use interval, or hold fire if neither is set. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "interval_standing": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 60000,
+              "description": "Enables firing while stopped, not specifically docked; 0 holds fire. If omitted, use interval, or hold fire if neither is set."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Enables firing while stopped, not specifically docked; 0 holds fire. If omitted, use interval, or hold fire if neither is set. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "preload_poll": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 60000
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "range": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "require_manned": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 4
+                },
+                {
+                  "type": "boolean"
+                }
+              ],
+              "description": "Engineers currently aboard. Native reload defaults: trebuchet 3, other supported siege engines 2. Independent timer defaults 0. Explicit true means 1; false or 0 allows unmanned fire."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Engineers currently aboard. Native reload defaults: trebuchet 3, other supported siege engines 2. Independent timer defaults 0. Explicit true means 1; false or 0 allows unmanned fire. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "shoot_height": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 500
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 500
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "spread": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 800,
-          "description": "Additional simultaneous-shot spread per axis, in whole native coordinate units: 1 = 1/8 tile, 8 = 1 tile. Zero adds no spread. Independent of inaccuracy."
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 800,
+              "description": "Additional simultaneous-shot spread per axis, in whole native coordinate units: 1 = 1/8 tile, 8 = 1 tile. Zero adds no spread. Independent of inaccuracy."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Additional simultaneous-shot spread per axis, in whole native coordinate units: 1 = 1/8 tile, 8 = 1 tile. Zero adds no spread. Independent of inaccuracy. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "spread_tiles": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 100,
-          "description": "Compatibility alias in whole tiles, converted by multiplying by 8. Prefer spread for native 1/8-tile steps. Do not combine both fields."
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100,
+              "description": "Compatibility alias in whole tiles, converted by multiplying by 8. Prefer spread for native 1/8-tile steps. Do not combine both fields."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Compatibility alias in whole tiles, converted by multiplying by 8. Prefer spread for native 1/8-tile steps. Do not combine both fields. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "stagger_max": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 60000
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 60000
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "stagger_min": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 60000,
-          "description": "Requires stagger_max; must not exceed it when staggering is enabled. Checked by the game loader."
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 60000,
+              "description": "Requires stagger_max; must not exceed it when staggering is enabled. Checked by the game loader."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Requires stagger_max; must not exceed it when staggering is enabled. Checked by the game loader. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "sync_max_wait": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 60000,
-          "description": "Legacy animation wait only; never bypasses a native reload firing frame."
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 60000,
+              "description": "Legacy animation wait only; never bypasses a native reload firing frame."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Legacy animation wait only; never bypasses a native reload firing frame. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "wall_min_distance": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 100
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "ai_cow_vs_units": {
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "ai_only": {
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "attached_ignore_crew": {
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "attached_stop_when_boarded": {
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "auto_targeting": {
+          "anyOf": [
+            {
+              "type": "boolean",
+              "default": true,
+              "description": "False requires an explicit human attack order and disables module automatic search and native automatic acquisition for this unit. True preserves native acquisition and permits configured interval searches. Native leaves the game unchanged when no interval is configured."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "False requires an explicit human attack order and disables module automatic search and native automatic acquisition for this unit. True preserves native acquisition and permits configured interval searches. Native leaves the game unchanged when no interval is configured. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults.",
+          "default": true
         },
         "preload": {
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "random_targets": {
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "strict_range": {
+          "anyOf": [
+            {
+              "type": "boolean",
+              "default": true,
+              "description": "Check automatic targets at native coordinate precision, including building centres. False restores the old rounded tile checks. Does not clamp projectile scatter or change native manual range rules."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Check automatic targets at native coordinate precision, including building centres. False restores the old rounded tile checks. Does not clamp projectile scatter or change native manual range rules. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults.",
+          "default": true
         },
         "suppress_default": {
-          "type": "boolean",
-          "description": "Defaults true with an interval. False combines native and automatic shots only in independent timer mode; it cannot bypass native reload timing. Unchanged cow orders remain available."
+          "anyOf": [
+            {
+              "type": "boolean",
+              "description": "Defaults true with an interval. False combines native and automatic shots only in independent timer mode; it cannot bypass native reload timing. Unchanged cow orders remain available."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Defaults true with an interval. False combines native and automatic shots only in independent timer mode; it cannot bypass native reload timing. Unchanged cow orders remain available. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "sync_to_animation": {
-          "type": "boolean",
-          "description": "Defaults to native firing-frame timing for catapult, trebuchet, mangonel, both ballistas, European/Arabian archers, horse archers, crossbowmen, slingers, firethrowers and hunters. Reload while waiting; never truncate the animation. Horse archers keep an independent bow clock while moving. Configured hunter shots use the native bow animation and retain other work states. False selects the independent timer. Other units default false; true uses the legacy bounded animation wait."
+          "anyOf": [
+            {
+              "type": "boolean",
+              "description": "Defaults to native firing-frame timing for catapult, trebuchet, mangonel, both ballistas, European/Arabian archers, horse archers, crossbowmen, slingers, firethrowers and hunters. Reload while waiting; never truncate the animation. Horse archers keep an independent bow clock while moving. Configured hunter shots use the native bow animation and retain other work states. False selects the independent timer. Other units default false; true uses the legacy bounded animation wait."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Defaults to native firing-frame timing for catapult, trebuchet, mangonel, both ballistas, European/Arabian archers, horse archers, crossbowmen, slingers, firethrowers and hunters. Reload while waiting; never truncate the animation. Horse archers keep an independent bow clock while moving. Configured hunter shots use the native bow animation and retain other work states. False selects the independent timer. Other units default false; true uses the legacy bounded animation wait. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "turn_before_shot": {
-          "type": "boolean",
-          "default": true,
-          "description": "Turn native-timed human siege engines toward their current attack order during reloading and before release. Defaults true; false retains the previous module behavior. Native cow orders and automatic target selection remain owned by their existing paths."
+          "anyOf": [
+            {
+              "type": "boolean",
+              "default": true,
+              "description": "Turn native-timed human siege engines toward their current attack order during reloading and before release. Defaults true; false retains the previous module behavior. Native cow orders and automatic target selection remain owned by their existing paths."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Turn native-timed human siege engines toward their current attack order during reloading and before release. Defaults true; false retains the previous module behavior. Native cow orders and automatic target selection remain owned by their existing paths. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults.",
+          "default": true
         },
         "projectile": {
           "anyOf": [
             {
-              "enum": [
-                "arrow",
-                "arrow_untargeted",
-                "ballista_bolt",
-                "catapult_rock",
-                "cow",
-                "crossbow_bolt",
-                "crossbow_bolt_untargeted",
-                "fire_arrow",
-                "fire_arrow_untargeted",
-                "fire_ballista_bolt",
-                "firethrower_pot",
-                "firethrower_pot_untargeted",
-                "mangonel_pebble",
-                "slinger_stone",
-                "slinger_stone_untargeted",
-                "trebuchet_rock",
-                1,
-                2,
-                3,
-                4,
-                7,
-                20,
-                23,
-                24,
-                25,
-                33,
-                34,
-                35,
-                36,
-                37,
-                91,
-                92
-              ]
+              "anyOf": [
+                {
+                  "enum": [
+                    "arrow",
+                    "arrow_untargeted",
+                    "ballista_bolt",
+                    "catapult_rock",
+                    "cow",
+                    "crossbow_bolt",
+                    "crossbow_bolt_untargeted",
+                    "fire_arrow",
+                    "fire_arrow_untargeted",
+                    "fire_ballista_bolt",
+                    "firethrower_pot",
+                    "firethrower_pot_untargeted",
+                    "mangonel_pebble",
+                    "slinger_stone",
+                    "slinger_stone_untargeted",
+                    "trebuchet_rock",
+                    1,
+                    2,
+                    3,
+                    4,
+                    7,
+                    20,
+                    23,
+                    24,
+                    25,
+                    33,
+                    34,
+                    35,
+                    36,
+                    37,
+                    91,
+                    92
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_-]{0,47}$"
+                }
+              ],
+              "description": "Native projectile or a name defined in projectiles. The game loader rejects undefined variant names."
             },
             {
-              "type": "string",
-              "pattern": "^[a-z][a-z0-9_-]{0,47}$"
+              "const": "native"
             }
           ],
-          "description": "Native projectile or a name defined in projectiles. The game loader rejects undefined variant names."
+          "description": "Native projectile or a name defined in projectiles. The game loader rejects undefined variant names. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "cow_projectile": {
           "anyOf": [
             {
-              "enum": [
-                "arrow",
-                "arrow_untargeted",
-                "ballista_bolt",
-                "catapult_rock",
-                "cow",
-                "crossbow_bolt",
-                "crossbow_bolt_untargeted",
-                "fire_arrow",
-                "fire_arrow_untargeted",
-                "fire_ballista_bolt",
-                "firethrower_pot",
-                "firethrower_pot_untargeted",
-                "mangonel_pebble",
-                "slinger_stone",
-                "slinger_stone_untargeted",
-                "trebuchet_rock",
-                1,
-                2,
-                3,
-                4,
-                7,
-                20,
-                23,
-                24,
-                25,
-                33,
-                34,
-                35,
-                36,
-                37,
-                91,
-                92
-              ]
+              "anyOf": [
+                {
+                  "enum": [
+                    "arrow",
+                    "arrow_untargeted",
+                    "ballista_bolt",
+                    "catapult_rock",
+                    "cow",
+                    "crossbow_bolt",
+                    "crossbow_bolt_untargeted",
+                    "fire_arrow",
+                    "fire_arrow_untargeted",
+                    "fire_ballista_bolt",
+                    "firethrower_pot",
+                    "firethrower_pot_untargeted",
+                    "mangonel_pebble",
+                    "slinger_stone",
+                    "slinger_stone_untargeted",
+                    "trebuchet_rock",
+                    1,
+                    2,
+                    3,
+                    4,
+                    7,
+                    20,
+                    23,
+                    24,
+                    25,
+                    33,
+                    34,
+                    35,
+                    36,
+                    37,
+                    91,
+                    92
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_-]{0,47}$"
+                }
+              ],
+              "description": "Separate replacement for native siege cow ammunition and automatic AI cow shots. Omission preserves cows."
             },
             {
-              "type": "string",
-              "pattern": "^[a-z][a-z0-9_-]{0,47}$"
+              "const": "native"
             }
           ],
-          "description": "Separate replacement for native siege cow ammunition and automatic AI cow shots. Omission preserves cows."
+          "description": "Separate replacement for native siege cow ammunition and automatic AI cow shots. Omission preserves cows. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "targets": {
-          "oneOf": [
+          "anyOf": [
             {
-              "type": "string",
-              "enum": [
-                "buildings",
-                "cluster",
-                "fortifications",
-                "siege_towers",
-                "units",
-                "walls"
-              ]
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "buildings",
+                    "cluster",
+                    "fortifications",
+                    "siege_towers",
+                    "units",
+                    "walls"
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "buildings",
+                      "cluster",
+                      "fortifications",
+                      "siege_towers",
+                      "units",
+                      "walls"
+                    ]
+                  },
+                  "minItems": 1,
+                  "maxItems": 4,
+                  "uniqueItems": true
+                }
+              ],
+              "description": "Automatic search priorities. Cluster density applies only to AI owners. Human native shooters retain their current unit/building/ground/wall attack order within range; humans without an order treat cluster as units."
             },
             {
-              "type": "array",
-              "items": {
-                "type": "string",
-                "enum": [
-                  "buildings",
-                  "cluster",
-                  "fortifications",
-                  "siege_towers",
-                  "units",
-                  "walls"
-                ]
-              },
-              "minItems": 1,
-              "maxItems": 4,
-              "uniqueItems": true
+              "const": "native"
             }
           ],
-          "description": "Automatic search priorities. Cluster density applies only to AI owners. Human native shooters retain their current unit/building/ground/wall attack order within range; humans without an order treat cluster as units."
+          "description": "Automatic search priorities. Cluster density applies only to AI owners. Human native shooters retain their current unit/building/ground/wall attack order within range; humans without an order treat cluster as units. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         }
       },
       "description": "Sparse overrides while on a wall or fortification. Missing fields inherit the ground settings. Runtime validates the merged settings.",
@@ -970,7 +1580,19 @@
             "required": [
               "spread",
               "spread_tiles"
-            ]
+            ],
+            "properties": {
+              "spread": {
+                "not": {
+                  "const": "native"
+                }
+              },
+              "spread_tiles": {
+                "not": {
+                  "const": "native"
+                }
+              }
+            }
           }
         },
         {
@@ -978,7 +1600,19 @@
             "required": [
               "inaccuracy",
               "inaccuracy_tiles"
-            ]
+            ],
+            "properties": {
+              "inaccuracy": {
+                "not": {
+                  "const": "native"
+                }
+              },
+              "inaccuracy_tiles": {
+                "not": {
+                  "const": "native"
+                }
+              }
+            }
           }
         }
       ]
@@ -992,283 +1626,576 @@
       "minProperties": 2,
       "properties": {
         "attached_board_radius": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 100
-        },
-        "attached_interval": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 60000,
-          "description": "Enables firing for a siege tower docked to a wall, overriding moving/standing intervals; 0 holds fire. Omission keeps the current moving/standing rate or fallback."
-        },
-        "count": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 64
-        },
-        "cow_count": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 64
-        },
-        "density_min": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 256,
-          "description": "Minimum enemy count for AI cluster targeting; human attack orders are not restricted by this threshold."
-        },
-        "density_radius": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 100,
-          "description": "Radius in tiles for counting nearby enemies in an AI cluster."
-        },
-        "inaccuracy": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 800,
-          "description": "Maximum random aim-error radius in whole native coordinate units: 1 = 1/8 tile, 8 = 1 tile. Explicit 0 removes native random error; omission preserves it. Separate spread still applies. Do not combine with inaccuracy_tiles."
-        },
-        "inaccuracy_tiles": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 100,
-          "description": "Compatibility alias in whole tiles, converted by multiplying by 8. Prefer inaccuracy for native 1/8-tile steps. Do not combine both fields."
-        },
-        "interval": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 60000,
-          "description": "Optional fallback automatic-fire interval in simulation ticks. Applies only where no state interval overrides it."
-        },
-        "interval_moving": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 60000,
-          "description": "Enables firing while moving; 0 holds fire. If omitted, use interval, or hold fire if neither is set."
-        },
-        "interval_standing": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 60000,
-          "description": "Enables firing while stopped, not specifically docked; 0 holds fire. If omitted, use interval, or hold fire if neither is set."
-        },
-        "preload_poll": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 60000
-        },
-        "range": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 100
-        },
-        "require_manned": {
           "anyOf": [
             {
               "type": "integer",
               "minimum": 0,
-              "maximum": 4
+              "maximum": 100
             },
             {
-              "type": "boolean"
+              "const": "native"
             }
           ],
-          "description": "Engineers currently aboard. Native reload defaults: trebuchet 3, other supported siege engines 2. Independent timer defaults 0. Explicit true means 1; false or 0 allows unmanned fire."
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "attached_interval": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 60000,
+              "description": "Enables firing for a siege tower docked to a wall, overriding moving/standing intervals; 0 holds fire. Omission keeps the current moving/standing rate or fallback."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Enables firing for a siege tower docked to a wall, overriding moving/standing intervals; 0 holds fire. Omission keeps the current moving/standing rate or fallback. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "count": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 64
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "cow_count": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 64
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "density_min": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 256,
+              "description": "Minimum enemy count for AI cluster targeting; human attack orders are not restricted by this threshold."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Minimum enemy count for AI cluster targeting; human attack orders are not restricted by this threshold. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "density_radius": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "description": "Radius in tiles for counting nearby enemies in an AI cluster."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Radius in tiles for counting nearby enemies in an AI cluster. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "inaccuracy": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 800,
+              "description": "Maximum random aim-error radius in whole native coordinate units: 1 = 1/8 tile, 8 = 1 tile. Explicit 0 removes native random error; omission preserves it. Separate spread still applies. Do not combine with inaccuracy_tiles."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Maximum random aim-error radius in whole native coordinate units: 1 = 1/8 tile, 8 = 1 tile. Explicit 0 removes native random error; omission preserves it. Separate spread still applies. Do not combine with inaccuracy_tiles. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "inaccuracy_tiles": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100,
+              "description": "Compatibility alias in whole tiles, converted by multiplying by 8. Prefer inaccuracy for native 1/8-tile steps. Do not combine both fields."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Compatibility alias in whole tiles, converted by multiplying by 8. Prefer inaccuracy for native 1/8-tile steps. Do not combine both fields. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "interval": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 60000,
+              "description": "Optional fallback automatic-fire interval in simulation ticks. Applies only where no state interval overrides it."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Optional fallback automatic-fire interval in simulation ticks. Applies only where no state interval overrides it. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "interval_moving": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 60000,
+              "description": "Enables firing while moving; 0 holds fire. If omitted, use interval, or hold fire if neither is set."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Enables firing while moving; 0 holds fire. If omitted, use interval, or hold fire if neither is set. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "interval_standing": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 60000,
+              "description": "Enables firing while stopped, not specifically docked; 0 holds fire. If omitted, use interval, or hold fire if neither is set."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Enables firing while stopped, not specifically docked; 0 holds fire. If omitted, use interval, or hold fire if neither is set. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "preload_poll": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 60000
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "range": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "require_manned": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 4
+                },
+                {
+                  "type": "boolean"
+                }
+              ],
+              "description": "Engineers currently aboard. Native reload defaults: trebuchet 3, other supported siege engines 2. Independent timer defaults 0. Explicit true means 1; false or 0 allows unmanned fire."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Engineers currently aboard. Native reload defaults: trebuchet 3, other supported siege engines 2. Independent timer defaults 0. Explicit true means 1; false or 0 allows unmanned fire. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "shoot_height": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 500
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 500
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "spread": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 800,
-          "description": "Additional simultaneous-shot spread per axis, in whole native coordinate units: 1 = 1/8 tile, 8 = 1 tile. Zero adds no spread. Independent of inaccuracy."
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 800,
+              "description": "Additional simultaneous-shot spread per axis, in whole native coordinate units: 1 = 1/8 tile, 8 = 1 tile. Zero adds no spread. Independent of inaccuracy."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Additional simultaneous-shot spread per axis, in whole native coordinate units: 1 = 1/8 tile, 8 = 1 tile. Zero adds no spread. Independent of inaccuracy. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "spread_tiles": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 100,
-          "description": "Compatibility alias in whole tiles, converted by multiplying by 8. Prefer spread for native 1/8-tile steps. Do not combine both fields."
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100,
+              "description": "Compatibility alias in whole tiles, converted by multiplying by 8. Prefer spread for native 1/8-tile steps. Do not combine both fields."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Compatibility alias in whole tiles, converted by multiplying by 8. Prefer spread for native 1/8-tile steps. Do not combine both fields. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "stagger_max": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 60000
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 60000
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "stagger_min": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 60000,
-          "description": "Requires stagger_max; must not exceed it when staggering is enabled. Checked by the game loader."
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 60000,
+              "description": "Requires stagger_max; must not exceed it when staggering is enabled. Checked by the game loader."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Requires stagger_max; must not exceed it when staggering is enabled. Checked by the game loader. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "sync_max_wait": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 60000,
-          "description": "Legacy animation wait only; never bypasses a native reload firing frame."
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 60000,
+              "description": "Legacy animation wait only; never bypasses a native reload firing frame."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Legacy animation wait only; never bypasses a native reload firing frame. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "wall_min_distance": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 100
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "ai_cow_vs_units": {
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "ai_only": {
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "attached_ignore_crew": {
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "attached_stop_when_boarded": {
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "auto_targeting": {
+          "anyOf": [
+            {
+              "type": "boolean",
+              "default": true,
+              "description": "False requires an explicit human attack order and disables module automatic search and native automatic acquisition for this unit. True preserves native acquisition and permits configured interval searches. Native leaves the game unchanged when no interval is configured."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "False requires an explicit human attack order and disables module automatic search and native automatic acquisition for this unit. True preserves native acquisition and permits configured interval searches. Native leaves the game unchanged when no interval is configured. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults.",
+          "default": true
         },
         "preload": {
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "random_targets": {
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": " Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "strict_range": {
+          "anyOf": [
+            {
+              "type": "boolean",
+              "default": true,
+              "description": "Check automatic targets at native coordinate precision, including building centres. False restores the old rounded tile checks. Does not clamp projectile scatter or change native manual range rules."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Check automatic targets at native coordinate precision, including building centres. False restores the old rounded tile checks. Does not clamp projectile scatter or change native manual range rules. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults.",
+          "default": true
         },
         "suppress_default": {
-          "type": "boolean",
-          "description": "Defaults true with an interval. False combines native and automatic shots only in independent timer mode; it cannot bypass native reload timing. Unchanged cow orders remain available."
+          "anyOf": [
+            {
+              "type": "boolean",
+              "description": "Defaults true with an interval. False combines native and automatic shots only in independent timer mode; it cannot bypass native reload timing. Unchanged cow orders remain available."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Defaults true with an interval. False combines native and automatic shots only in independent timer mode; it cannot bypass native reload timing. Unchanged cow orders remain available. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "sync_to_animation": {
-          "type": "boolean",
-          "description": "Defaults to native firing-frame timing for catapult, trebuchet, mangonel, both ballistas, European/Arabian archers, horse archers, crossbowmen, slingers, firethrowers and hunters. Reload while waiting; never truncate the animation. Horse archers keep an independent bow clock while moving. Configured hunter shots use the native bow animation and retain other work states. False selects the independent timer. Other units default false; true uses the legacy bounded animation wait."
+          "anyOf": [
+            {
+              "type": "boolean",
+              "description": "Defaults to native firing-frame timing for catapult, trebuchet, mangonel, both ballistas, European/Arabian archers, horse archers, crossbowmen, slingers, firethrowers and hunters. Reload while waiting; never truncate the animation. Horse archers keep an independent bow clock while moving. Configured hunter shots use the native bow animation and retain other work states. False selects the independent timer. Other units default false; true uses the legacy bounded animation wait."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Defaults to native firing-frame timing for catapult, trebuchet, mangonel, both ballistas, European/Arabian archers, horse archers, crossbowmen, slingers, firethrowers and hunters. Reload while waiting; never truncate the animation. Horse archers keep an independent bow clock while moving. Configured hunter shots use the native bow animation and retain other work states. False selects the independent timer. Other units default false; true uses the legacy bounded animation wait. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "turn_before_shot": {
-          "type": "boolean",
-          "default": true,
-          "description": "Turn native-timed human siege engines toward their current attack order during reloading and before release. Defaults true; false retains the previous module behavior. Native cow orders and automatic target selection remain owned by their existing paths."
+          "anyOf": [
+            {
+              "type": "boolean",
+              "default": true,
+              "description": "Turn native-timed human siege engines toward their current attack order during reloading and before release. Defaults true; false retains the previous module behavior. Native cow orders and automatic target selection remain owned by their existing paths."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Turn native-timed human siege engines toward their current attack order during reloading and before release. Defaults true; false retains the previous module behavior. Native cow orders and automatic target selection remain owned by their existing paths. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults.",
+          "default": true
         },
         "projectile": {
           "anyOf": [
             {
-              "enum": [
-                "arrow",
-                "arrow_untargeted",
-                "ballista_bolt",
-                "catapult_rock",
-                "cow",
-                "crossbow_bolt",
-                "crossbow_bolt_untargeted",
-                "fire_arrow",
-                "fire_arrow_untargeted",
-                "fire_ballista_bolt",
-                "firethrower_pot",
-                "firethrower_pot_untargeted",
-                "mangonel_pebble",
-                "slinger_stone",
-                "slinger_stone_untargeted",
-                "trebuchet_rock",
-                1,
-                2,
-                3,
-                4,
-                7,
-                20,
-                23,
-                24,
-                25,
-                33,
-                34,
-                35,
-                36,
-                37,
-                91,
-                92
-              ]
+              "anyOf": [
+                {
+                  "enum": [
+                    "arrow",
+                    "arrow_untargeted",
+                    "ballista_bolt",
+                    "catapult_rock",
+                    "cow",
+                    "crossbow_bolt",
+                    "crossbow_bolt_untargeted",
+                    "fire_arrow",
+                    "fire_arrow_untargeted",
+                    "fire_ballista_bolt",
+                    "firethrower_pot",
+                    "firethrower_pot_untargeted",
+                    "mangonel_pebble",
+                    "slinger_stone",
+                    "slinger_stone_untargeted",
+                    "trebuchet_rock",
+                    1,
+                    2,
+                    3,
+                    4,
+                    7,
+                    20,
+                    23,
+                    24,
+                    25,
+                    33,
+                    34,
+                    35,
+                    36,
+                    37,
+                    91,
+                    92
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_-]{0,47}$"
+                }
+              ],
+              "description": "Native projectile or a name defined in projectiles. The game loader rejects undefined variant names."
             },
             {
-              "type": "string",
-              "pattern": "^[a-z][a-z0-9_-]{0,47}$"
+              "const": "native"
             }
           ],
-          "description": "Native projectile or a name defined in projectiles. The game loader rejects undefined variant names."
+          "description": "Native projectile or a name defined in projectiles. The game loader rejects undefined variant names. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "cow_projectile": {
           "anyOf": [
             {
-              "enum": [
-                "arrow",
-                "arrow_untargeted",
-                "ballista_bolt",
-                "catapult_rock",
-                "cow",
-                "crossbow_bolt",
-                "crossbow_bolt_untargeted",
-                "fire_arrow",
-                "fire_arrow_untargeted",
-                "fire_ballista_bolt",
-                "firethrower_pot",
-                "firethrower_pot_untargeted",
-                "mangonel_pebble",
-                "slinger_stone",
-                "slinger_stone_untargeted",
-                "trebuchet_rock",
-                1,
-                2,
-                3,
-                4,
-                7,
-                20,
-                23,
-                24,
-                25,
-                33,
-                34,
-                35,
-                36,
-                37,
-                91,
-                92
-              ]
+              "anyOf": [
+                {
+                  "enum": [
+                    "arrow",
+                    "arrow_untargeted",
+                    "ballista_bolt",
+                    "catapult_rock",
+                    "cow",
+                    "crossbow_bolt",
+                    "crossbow_bolt_untargeted",
+                    "fire_arrow",
+                    "fire_arrow_untargeted",
+                    "fire_ballista_bolt",
+                    "firethrower_pot",
+                    "firethrower_pot_untargeted",
+                    "mangonel_pebble",
+                    "slinger_stone",
+                    "slinger_stone_untargeted",
+                    "trebuchet_rock",
+                    1,
+                    2,
+                    3,
+                    4,
+                    7,
+                    20,
+                    23,
+                    24,
+                    25,
+                    33,
+                    34,
+                    35,
+                    36,
+                    37,
+                    91,
+                    92
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_-]{0,47}$"
+                }
+              ],
+              "description": "Separate replacement for native siege cow ammunition and automatic AI cow shots. Omission preserves cows."
             },
             {
-              "type": "string",
-              "pattern": "^[a-z][a-z0-9_-]{0,47}$"
+              "const": "native"
             }
           ],
-          "description": "Separate replacement for native siege cow ammunition and automatic AI cow shots. Omission preserves cows."
+          "description": "Separate replacement for native siege cow ammunition and automatic AI cow shots. Omission preserves cows. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "targets": {
-          "oneOf": [
+          "anyOf": [
             {
-              "type": "string",
-              "enum": [
-                "buildings",
-                "cluster",
-                "fortifications",
-                "siege_towers",
-                "units",
-                "walls"
-              ]
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "buildings",
+                    "cluster",
+                    "fortifications",
+                    "siege_towers",
+                    "units",
+                    "walls"
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "buildings",
+                      "cluster",
+                      "fortifications",
+                      "siege_towers",
+                      "units",
+                      "walls"
+                    ]
+                  },
+                  "minItems": 1,
+                  "maxItems": 4,
+                  "uniqueItems": true
+                }
+              ],
+              "description": "Automatic search priorities. Cluster density applies only to AI owners. Human native shooters retain their current unit/building/ground/wall attack order within range; humans without an order treat cluster as units."
             },
             {
-              "type": "array",
-              "items": {
-                "type": "string",
-                "enum": [
-                  "buildings",
-                  "cluster",
-                  "fortifications",
-                  "siege_towers",
-                  "units",
-                  "walls"
-                ]
-              },
-              "minItems": 1,
-              "maxItems": 4,
-              "uniqueItems": true
+              "const": "native"
             }
           ],
-          "description": "Automatic search priorities. Cluster density applies only to AI owners. Human native shooters retain their current unit/building/ground/wall attack order within range; humans without an order treat cluster as units."
+          "description": "Automatic search priorities. Cluster density applies only to AI owners. Human native shooters retain their current unit/building/ground/wall attack order within range; humans without an order treat cluster as units. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
         "decoration": {
           "type": "string",
@@ -1281,7 +2208,19 @@
             "required": [
               "spread",
               "spread_tiles"
-            ]
+            ],
+            "properties": {
+              "spread": {
+                "not": {
+                  "const": "native"
+                }
+              },
+              "spread_tiles": {
+                "not": {
+                  "const": "native"
+                }
+              }
+            }
           }
         },
         {
@@ -1289,7 +2228,19 @@
             "required": [
               "inaccuracy",
               "inaccuracy_tiles"
-            ]
+            ],
+            "properties": {
+              "inaccuracy": {
+                "not": {
+                  "const": "native"
+                }
+              },
+              "inaccuracy_tiles": {
+                "not": {
+                  "const": "native"
+                }
+              }
+            }
           }
         }
       ],

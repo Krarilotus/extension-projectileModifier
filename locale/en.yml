@@ -1,6 +1,6 @@
 balance_changes: Balance Changes
 config_file: Projectile configuration file (YAML)
-config_help: 'Copy vanilla-projectiles.yml from the module ZIP into ucp/resources/custom-projectiles/, edit the
-  copy and select it here. Omitted settings stay unchanged; an empty path makes no changes. UCP required/suggested
-  rules apply to the selected file as a whole. Restart the game after changes. With native reload timing, turn_before_shot:
-  false disables turning toward manual targets.'
+config_help: 'Copy the complete vanilla-projectiles.yml from the ZIP, edit it and select the copy. native preserves
+  the game’s rules; an empty path changes nothing. auto_targeting: false requires manual attack orders. strict_range:
+  false restores rounded range checks; turn_before_shot: false disables the turning correction. Required/suggested
+  applies to the whole file selection. Restart after editing.'

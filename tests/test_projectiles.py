@@ -574,7 +574,12 @@ class ConfigTests(unittest.TestCase):
         path=ROOT/'vanilla-projectiles.yml'; text=path.read_text(encoding='utf-8')
         parsed=yaml.safe_load(text)
         self.assertEqual(len(parsed['units']),77)
-        self.assertTrue(all(value=={} for value in parsed['units'].values()))
+        for value in parsed['units'].values():
+            self.assertEqual(value['auto_targeting'],'native')
+            self.assertEqual(value['on_fortification'],{})
+            self.assertEqual(value['near_decorations'],[])
+            self.assertTrue(all(v=='native' for k,v in value.items() if k not in ('on_fortification','near_decorations')))
+            self.assertGreater(len(value),30)
         h=Harness(); before=h.cursor
         self.load_file(h,path)
         self.assertEqual(h.scans,[]); self.assertEqual(h.writes,[]); self.assertEqual(h.cursor,before)

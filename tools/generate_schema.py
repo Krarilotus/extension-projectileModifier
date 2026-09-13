@@ -33,14 +33,19 @@ def build_schema():
     fields['interval_moving']['description'] = 'Enables firing while moving; 0 holds fire. If omitted, use interval, or hold fire if neither is set.'
     fields['interval_standing']['description'] = 'Enables firing while stopped, not specifically docked; 0 holds fire. If omitted, use interval, or hold fire if neither is set.'
     fields['attached_interval']['description'] = 'Enables firing for a siege tower docked to a wall, overriding moving/standing intervals; 0 holds fire. Omission keeps the current moving/standing rate or fallback.'
+    fields['strict_range'] = dict(type='boolean', default=True, description='Check automatic targets at native coordinate precision, including building centres. False restores the old rounded tile checks. Does not clamp projectile scatter or change native manual range rules.')
+    fields['auto_targeting'] = dict(type='boolean', default=True, description='False requires an explicit human attack order and disables module automatic search and native automatic acquisition for this unit. True preserves native acquisition and permits configured interval searches. Native leaves the game unchanged when no interval is configured.')
+    for name, field in list(fields.items()):
+        fields[name] = dict(anyOf=[field, {'const':'native'}], description=field.get('description','') + ' Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults.')
+        if 'default' in field: fields[name]['default']=field['default']
     unit = dict(type='object', additionalProperties=False, properties=fields,
                 dependentSchemas={'stagger_max': {'anyOf': [{'required': [name]} for name in
                                   ['interval', 'interval_moving', 'interval_standing', 'attached_interval']]}},
-                allOf=[{'not': dict(required=[name, name+'_tiles'])} for name in ['spread', 'inaccuracy']])
+                allOf=[{'not': dict(required=[name, name+'_tiles'], properties={key:{'not':{'const':'native'}} for key in [name,name+'_tiles']})} for name in ['spread', 'inaccuracy']])
     unit['dependentRequired'] = {'stagger_min': ['stagger_max']}
     override = dict(type='object', additionalProperties=False, properties=dict(fields),
                     description='Sparse overrides while on a wall or fortification. Missing fields inherit the ground settings. Runtime validates the merged settings.',
-                    allOf=[{'not': dict(required=[name, name+'_tiles'])} for name in ['spread', 'inaccuracy']])
+                    allOf=[{'not': dict(required=[name, name+'_tiles'], properties={key:{'not':{'const':'native'}} for key in [name,name+'_tiles']})} for name in ['spread', 'inaccuracy']])
     rule = dict(type='object',additionalProperties=False,required=['decoration'],minProperties=2,
                 properties=dict(override['properties'],decoration={'type':'string','pattern':'^[a-z][a-z0-9_-]{0,47}$'}),
                 allOf=override['allOf'],

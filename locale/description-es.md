@@ -4,7 +4,7 @@ Configura los 77 tipos de unidades mediante YAML. La munición normal y las vaca
 
 El mínimo de enemigos agrupados solo se aplica a la IA; el jugador puede seguir dando órdenes de ataque.
 
-Copia vanilla-projectiles.yml del ZIP del módulo a ucp/resources/custom-projectiles/, edita la copia y selecciónala aquí. Los ajustes omitidos no cambian; una ruta vacía no aplica cambios. Las reglas UCP de valores obligatorios o sugeridos se aplican al archivo seleccionado en su conjunto. Reinicia el juego tras los cambios. Con la recarga nativa, turn_before_shot: false desactiva el giro hacia objetivos seleccionados manualmente.
+Copia el archivo completo vanilla-projectiles.yml del ZIP, edítalo y selecciona la copia. native conserva las reglas del juego; una ruta vacía no cambia nada. auto_targeting: false exige órdenes de ataque manuales. strict_range: false restaura las comprobaciones de alcance redondeadas; turn_before_shot: false desactiva la corrección de giro. Obligatorio/sugerido se aplica a la selección del archivo completo. Reinicia después de editar.
 
 Gráficos propios: añade un nombre en projectiles con inherits y sprites (archivo GM1 completo y compatible). Define decorations y las reglas near_decorations de las unidades; colócalas mediante el botón del brasero. Formatos: README.md y examples/custom-sprites-and-decorations.yml. Colócalas en murallas o torres válidas; las casas señoriales no admiten braseros.
 

@@ -1,19 +1,21 @@
-"""An inert preset with every legal unit name and a commented settings reference."""
+"""Explicit native inheritance for every unit and every canonical setting."""
 from generate_options import ROOT, cfg, constants
 import yaml
 
 HEADER='''# yaml-language-server: $schema=./projectile-config.schema.json
 # VANILLA / NO CHANGES
-# Empty unit mappings are intentional: this file installs no projectile hooks.
+# Every canonical field is explicit. native delegates to the game, including
+# height bonuses, brazier arrows, ammunition and animation-dependent reloads.
+# This unchanged file installs no projectile hooks, timers or resource handlers.
 # It preserves the game and other modules; it does not undo their balance changes.
 # Copy this file and the schema into ucp/resources/custom-projectiles/ and select
 # your edited copy in the launcher. Restart the game after changing a file.
 #
-# Replace a unit's {} with indented settings, for example:
+# Replace native only for settings you want to override, for example:
 #   Catapult:
 #     projectile: mangonel_pebble
 #     count: 3
-# Missing units and missing keys are allowed. Do not write null/undefined for
+# Missing units and missing keys are also allowed. Do not write null/undefined for
 # an omitted value. Unknown names and invalid values are errors, not defaults.
 #
 # FIELD REFERENCE (all fields optional; do not uncomment everything at once)
@@ -24,6 +26,8 @@ HEADER='''# yaml-language-server: $schema=./projectile-config.schema.json
 #   cow_count: 1                 # 1..64; independent of regular count; default 1.
 #   suppress_default: false      # Add native shots only in independent timer mode.
 # Automatic attacks:
+#   auto_targeting: false        # Manual orders only; true permits automatic acquisition.
+#   strict_range: true           # Exact automatic range checks; false restores old tile checks.
 #   interval: 100                # Optional fallback; 1..60000 ticks, not ms.
 #                                # Applies only without a matching state rate.
 #   interval_moving: 200          # 0..60000; 0 holds fire while moving.
@@ -116,7 +120,25 @@ def generate():
     assert all(f'#   {name}:' in HEADER for name in fields)
     text=HEADER+'# Projectile names: '+', '.join(sorted(constants.projectile_names.keys()))+'\n'
     text+='# Target kinds: '+', '.join(sorted(constants.target_kinds.keys()))+'\n\n'
-    text+=yaml.safe_dump({'units':{name:{} for _,name in sorted(constants.unit_names.items())}},sort_keys=False)
+    text+='# native is explicit non-intervention, not a fixed numeric snapshot.\n'
+    text+='# Adding an interval enables module fire: omitted/native range then defaults\n'
+    text+='# to 20 tiles. Set range explicitly if you want a different limit.\n'
+    text+='# auto_targeting: native preserves native autonomy; false requires manual orders.\n'
+    text+='# The *_tiles compatibility aliases are documented above; canonical fields use eighth-tiles.\n\n'
+    text+='projectiles: {}\ndecorations: {}\nunits:\n'
+    canonical=[key for key in cfg.numbers.keys() if not key.endswith('_tiles')]
+    # Use reference order, not Lua table iteration order.
+    canonical=sorted(set(canonical)|set(cfg.booleans.keys())|{'projectile','cow_projectile','targets'},
+                     key=lambda key: HEADER.index('#   '+key+':'))
+    names={value:key for key,value in constants.projectile_names.items()}
+    for _, name in sorted(constants.unit_names.items()):
+        base=constants.native_projectiles[name]
+        note=('Native regular ammunition: '+names[base]+'. Other native modes remain available.'
+              if base else 'No regular native ranged weapon; native does not add one.')
+        text+='  # '+note+'\n'
+        block=yaml.safe_dump({name:{**{key:'native' for key in canonical},
+                                    'on_fortification':{},'near_decorations':[]}},sort_keys=False)
+        text+=''.join('  '+line+'\n' for line in block.splitlines())
     (ROOT/'vanilla-projectiles.yml').write_text(text,encoding='utf-8',newline='\n')
 
 if __name__ == '__main__': generate()

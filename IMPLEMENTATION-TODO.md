@@ -68,3 +68,9 @@ test. No new completed release is implied by the older tester delivery entries.
 See VALIDATION.md for exact automated boundaries and manual testing steps. UCP's
 developer warning has been accepted with explicit user authorization. No signed
 release or merge is implied by this test candidate.
+# Latest reported movement/aiming gap
+
+See [MOVING-CATAPULT-STATUS.md](MOVING-CATAPULT-STATUS.md): direct enemy clicks
+omit native path cleanup; a separate local module correction preserves accepted
+aim after Halt. Both are local candidates, with corrected in-game/composition
+acceptance still outstanding. No updated public ZIP is claimed.

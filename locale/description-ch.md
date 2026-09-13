@@ -4,7 +4,7 @@
 
 集群数量限制仅用于 AI；玩家仍可手动指定攻击目标。
 
-将模块 ZIP 中的 vanilla-projectiles.yml 复制到 ucp/resources/custom-projectiles/，编辑副本后在此选择。省略的设置保持不变；路径为空时不做任何更改。UCP 的必需值和建议值规则适用于整个文件选择项。修改后请重新启动游戏。 使用原生装填计时时，turn_before_shot: false 可关闭朝手动目标转向的修正。
+从 ZIP 中复制完整的 vanilla-projectiles.yml，编辑后选择副本。native 保留游戏原有规则；路径留空则不作更改。auto_targeting: false 表示仅接受手动攻击命令。strict_range: false 恢复取整后的射程检查；turn_before_shot: false 关闭转向修正。必需/建议规则适用于整个文件的选择。编辑后请重启游戏。
 
 自定义图像：在 projectiles 下添加名称，并设置 inherits 和 sprites（完整且匹配的 GM1 文件）。定义 decorations 及单位的 near_decorations 规则，再通过火盆按钮放置。格式参见 README.md 和 examples/custom-sprites-and-decorations.yml。 只能放在符合条件的城墙或塔楼上；庄园不能放置火盆。
 

@@ -1,6 +1,6 @@
 balance_changes: Balance Changes
 config_file: Archivo de configuración de proyectiles (YAML)
-config_help: 'Copia vanilla-projectiles.yml del ZIP del módulo a ucp/resources/custom-projectiles/, edita la copia
-  y selecciónala aquí. Los ajustes omitidos no cambian; una ruta vacía no aplica cambios. Las reglas UCP de valores
-  obligatorios o sugeridos se aplican al archivo seleccionado en su conjunto. Reinicia el juego tras los cambios.
-  Con la recarga nativa, turn_before_shot: false desactiva el giro hacia objetivos seleccionados manualmente.'
+config_help: 'Copia el archivo completo vanilla-projectiles.yml del ZIP, edítalo y selecciona la copia. native conserva
+  las reglas del juego; una ruta vacía no cambia nada. auto_targeting: false exige órdenes de ataque manuales. strict_range:
+  false restaura las comprobaciones de alcance redondeadas; turn_before_shot: false desactiva la corrección de giro.
+  Obligatorio/sugerido se aplica a la selección del archivo completo. Reinicia después de editar.'

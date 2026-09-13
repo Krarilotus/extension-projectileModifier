@@ -8,6 +8,8 @@ units:
     interval_moving: 150
     interval_standing: 100 # Stopped; attached_interval overrides this when docked.
     suppress_default: true
+    auto_targeting: true
+    strict_range: true
     targets: [cluster, units, fortifications, buildings]
     range: 20
     wall_min_distance: 3

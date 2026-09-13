@@ -33,9 +33,9 @@ Legacy's displayed category name, including its English fallback.
    directory, creating it if needed. Keep your editable file outside the module
    archive so replacing the module does not overwrite your settings.
 2. Edit the copy, then select it with the file picker. The vanilla file lists all
-   77 units with empty `{}` mappings and documents the settings in comments.
-   It makes no changes until you add settings. To edit a unit, replace its `{}`
-   with indented fields.
+   77 units with every canonical setting written explicitly. `native` delegates
+   that field to the game instead of replacing its dynamic rules. The unchanged
+   file installs no hooks or timers. Replace individual `native` values to edit.
 3. Restart the game after changing the selected file or its contents. No live
    reconfiguration is supported. An empty file path means this module makes no
    changes, unless another UCP preset supplies a path through normal resolution.
@@ -55,8 +55,13 @@ is an active advanced example. The vanilla template is the no-change starting
 point; it preserves other modules rather than reverting their balance changes.
 
 Missing units and missing fields are allowed. Empty unit mappings are ignored.
-Omission preserves native behavior, except that explicitly enabling an automatic
-interval activates the documented automatic-fire defaults. Do not use null,
+`native` explicitly leaves a field unmodified, like omission. In a conditional
+override it clears that field's configured base override. Enabling an automatic
+interval still activates the documented module defaults: for example,
+`range: native` with an interval uses the existing 20-tile automatic-search
+default, not a fixed snapshot of the troop's vanilla range. The complete vanilla
+file leaves the interval native as well, so the original range, height bonuses,
+reloads, ammunition and autonomy remain owned by the game. Do not use null,
 `undefined`, required-value or suggested-value inside projectile settings.
 Wrong names, types, bounds and contradictory settings fail before native hooks.
 Negative scatter radii are invalid. Explicit zero accuracy removes random aim
@@ -188,7 +193,9 @@ completion and validation; Lua also checks cross-field comparisons.
 | `interval` | 1–60000 ticks; optional fallback automatic-fire interval |
 | `interval_moving`, `interval_standing` | 0–60000; independently enable firing; inherit fallback or hold fire if omitted |
 | `targets` | One to four distinct target kinds in priority order; default `units` |
-| `range` | 1–100 tiles, default 20; automatic targeting only |
+| `range` | 1–100 tiles, default 20; automatic targeting only  Projectile choice does not change this limit. |
+| `strict_range` | Default true; exact automatic range checks using unit positions, building centres and wall aim points. False restores rounded tile checks. |
+| `auto_targeting` | False requires human attack orders, including without an interval. True permits native acquisition and configured automatic searches. Native preserves the game when no interval is set. |
 | `spread`, `inaccuracy` | 0–800 whole native coordinate units: **1 = ⅛ tile, 8 = 1 tile** |
 | `spread_tiles`, `inaccuracy_tiles` | Compatibility aliases, 0–100 whole tiles; use only one unit system per effect |
 | `wall_min_distance` | 0–100 tiles; default 3 |
@@ -249,6 +256,29 @@ Scattered aim coordinates are clamped to map limits and use destination ground
 height. Unscattered shots retain their original target height.
 
 Targets: `units`, `cluster`, `buildings`, `fortifications`, `siege_towers`, `walls`.
+
+For a catapult that fires firethrower pots only when commanded, while retaining
+its original reload schedule:
+
+```yaml
+units:
+  Catapult:
+    projectile: firethrower_pot
+    auto_targeting: false
+```
+
+Add `interval: 700` to slow repeated shots under native animation timing.
+`auto_targeting: true` permits configured automatic search; an interval enables
+that search for units which do not already have it. False also disables AI-owned
+acquisition; `ai_only: true` can restrict the entire profile to AI owners.
+Units without native attack commands cannot gain a manual attack button from
+this switch. The unchanged vanilla file preserves each unit's own autonomy:
+archers can defend themselves, while catapults retain their original orders.
+
+Automatic range is measured to the unit position, building centre or wall aim
+point before scattering. A projectile may land outside the radius because of
+spread/inaccuracy, or continue flying after a target moves out of range; the
+range check does not truncate native flight.
 
 `cluster` applies its density threshold only to AI-controlled units. For a human
 native shooter, its existing unit, building, ground or wall

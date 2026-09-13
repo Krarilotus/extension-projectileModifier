@@ -4,7 +4,7 @@
 
 Hedef grubu eşiği yalnızca yapay zekâ için geçerlidir; oyuncular saldırı hedefini elle seçebilir.
 
-Modül ZIP dosyasındaki vanilla-projectiles.yml dosyasını ucp/resources/custom-projectiles/ klasörüne kopyalayın, kopyayı düzenleyip burada seçin. Atlanan ayarlar değişmez; boş yol hiçbir değişiklik yapmaz. UCP zorunlu ve önerilen değer kuralları seçilen dosyanın tamamına uygulanır. Değişikliklerden sonra oyunu yeniden başlatın. Yerel yeniden doldurma zamanlamasında turn_before_shot: false, elle seçilen hedeflere dönmeyi kapatır.
+ZIP içindeki eksiksiz vanilla-projectiles.yml dosyasını kopyalayın, düzenleyin ve kopyayı seçin. native oyunun kurallarını korur; boş yol hiçbir şeyi değiştirmez. auto_targeting: false yalnızca elle verilen saldırı emirlerine izin verir. strict_range: false yuvarlanmış menzil denetimlerini geri getirir; turn_before_shot: false dönüş düzeltmesini kapatır. Zorunlu/önerilen, dosya seçiminin tamamına uygulanır. Düzenledikten sonra oyunu yeniden başlatın.
 
 Özel görseller: projectiles altında inherits ve sprites içeren bir ad ekleyin (tam ve uyumlu GM1 dosyası). decorations ve birimlerin near_decorations kurallarını tanımlayın; mangal düğmesiyle yerleştirin. Biçimler: README.md ve examples/custom-sprites-and-decorations.yml. Uygun surlara veya kulelere yerleştirin; malikânelere yerleştirilemez.
 
