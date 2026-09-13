@@ -4,3 +4,6 @@ config_help: 'فایل کامل vanilla-projectiles.yml را از ZIP کپی و 
   قواعد بازی را حفظ می‌کند؛ مسیر خالی چیزی را تغییر نمی‌دهد. auto_targeting: false فقط فرمان حملهٔ دستی را می‌پذیرد.
   strict_range: false بررسی بُرد گرد‌شده را برمی‌گرداند؛ turn_before_shot: false اصلاح چرخش را غیرفعال می‌کند. الزامی/پیشنهادی
   به انتخاب کل فایل مربوط است. پس از ویرایش بازی را دوباره اجرا کنید.'
+tags.behavior: رفتار
+tags.textures: بافت‌ها
+tags.tools: ابزارها

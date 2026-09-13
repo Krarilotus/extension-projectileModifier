@@ -5,3 +5,6 @@ config_help: 'Másold ki a teljes vanilla-projectiles.yml fájlt a ZIP-ből, sze
   támadási parancsokat enged. A strict_range: false visszaállítja a kerekített hatótáv-ellenőrzést; a turn_before_shot:
   false kikapcsolja a fordulás javítását. A kötelező/javasolt jelölés a teljes fájl kiválasztására vonatkozik. Módosítás
   után indítsd újra a játékot.'
+tags.behavior: Viselkedés
+tags.textures: Textúrák
+tags.tools: Eszközök

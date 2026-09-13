@@ -12,3 +12,7 @@ dependencies:
   ui: '^1.0.1'
 meta:
   version: 1.0.0
+tags:
+- behavior
+- textures
+- tools

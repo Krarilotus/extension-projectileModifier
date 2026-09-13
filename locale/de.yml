@@ -4,3 +4,6 @@ config_help: 'Die vollständige vanilla-projectiles.yml aus der ZIP kopieren, be
   die Spielregeln; ein leerer Pfad ändert nichts. auto_targeting: false erlaubt nur manuelle Angriffsbefehle. strict_range:
   false stellt gerundete Reichweitenprüfungen wieder her; turn_before_shot: false deaktiviert die Drehkorrektur.
   Erforderlich/empfohlen gilt für die gesamte Dateiauswahl. Nach Änderungen neu starten.'
+tags.behavior: Verhalten
+tags.textures: Texturen
+tags.tools: Werkzeuge

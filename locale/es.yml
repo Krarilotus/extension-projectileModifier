@@ -4,3 +4,6 @@ config_help: 'Copia el archivo completo vanilla-projectiles.yml del ZIP, edítal
   las reglas del juego; una ruta vacía no cambia nada. auto_targeting: false exige órdenes de ataque manuales. strict_range:
   false restaura las comprobaciones de alcance redondeadas; turn_before_shot: false desactiva la corrección de giro.
   Obligatorio/sugerido se aplica a la selección del archivo completo. Reinicia después de editar.'
+tags.behavior: Comportamiento
+tags.textures: Texturas
+tags.tools: Herramientas
