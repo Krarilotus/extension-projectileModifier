@@ -8,6 +8,8 @@ units:
     interval_moving: 150
     interval_standing: 100 # Stopped; attached_interval overrides this when docked.
     suppress_default: true
+    auto_targeting: true
+    strict_range: true
     targets: [cluster, units, fortifications, buildings]
     range: 20
     wall_min_distance: 3
@@ -31,3 +33,6 @@ units:
     preload_poll: 5
     sync_to_animation: false
     sync_max_wait: 40
+  Catapult:
+    interval: 700
+    turn_before_shot: true

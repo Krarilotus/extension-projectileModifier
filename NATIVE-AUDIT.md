@@ -216,3 +216,93 @@ the existing behavior until explicitly configured. Any verified eligibility or
 retargeting correction needs an ON default and OFF baseline without another
 overwhelming Customizations panel. Existing file schemas and saved RNG order must
 remain compatible unless an explicit user option changes behavior.
+
+
+## Human siege retargeting correction
+
+The existing cooldown hook could preserve a loaded pose while a human changed
+its attack order, then release at the new position without rotating. The
+correction stays in `cadence.configuredAnimationHold`; no siege handler,
+projectile dispatcher, command handler or additional animation site is patched.
+
+Reuse review (base `506358a`; framework `02a7a6bc`, native reference images as
+recorded in the test harness):
+
+| Responsibility | Existing owner and decision |
+| --- | --- |
+| Human/native order precedence | `templates.manualOrder`, already used by cadence and dispatch. Reused without changing automatic selection or its RNG. |
+| Point-facing direction and camera adjustment | Native `UnitsState::setUnitFacingDirectionForTargetXandY`, already bound for hunters. Its binding is renamed `FACEPOINT` and shared; UCP AOB context now includes argument reads, tile/facing offsets, direction call and `ret 12`. |
+| Facing a moving unit | Native `UnitsState::setUnitFacingDirectionTowardsTarget`, thiscall `(unit ID, target ID)`, `ret 8`. UCP AOB resolves its ID check and both verified stride operands. The existing order's ID/UID is checked before calling it. |
+| Building aim position | Native siege state 8 uses the building centre. The generic native building-facing routine instead uses its corner, so it is not equivalent. A bounded read of the existing building ID/UID, tile and width supplies the same centre to the point-facing owner. No building search or target eligibility implementation is introduced. |
+| Turn timing and reload progress | Existing native animation clock, phase and cycle. Retain phase/cycle and delay its clock for the native six-tick direction step; no private turn timer, target cache or new save block. |
+| Configuration | Existing validated effective profiles, including fortification/decorations, own `turn_before_shot`. The native writer defaults omitted values ON and preserves explicit false. One immutable profile table is added, not per-unit persistent state. |
+| UI and translations | The user's explicit file-only configuration direction takes precedence over adding a separate checkbox. Keep the existing file picker under Legacy's Balance Changes category, with the OFF instruction in all nine locale help/preview catalogs. No Legacy edits. |
+
+The correction is limited to human attack orders during native reload/firing
+phases. Initial state-8 aiming, movement, native cow phases, pending accepted
+volleys and automatic target selection keep their existing owners. Turning does
+not call `ACQUIRE` or consume RNG. It uses the selected unit's current tile, and
+wall/ground commands use the native stored target tiles.
+
+New regression coverage includes changing a ground target from east to west,
+unit/ground/building/wall retargets during the loaded cooldown, save/load during
+the direction steps, absence of target queries while turning, unchanged module
+RNG and an explicit OFF baseline. Normal and Extreme pass the focused checks.
+The changed-target test and framework-cache binding test also pass against the
+official PL and EFIGS executables for both families. All four official images
+have identical mapped section contents to their corresponding reference family;
+their whole-file identities differ. This is native instruction execution in the
+harness, not live language-asset or multiplayer acceptance.
+
+All 23 GUI component/archive tests pass, including the installed Legacy category
+resolver and all nine locale catalogs. They caught help/preview drift and a
+PowerShell stdin encoding conversion in the first generated translation pass;
+both are corrected and the ZIP was regenerated with intact UTF-8. This does not
+replace actual installed-GUI checks. The current internal archive is 47 files,
+103598 bytes, SHA256
+`873654d30a79bf6e494de74afd610a6c7d7d084be6262c0a8dede0b9b8d8d473`.
+It is not a published replacement for the existing 1.8.6 tester download.
+
+The full suite passes: 121 tests in 964.040 seconds. The expanded changed-ground
+case covers all five siege engines on both families, and loaded-turn checks
+assert six ticks between direction steps (two expanded tests pass in 100.863
+seconds). Live normal Crusader loads and retains three successive wall volleys.
+The attempted GUI target changes did not change the recorded native order, so
+live retargeting acceptance is still pending; see
+[the bounded live trace](tests/evidence/native-retarget-attempt.json).
+The UI attempts omitted `screenshotId`, so clicks on the scaled game capture
+landed at different coordinates. Supplying it closed the game normally at
+20:12:34 CEST; the desktop was released immediately and the original test ZIP
+restored with its hash verified. The target-selection attempts must be repeated
+with correctly scaled input. They are not evidence of a game-command defect.
+No existing save was overwritten. Resource/render lifecycle ownership, automatic threat targeting,
+required replay enrollment, complete runtime diagnostic localization and the
+remaining multiplayer/performance/GUI acceptance still prevent completion.
+
+## Inherited-sheet owner correction in progress
+
+The consumer now calls `gmResourceModifier:ReserveGm` and consumes
+`GetReservedGm` through the framework's existing `afterInit` callback (the same
+lifecycle used by aiSwapper). Its private `sprite_resources.clone`, memory-copy
+helper, rescans of GM arrays and nested native loader hook are removed. The
+`locate` argument to `sprites.install` is removed with its only use. The owner
+dependency becomes `^0.3.0`; there is no fallback to the old private loader.
+
+The owner change is isolated at `ucp-gm-inherited-sheets`, based on 019039a and
+coordinated in gmResourceModifier issue 6. It admits a complete reservation batch
+before constructing the existing Replacers, uses their existing original/reset
+state and SetGm reference counts, and preserves queued texture replacement order.
+The native loader remains called exactly once. No capacities are expanded.
+
+Consumer failure resolves the entire batch before exposing variant IDs. A missing
+required sheet uses the existing framework fatal logger: `luaLog` reaches
+`VLOG_F`, whose pinned loguru 4adaa185 implementation aborts at FATAL; ordinary
+afterInit assertions are caught. Actual fatal-path acceptance remains outstanding.
+
+Six consumer sprite tests pass, including native inherited projectile kinds,
+normal/Extreme flight, saved continuation and no partially exposed layout on
+owner admission failure. Six owner host scenarios and its real-framework binding
+tests on the two reference families plus official PL/EFIGS files also pass. These
+do not replace real rendering, multiplayer, save/replay and GUI acceptance.
+The consumer's GM1 validation/hash read and full entity render scans still remain;
+they are explicitly unfinished and this is not a completed PR/release update.

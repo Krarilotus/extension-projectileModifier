@@ -58,7 +58,7 @@ end
 
 -- Inside UnitsState::updateUnits, reached once per tick for every living unit.
 local unit_tick_addr = locate("83 C2 01 89 16 8B 15 ? ? ? ? 69 D2 90 04 00 00 33 C9 66 89 8C 32 AE 09 00 00")
-local animation_addr, release_cycles, catapult_rest, trebuchet_rest, horse_addr, hunter_addr, hunter_script, hunter_sound, sound_this, hunter_end, hunter_face
+local animation_addr, release_cycles, catapult_rest, trebuchet_rest, horse_addr, hunter_addr, hunter_script, hunter_sound, sound_this, hunter_end, face_point, face_unit
 if native_cadence then
     animation_addr = locate('A1 ? ? ? ? 69 C0 90 04 00 00 01 9C 30 54 06 00 00')
     assert(core.readByte(animation_addr + 0xA1) == 0x69, 'unsupported animation continuation')
@@ -68,8 +68,23 @@ if native_cadence then
     if release_cycles[74] then
         horse_addr = locate('53 56 8B 74 24 0C 69 F6 90 04 00 00 0F B7 86 ? ? ? ? 33 DB 66 3B C3')
     end
+    local needs_facing = release_cycles[6] ~= nil
+    local needs_siege_facing = false
+    for name, cfg in pairs(config.units) do
+        if cadence.start_states[configuration.units[name]] == 8
+            and configuration.any_profile(cfg, function(profile)
+                return profile.interval and profile.sync_to_animation ~= false and profile.turn_before_shot ~= false
+            end) then needs_facing = true; needs_siege_facing = true end
+    end
+    if needs_facing then
+        -- thiscall (unit ID, tile X, tile Y), ret 12; validate native tile
+        -- and facing fields plus the decoded-direction call context.
+        face_point = locate('8B 44 24 04 8B 54 24 08 69 C0 90 04 00 00 53 0F BF 9C 08 C8 08 00 00 56 8D 34 08 8B 4C 24 14 0F BF 86 DA 06 00 00 51 0F BF 8E D8 06 00 00 52 50 51 B9 ? ? ? ? E8 ? ? ? ? 8B 0D ? ? ? ? 83 F9 0F 75 07 5E 33 C0 5B C2 0C 00')
+    end
+    if needs_siege_facing then
+        face_unit = locate('8B 44 24 08 85 C0 7F 05 33 C0 C2 08 00 8B 54 24 04 69 C0 90 04 00 00 69 D2 90 04 00 00')
+    end
     if release_cycles[6] then
-        hunter_face = locate('8B 44 24 04 8B 54 24 08 69 C0 90 04 00 00 53 0F BF 9C 08 C8 08 00 00')
         hunter_addr = locate('53 55 56 57 8B 3D ? ? ? ? 8B F7 69 F6 90 04 00 00 0F BF 9E ? ? ? ? 33 C9')
         local script_site=locate('0F BE 80 ? ? ? ? 83 C4 08 3B C5 89 86 ? ? ? ? 7E 14')
         hunter_script = core.readInteger(script_site+3)
@@ -134,7 +149,7 @@ assert(unit_capacity == (data.version.isExtreme() and 10000 or 2500),
     '[custom-projectiles] unsupported unit-array capacity modification')
 return {locate=locate, fire=fire_projectile_addr, acquire=acquire_target_addr, tick=unit_tick_addr,
     animation=animation_addr, releaseCycles=release_cycles, catapultRest=catapult_rest, trebuchetRest=trebuchet_rest, horse=horse_addr,
-    hunter=hunter_addr, hunterScript=hunter_script, hunterSound=hunter_sound, soundThis=sound_this, hunterEnd=hunter_end, hunterFace=hunter_face,
+    hunter=hunter_addr, hunterScript=hunter_script, hunterSound=hunter_sound, soundThis=sound_this, hunterEnd=hunter_end, facePoint=face_point, faceUnit=face_unit,
     groundAim=ground_aim_addr, aimError=aim_error_addr,
     rows=tile_rows_addr, flags=tile_flags_addr, terrain=terrain_height_addr,
     teams=team_table_addr, buildings=building_base_addr, aic=aic_array_base,
@@ -143,7 +158,7 @@ return {locate=locate, fire=fire_projectile_addr, acquire=acquire_target_addr, t
 end
 
 -- Private tables, non-overlapping scratch and persistent per-unit firing state.
-local TABLE_BYTES, OFF_REENTRY, OFF_SEED, OFF_SCATY, OFF_REMAP, OFF_COUNT, OFF_SPREAD, OFF_INTERVAL, OFF_SUPPRESS, OFF_FORCED, OFF_COOLDOWN, OFF_ORDER, OFF_RANGE, OFF_WALLMIN, OFF_MULTI, OFF_HEIGHT, OFF_MANNED, OFF_BLDCLASS, OFF_SCRATCH, OFF_CANDS, OFF_IMOVE, OFF_ISTAND, OFF_LASTPOS, OFF_MOVECD, OFF_STAGMIN, OFF_STAGMAX, OFF_PENDING, OFF_PENDCD, OFF_DMIN, OFF_DRAD, OFF_ATTINT, OFF_ATTCREW, OFF_ATTBOARD, OFF_ATTBR2, OFF_AICOW, OFF_COWREMAP, OFF_COWCOUNT, OFF_PRELOAD, OFF_PRELPOLL, OFF_SYNC, OFF_SYNCMAX, OFF_SYNCWAIT, OFF_INACC, OFF_INACCSET, OFF_AIONLY, OFF_UID, OFF_IDENTITY, OFF_NATIVESEEN, OFF_FORTIFIED, OFF_PROFILESTATE, OFF_NATIVECYCLE, OFF_NATIVEINT, OFF_NATIVEBLOCK, OFF_NATIVEATTACK, OFF_NATIVESTART, OFF_WEAPONSEEN, OFF_WEAPONCYCLE, OFF_WEAPONTICK, OFF_WEAPONPHASE, OFF_SPRITE, OFF_COWSPRITE, OFF_CURRENTVARIANT, OFF_VARIANTGM, OFF_VARIANTBASEGM, OFF_VARIANTCOUNT, OFF_ENTITYVARIANT, OFF_ENTITYUID, OFF_ENTITYTYPE, OFF_DECORVARIANT, OFF_DECORUID, OFF_DECORGM, OFF_DECORGRID, OFF_DECORNEXT, OFF_DECORRULEMAP, OFF_DECORRULEST, DATA_SIZE
+local TABLE_BYTES, OFF_REENTRY, OFF_SEED, OFF_SCATY, OFF_REMAP, OFF_COUNT, OFF_SPREAD, OFF_INTERVAL, OFF_SUPPRESS, OFF_FORCED, OFF_COOLDOWN, OFF_ORDER, OFF_RANGE, OFF_WALLMIN, OFF_MULTI, OFF_HEIGHT, OFF_MANNED, OFF_BLDCLASS, OFF_SCRATCH, OFF_CANDS, OFF_IMOVE, OFF_ISTAND, OFF_LASTPOS, OFF_MOVECD, OFF_STAGMIN, OFF_STAGMAX, OFF_PENDING, OFF_PENDCD, OFF_DMIN, OFF_DRAD, OFF_ATTINT, OFF_ATTCREW, OFF_ATTBOARD, OFF_ATTBR2, OFF_AICOW, OFF_COWREMAP, OFF_COWCOUNT, OFF_PRELOAD, OFF_PRELPOLL, OFF_SYNC, OFF_SYNCMAX, OFF_SYNCWAIT, OFF_INACC, OFF_INACCSET, OFF_AIONLY, OFF_UID, OFF_IDENTITY, OFF_NATIVESEEN, OFF_FORTIFIED, OFF_PROFILESTATE, OFF_NATIVECYCLE, OFF_NATIVEINT, OFF_NATIVEBLOCK, OFF_NATIVEATTACK, OFF_NATIVESTART, OFF_WEAPONSEEN, OFF_WEAPONCYCLE, OFF_WEAPONTICK, OFF_WEAPONPHASE, OFF_SPRITE, OFF_COWSPRITE, OFF_CURRENTVARIANT, OFF_VARIANTGM, OFF_VARIANTBASEGM, OFF_VARIANTCOUNT, OFF_ENTITYVARIANT, OFF_ENTITYUID, OFF_ENTITYTYPE, OFF_DECORVARIANT, OFF_DECORUID, OFF_DECORGM, OFF_DECORGRID, OFF_DECORNEXT, OFF_DECORRULEMAP, OFF_DECORRULEST, OFF_TURNBEFORE, OFF_STRICTRANGE, OFF_AUTOTARGET, OFF_RELEASECYCLE, DATA_SIZE
 local function layout(profile_count)
     MAX_PROFILES = profile_count
     TABLE_BYTES = MAX_PROFILES * 4
@@ -221,7 +236,11 @@ local function layout(profile_count)
     OFF_DECORNEXT = OFF_DECORGRID + 10000*4
     OFF_DECORRULEMAP = OFF_DECORNEXT + 3000*4
     OFF_DECORRULEST = OFF_DECORRULEMAP + MAX_TYPES*408
-    DATA_SIZE = OFF_DECORRULEST + MAX_TYPES*4
+    OFF_TURNBEFORE = OFF_DECORRULEST + MAX_TYPES*4
+    OFF_STRICTRANGE = OFF_TURNBEFORE + TABLE_BYTES
+    OFF_AUTOTARGET = OFF_STRICTRANGE + TABLE_BYTES
+    OFF_RELEASECYCLE = OFF_AUTOTARGET + TABLE_BYTES
+    DATA_SIZE = OFF_RELEASECYCLE + MAX_TYPES * 4
 
 end
 
@@ -280,6 +299,12 @@ local function install(config)
     local has_decorations = next(config.decorations or {}) ~= nil
     local profile_count = MAX_TYPES * 2
     for _, cfg in pairs(config.units) do profile_count = profile_count + 2 * #(cfg.near_decorations or {}) end
+    local manual_only = false
+    for _, cfg in pairs(config.units) do
+        if configuration.any_profile(cfg, function(profile) return profile.auto_targeting == false end) then
+            manual_only = true; break
+        end
+    end
     local native = resolve(cadence.required(config), config)
     MAX_UNITS = native.capacity
     layout(profile_count)
@@ -294,11 +319,14 @@ local function install(config)
     local unit_array_base, unit_state_this, current_unit_id_addr = native.units, native.this, native.current
     data_addr = core.allocate(DATA_SIZE, true)
     core.writeInteger(data_addr + OFF_SEED, 0x1D872B41)
+    for kind, cycle in pairs(release_cycles) do set_entry(OFF_RELEASECYCLE, kind, cycle) end
     for kind, phase in pairs(cadence.attack_states) do set_entry(OFF_NATIVEATTACK, kind, phase) end
     for kind, phase in pairs(cadence.start_states) do set_entry(OFF_NATIVESTART, kind, phase) end
 
     -- -1 in the remap table means "leave the game's choice alone".
     for i = 0, MAX_PROFILES - 1 do
+        set_entry(OFF_AUTOTARGET, i, 1)
+        set_entry(OFF_STRICTRANGE, i, 1)
         core.writeInteger(data_addr + OFF_REMAP + 4 * i, 0xFFFFFFFF)
         core.writeInteger(data_addr + OFF_COWREMAP + 4 * i, 0xFFFFFFFF)
         core.writeInteger(data_addr + OFF_RANGE + 4 * i, constants.DEFAULT_RANGE)
@@ -330,6 +358,7 @@ local function install(config)
     end
 
     local values = {
+        HASMANUALONLY = manual_only and 1 or 0,
         REENTRY       = data_addr + OFF_REENTRY,
         SEED          = data_addr + OFF_SEED,
         SCATY         = data_addr + OFF_SCATY,
@@ -361,7 +390,12 @@ local function install(config)
         CATRELEASELEAD = native.catapultRest and native.catapultRest.lead or 0,
         TREBRESTCYCLE = native.trebuchetRest and native.trebuchetRest.cycle or -1,
         TREBRELEASELEAD = native.trebuchetRest and native.trebuchetRest.lead or 0,
-        HUNTERFACE    = native.hunterFace or 0,
+        FACEPOINT     = native.facePoint or 0,
+        FACEUNIT      = native.faceUnit or 0,
+        TURNBEFORET   = data_addr + OFF_TURNBEFORE,
+        STRICTRANGET  = data_addr + OFF_STRICTRANGE,
+        AUTOTARGETT   = data_addr + OFF_AUTOTARGET,
+        RELEASECYCLET = data_addr + OFF_RELEASECYCLE,
         SPRITET       = data_addr + OFF_SPRITE,
         COWSPRITET    = data_addr + OFF_COWSPRITE,
         CURRENTVARIANT = data_addr + OFF_CURRENTVARIANT,
@@ -424,6 +458,7 @@ local function install(config)
         S_VOLLEYCOUNT = data_addr + OFF_SCRATCH + 0xBC,
         S_PROFILE     = data_addr + OFF_SCRATCH + 0xC0,
         S_FIRED       = data_addr + OFF_SCRATCH + 0xC8,
+        S_RANGE8SQ    = data_addr + OFF_SCRATCH + 0xCC,
         S_SELF        = data_addr + OFF_SCRATCH + 0x50,
         S_ID          = data_addr + OFF_SCRATCH + 0x54,
         S_INTV        = data_addr + OFF_SCRATCH + 0x58,
@@ -544,6 +579,12 @@ local function install(config)
     volley_addr = assemble_blob(templates.volley_code, values)
     values.VOLLEY = volley_addr
     values.MANUALORDER = assemble_blob(templates.manual_order_code, values)
+    values.NATIVECONTEXT = assemble_blob(cadence.context_code, values)
+    local acquire_hook
+    if manual_only then
+        values.RESUME = acquire_target_addr + 6
+        acquire_hook = assemble_blob(templates.acquire_hook_code, values)
+    end
     values.PICKTARGET = assemble_blob(templates.pick_code, values)
     values.RESTORETARGET = assemble_blob(templates.restore_code, values)
     values.AUTOVOLLEY = assemble_blob(templates.automatic_code, values)
@@ -629,7 +670,7 @@ local function install(config)
         {'decoration-uid', data_addr + OFF_DECORUID, 3000*4},
         {'decoration-gm', data_addr + OFF_DECORGM, 34*4, true},
     }, config, MAX_PROFILES, has_decorations and core.exposeCode(values.REBUILDDECOR,0,0) or nil)
-    sprites.install(resources,native.locate,function(asset)
+    sprites.install(resources,function(asset)
         for _, name in ipairs(asset.decorations or {}) do
             set_entry(OFF_DECORGM, config.decorations[name].id, asset.slot)
         end
@@ -679,6 +720,11 @@ local function install(config)
             0x90, 0x90, 0x90, 0x90, 0x90
         })
     end
+    if acquire_hook then
+        core.writeCode(acquire_target_addr, {
+            0xE9, core.itob(core.getRelativeAddress(acquire_target_addr, acquire_hook, -5)), 0x90
+        })
+    end
     if spawn_site then
         core.writeCode(spawn_site, {0xE9,core.itob(core.getRelativeAddress(spawn_site,spawn_hook,-5)),0x90,0x90,0x90})
         core.writeCode(entity_site, {0xE9,core.itob(core.getRelativeAddress(entity_site,entity_hook,-5)),0x90})
@@ -693,6 +739,9 @@ end
 -- Only configuration.validate's normalized effective profiles reach this writer.
 apply_unit = function(name, cfg, profile)
     local id = profile or configuration.units[name]
+    set_entry(OFF_TURNBEFORE, id, cfg.turn_before_shot == false and 0 or 1)
+    set_entry(OFF_STRICTRANGE, id, cfg.strict_range == false and 0 or 1)
+    set_entry(OFF_AUTOTARGET, id, cfg.auto_targeting == false and 0 or 1)
 
     if cfg["projectile"] ~= nil then
         local pid = projectile_id(cfg["projectile"])

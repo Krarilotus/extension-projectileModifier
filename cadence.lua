@@ -11,7 +11,7 @@ M.start_states = {[6]=10, [22]=4, [23]=4, [39]=8, [40]=8, [41]=8,
     [61]=8, [70]=4, [72]=4, [74]=4, [76]=4, [77]=8}
 
 local function native_profile(profile)
-    return profile.interval and profile.sync_to_animation ~= false
+    return profile.auto_targeting == false or (profile.interval and profile.sync_to_animation ~= false)
 end
 
 local function enabled(config, name)
@@ -129,6 +129,32 @@ function M.resolve_trebuchet_rest(locate, release_cycle)
     return {cycle=finish-1, lead=release_cycle * (core.readInteger(speed + 1) + 1)}
 end
 
+-- Classify the already admitted native aim: 1 human order, 2 corrected siege
+-- automatic aim, 0 legacy automatic selection. Share this decision between
+-- validation, native dispatch and stagger continuation; keep coordinates/UIDs
+-- with the native unit record rather than a second target cache.
+M.context_code = [[
+nativeContext:
+    push dword [esp+4]
+    call MANUALORDER
+    add esp, 4
+    test eax, eax
+    jnz nc_done
+    mov ecx, [esp+8]
+    cmp dword [NATIVECYCLET+ecx*4], 0
+    je nc_done
+    cmp dword [TURNBEFORET+ecx*4], 0
+    je nc_done
+    mov ecx, [esp+4]
+    imul ecx, ecx, 0x490
+    movzx ecx, word [ecx+UNITARRAY+0x8E]
+    cmp dword [NATIVESTARTT+ecx*4], 8
+    jne nc_done
+    mov eax, 2
+nc_done:
+    ret
+]]
+
 -- Tick cached interval/crew eligibility is used by the later animation pass.
 -- This prevents movement hysteresis from advancing twice in one simulation tick.
 M.release_code = [[
@@ -163,9 +189,10 @@ nativeRelease:
     push eax
     call CHECKATTACHED
     add esp, 4
+    push dword [S_PROFILE]
     push dword [S_ID]
-    call MANUALORDER
-    add esp, 4
+    call NATIVECONTEXT
+    add esp, 8
     test eax, eax
     jz nr_search
     mov eax, [ebp+44]            ; native code already acquired and charged this shot
@@ -339,7 +366,7 @@ nt_hunterface:
     push edx
     push ebx
     mov ecx, UNITSTATE
-    call HUNTERFACE
+    call FACEPOINT
     pop eax
 nt_restore:
     push eax
@@ -373,17 +400,156 @@ configuredAnimationHold:
     jl ca_pass
     cmp ebx, MAXUNITS
     jae ca_pass
-    cmp dword [NATIVEINTT+ebx*4], -1
-    je ca_pass
-    imul eax, ebx, 0x490
-    cmp word [eax+UNITARRAY+0x8E], 74
-    je ca_pass                   ; bow routine owns a separate temporary clock
+    if HASMANUALONLY = 0
+        cmp dword [NATIVEINTT+ebx*4], -1
+        je ca_pass
+    end if
     push ebx
     call PROFILE
     add esp, 4
     cmp eax, MAXPROFILES
     jae ca_pass
-    mov edx, eax
+    imul esi, ebx, 0x490
+    add esi, UNITARRAY
+    cmp word [esi+0x8E], 74
+    je ca_pass                   ; bow routine owns a separate temporary clock
+    cmp dword [AUTOTARGETT+eax*4], 0
+    jne ca_scheduled
+    cmp dword [AIONLYT+eax*4], 0
+    je ca_manual
+    push eax
+    push ebx
+    call ISAIOWNED
+    add esp, 4
+    mov ecx, eax
+    pop eax
+    test ecx, ecx
+    jz ca_pass
+ca_manual:
+    push eax
+    push ebx
+    call MANUALORDER
+    add esp, 4
+    mov ecx, eax
+    pop eax
+    test ecx, ecx
+    jnz ca_scheduled
+    ; A retained native target can bypass acquisition during wind-up. Reuse
+    ; the release/loaded-pose gate, without installing an interval or a timer.
+    push eax
+    push 1
+    push 0
+    movzx ecx, word [esi+0x8E]
+    push dword [RELEASECYCLET+ecx*4]
+    push ebx
+    call SHOULDHOLD
+    add esp, 16
+    mov ecx, eax
+    pop eax
+    test ecx, ecx
+    jnz ca_hold
+ca_scheduled:
+    cmp dword [NATIVEINTT+ebx*4], -1
+    je ca_pass
+    ; Turn human siege orders at native frame boundaries, including cooldown.
+    ; This reads the existing order and calls the native direction owner. It
+    ; never reacquires a shot, consumes RNG or replaces native target policy.
+    cmp dword [TURNBEFORET+eax*4], 0
+    je ca_cadence
+    cmp dword [PENDINGT+ebx*4], 0
+    jg ca_cadence
+    imul esi, ebx, 0x490
+    add esi, UNITARRAY
+    movzx ecx, word [esi+0x8E]
+    cmp dword [NATIVESTARTT+ecx*4], 8
+    jne ca_cadence
+    cmp word [esi+0x3B0], 0
+    jne ca_cadence
+    cmp word [esi+0x2C0], 2
+    je ca_turnclock
+    cmp word [esi+0x2C0], 4
+    jne ca_cadence
+ca_turnclock:
+    mov ecx, [esi+0x40]
+    inc ecx
+    mov edx, [esi+0x3C]
+    add edx, [esi+0x44]
+    cmp ecx, edx
+    jle ca_cadence
+    push eax
+    push ebx
+    call MANUALORDER
+    add esp, 4
+    test eax, eax
+    pop eax
+    jz ca_cadence
+    movzx ecx, word [esi+0x39C]
+    cmp ecx, 22
+    je ca_cadence               ; native cow phases already turn
+    push eax                   ; effective profile
+    cmp ecx, 4
+    jne ca_turnpoint
+    movzx edx, word [esi+0x39E]
+    cmp edx, 1
+    jl ca_turnskip
+    cmp edx, MAXUNITS
+    jae ca_turnskip
+    imul ecx, edx, 0x490
+    mov ecx, [ecx+UNITARRAY+0x98]
+    cmp ecx, [esi+0x3A0]
+    jne ca_turnskip             ; do not follow a recycled native target slot
+    push edx
+    push ebx
+    mov ecx, UNITSTATE
+    call FACEUNIT
+    jmp ca_turned
+ca_turnpoint:
+    movsx edx, word [esi+0x3EA]
+    movsx edi, word [esi+0x3E8]
+    cmp ecx, 9
+    jne ca_facexy
+    ; Native siege state 8 aims at a building's centre, whereas the generic
+    ; native building-facing function aims at its corner. Supply that centre
+    ; to the existing point-facing API, retaining the native UID check.
+    movzx ecx, word [esi+0x336]
+    test ecx, ecx
+    jz ca_turnskip
+    cmp ecx, MAXBLD
+    jae ca_turnskip
+    imul ecx, ecx, 0x32C
+    add ecx, BLDBASE
+    mov eax, [ecx+0xD8]
+    cmp eax, [esi+0x3A0]
+    jne ca_turnskip
+    mov eax, [ecx+0xF8]
+    cdq
+    sub eax, edx
+    sar eax, 1
+    movsx edi, word [ecx+0xEE]
+    movsx edx, word [ecx+0xF0]
+    add edi, eax
+    add edx, eax
+ca_facexy:
+    push edx
+    push edi
+    push ebx
+    mov ecx, UNITSTATE
+    call FACEPOINT
+ca_turned:
+    test eax, eax
+    jz ca_turnskip
+    ; Reuse the native animation clock for the six-tick aiming step. Holding
+    ; the phase/cycle keeps the loaded pose and all progress through reloading.
+    mov edx, [esi+0x3C]
+    add edx, [esi+0x44]
+    sub edx, 5
+    mov [esi+0x40], edx
+    pop eax
+    jmp ca_hold
+ca_turnskip:
+    pop eax
+ca_cadence:
+    mov edi, eax                ; retain the effective profile across gate calls
     mov ecx, [NATIVECYCLET+eax*4]
     test ecx, ecx
     jz ca_pass
@@ -397,11 +563,7 @@ configuredAnimationHold:
     jnz ca_hold
     ; At a loaded/release transition, use a synthetic block to validate the
     ; selected target before native code starts the swing or consumes ammunition.
-    mov eax, [CURUNIT]
-    push eax
-    call PROFILE
-    add esp, 4
-    mov ecx, [NATIVECYCLET+eax*4]
+    mov ecx, [NATIVECYCLET+edi*4]
     push 1
     push 0
     push ecx
@@ -412,10 +574,16 @@ configuredAnimationHold:
     jz ca_pass
     cmp dword [PENDINGT+ebx*4], 0
     jg ca_hold
-    push dword [CURUNIT]
-    call PROFILE
-    add esp, 4
-    push eax
+    push edi
+    push ebx
+    call NATIVECONTEXT
+    add esp, 8
+    cmp eax, 2
+    je ca_pass
+    ; Automatic siege aim was admitted before native state 8 turned the body.
+    ; Do not pick another target while loaded or at release: after Halt this
+    ; would replace the old aim without another native aiming transition.
+    push edi
     push dword [CURUNIT]
     call NATIVETARGET
     add esp, 8

@@ -1,9 +1,9 @@
 balance_changes: Balance Changes
 config_file: Geschosskonfigurationsdatei (YAML)
-config_help: vanilla-projectiles.yml aus dem Modul-ZIP nach ucp/resources/custom-projectiles/ kopieren, dort bearbeiten
-  und hier auswählen. Ausgelassene Einstellungen bleiben unverändert; ein leerer Pfad bewirkt keine Änderungen.
-  Die UCP-Regeln für erforderliche und vorgeschlagene Werte gelten für die gesamte Dateiauswahl. Nach Änderungen
-  das Spiel neu starten.
+config_help: 'Die vollständige vanilla-projectiles.yml aus der ZIP kopieren, bearbeiten und auswählen. native erhält
+  die Spielregeln; ein leerer Pfad ändert nichts. auto_targeting: false erlaubt nur manuelle Angriffsbefehle. strict_range:
+  false stellt gerundete Reichweitenprüfungen wieder her; turn_before_shot: false deaktiviert die Drehkorrektur.
+  Erforderlich/empfohlen gilt für die gesamte Dateiauswahl. Nach Änderungen neu starten.'
 tags.behavior: Verhalten
 tags.textures: Texturen
 tags.tools: Werkzeuge

@@ -1,8 +1,9 @@
 balance_changes: Balance Changes
 config_file: فایل تنظیمات پرتابه (YAML)
-config_help: فایل vanilla-projectiles.yml را از ZIP ماژول به ucp/resources/custom-projectiles/ کپی کنید، نسخهٔ کپی
-  را ویرایش و اینجا انتخاب کنید. تنظیمات حذف‌شده تغییر نمی‌کنند؛ مسیر خالی هیچ تغییری ایجاد نمی‌کند. قواعد مقدار
-  الزامی یا پیشنهادی UCP به کل فایل انتخاب‌شده اعمال می‌شوند. پس از تغییرات، بازی را دوباره اجرا کنید.
+config_help: 'فایل کامل vanilla-projectiles.yml را از ZIP کپی و ویرایش کنید، سپس نسخهٔ کپی را انتخاب کنید. native
+  قواعد بازی را حفظ می‌کند؛ مسیر خالی چیزی را تغییر نمی‌دهد. auto_targeting: false فقط فرمان حملهٔ دستی را می‌پذیرد.
+  strict_range: false بررسی بُرد گرد‌شده را برمی‌گرداند؛ turn_before_shot: false اصلاح چرخش را غیرفعال می‌کند. الزامی/پیشنهادی
+  به انتخاب کل فایل مربوط است. پس از ویرایش بازی را دوباره اجرا کنید.'
 tags.behavior: رفتار
 tags.textures: بافت‌ها
 tags.tools: ابزارها
