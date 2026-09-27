@@ -1,9 +1,9 @@
-# Custom Projectiles 1.8.7 (test candidate)
+# Custom Projectiles 1.8.8 (test candidate)
 
 Configure projectile types, volley sizes and automatic firing for all 77 unit
 types using one readable YAML file. Based on Monsterfish's supplied 1.2.0 module.
 Requires UCP 3.0.7+, Crusader/Extreme 1.41 and the declared map-extensions,
-gmResourceModifier, protocol and ui dependencies. The 0.3.0 GM owner build is
+gmResourceModifier, protocol and ui dependencies. The 0.3.1 GM owner build is
 currently a draft dependency; the public Store does not resolve it yet.
 The ui dependency requires version 1.0.1 or later and launcher 1.0.12 or later.
 UI 1.0.0 has a native menu-array overrun that can crash startup.
@@ -82,8 +82,8 @@ wrappers into it. Use spaces for indentation and restart the game after edits.
 
 ## Installation and use
 
-Import `custom-projectiles-1.8.7.zip` and the matching
-`gmResourceModifier-0.3.0.zip` draft dependency into a developer launcher, then
+Import `custom-projectiles-1.8.8.zip` and the matching
+`gmResourceModifier-0.3.1.zip` draft dependency into a developer launcher, then
 enable them with map-extensions, protocol and ui. For the direct enemy-click
 catapult check, also enable the separate Fixed Engineers 0.2.0 tester. This
 unsigned test candidate requires development module loading. It is not a

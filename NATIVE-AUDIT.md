@@ -1,6 +1,6 @@
 # Native integration audit, 12 September 2026
 
-This audit began with the 1.8.6 candidate and tracks provisional 1.8.7 source;
+This audit began with the 1.8.6 candidate and tracks provisional 1.8.8 source;
 it is not release acceptance. Original source `main` and Store PR #31 remain
 preserved. User scope also includes combined live retargeting, optional threat
 priorities and investigation of reported monk targeting.
@@ -15,7 +15,7 @@ priorities and investigation of reported monk targeting.
 | Retargeting can fire before turning | 1.8.5 live trace records a trebuchet shooting at new coordinates before its next aiming phase. | Provisional accepted-aim correction in PR #8; emulated normal/Extreme Halt, death and slot-reuse regressions pass; combined live direct-click test remains open. |
 | Full-world automatic target scans | `templates.lua:scanUnit` visits every unit slot per search; building/wall scans and the 256-candidate cluster loop also need review. Multiple shooters multiply the cost. | Open; investigate native spatial/target owners before extending priorities. |
 | Full entity scans every update | `spriteUpdate` invokes `spriteAll` twice, each visiting 2999 slots. Decorations additionally rebuild a 10000-cell grid and scan the entity pool. | Open; owner-side render/lifecycle integration is required before claiming this efficient. |
-| Private GM slot allocator/loader interception | `sprite_resources.clone/install` duplicated GM header/offset discovery and intercepted the native loader inside gmResourceModifier's own loading lifecycle. | Removed in PR #8; GM owner PR #7 implements reservation, while consumer parsing/hash and content identity remain open. |
+| Private GM slot allocator/loader interception | `sprite_resources.clone/install` duplicated GM header/offset discovery and intercepted the native loader inside gmResourceModifier's own loading lifecycle. | Removed in PR #8. GM owner PR #7 now also implements complete-sheet validation and content identity; 1.8.8 removes the consumer parser, file read and hash. Live acceptance remains open. |
 | English-only validation and conflict errors | `configuration.lua`, `state.lua`, resource validation and native resolver diagnostics are English-only. Nine GUI preview catalogs do not cover these errors. | Open; inspect native-language and launcher diagnostic owners. |
 | No separate OFF controls for simple corrections | One file picker exists; previous automatic bug corrections were not exposed separately. | Open; preserve the user's compact, file-based interface and explicit existing choices. |
 | Redundant legacy settings | `suppress_default`, `sync_to_animation`, `sync_max_wait`, `preload` and unit/tile aliases require a semantic/caller audit before removal. | Open; do not break existing presets or silently reinterpret omitted fields. |
@@ -35,6 +35,11 @@ cluster thresholds and current commands need examination in the failing match.
 | Capability | Implementation inspected and decision |
 |---|---|
 | AOB discovery/cache | Framework `content/ucp/code/core.lua:core.AOBScan` and `data/cache.lua:AOB.retrieve`, revision `02a7a6bc8ab956a91fc752e8c8ed215c149855e7`. The cache validates hits through the native scanner; reuse directly, with no module-private cache. |
+| Ambiguous AOB rejection | That framework returns one cached match but exposes no match-count result. `init.lua:resolve().locate` calls its `scanForAOB` only around the framework result to reject second matches, then decodes operands from verified context. This is an initialization-only guard, not a competing discovery cache or fixed-address fallback. |
+| Complete GM1 loading/identity | gmResourceModifier PR #7 `Gm1ResourceManager::CreateGm1Resource` owns file loading and native resource lifetime. Its new `LoadCompleteGm1Resource` validates an exact inherited layout and returns a SHA-256 digest of the same loaded bytes. `sprite_resources.prepare` calls that owner once and passes its ID to `ReserveGm`; its Lua parser, file read and framework hash call were deleted. |
+| Digest service | The framework's Lua `sha.sha256` accepts a Lua byte string, but the GM owner already holds the file in native buffers before renderer preparation. Passing or rereading it through Lua would duplicate loading. The owner uses Windows CryptoAPI on those buffers; it does not implement another SHA algorithm or cache. |
+| Entity/render lifecycle | Framework `content/ucp/code` at `02a7a6b` exposes no entity spawn/removal/render callback. The module currently wraps native spawn and whole-entity update; see issue #9 for the unresolved owner integration and per-update scan removal. No new lifecycle helper is claimed by 1.8.8. |
+| Decoration map receiver | `decorations.lua` derives the native map receiver as the AOB-decoded `TILEFLAGS` data layer minus its `0x165160` structure offset. This number is a map-layout field offset, not an executable VA/RVA. The native validation, height, ownership and construction tests exercise the receiver on normal/Extreme; broader live variant acceptance remains open. |
 | Native allocation/assembly/patches | The same framework's `core.allocateAssembly`, `core.insertCode` and memory APIs. Existing module assembly wrappers filter unused constants for the framework assembler budget; no alternate assembler or allocator is introduced by this correction. Remaining manual trampoline ownership needs audit. |
 | Working unit/projectile balance extension | `rebalancer/init.lua`, `templates.lua`, `constants.lua`, revision `8d5b47e1d61cab8c0f4b1f301669d2541788facd`. It exposes native table/operand balance changes; it does not provide a runtime projectile-target query service. Preserve its source and resolve actual overlap before changing target ownership. |
 | Effective configuration profiles | `configuration.validate` already merges sparse base/wall/decoration fields before installation. `cadence.enabled` privately repeated profile traversal. The small `configuration.any_profile` helper now owns traversal for cadence and conditional accuracy; no independent cache, resolver or per-tick traversal. |
@@ -285,7 +290,7 @@ The consumer now calls `gmResourceModifier:ReserveGm` and consumes
 lifecycle used by aiSwapper). Its private `sprite_resources.clone`, memory-copy
 helper, rescans of GM arrays and nested native loader hook are removed. The
 `locate` argument to `sprites.install` is removed with its only use. The owner
-dependency becomes `^0.3.0`; there is no fallback to the old private loader.
+dependency becomes `^0.3.1`; there is no fallback to the old private loader.
 
 The owner change is isolated at `ucp-gm-inherited-sheets`, based on 019039a and
 coordinated in gmResourceModifier issue 6. It admits a complete reservation batch
@@ -303,8 +308,8 @@ normal/Extreme flight, saved continuation and no partially exposed layout on
 owner admission failure. Six owner host scenarios and its real-framework binding
 tests on the two reference families plus official PL/EFIGS files also pass. These
 do not replace real rendering, multiplayer, save/replay and GUI acceptance.
-The consumer's GM1 validation/hash read and full entity render scans still remain;
-they are explicitly unfinished and this is not a completed PR/release update.
+The 1.8.8 consumer removes the GM1 validation/hash read through the owner API.
+Full entity render scans remain unfinished; this is not release acceptance.
 
 ## 27 September 2026: accepted aim and owner review
 
@@ -328,6 +333,6 @@ Normal native release performs no target search. A normal and Extreme harness
 test confirms candidate coordinates and order/identity restoration.
 The GM owner API is now proposed in
 [gmResourceModifier PR #7](https://github.com/UnofficialCrusaderPatch/ucp_gmResourceModifier/pull/7),
-with two passing CI checks. Its content validation/identity and actual
-rendering remain open. The private consumer GM1 parser and render/decorations
-full-world scans remain unfinished architectural debt.
+with two passing CI checks at that revision. Later 0.3.1 owner work adds
+content validation/identity and removes the private consumer GM1 parser.
+Actual rendering and render/decorations full-world scans remain open.

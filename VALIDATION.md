@@ -1,5 +1,23 @@
 # Validation — unreleased work
 
+## 1.8.8 owner loading refactor, 27 September
+
+The GM owner now validates complete inherited sheets and hashes the exact bytes
+it loaded before native preparation. The consumer uses that owner API once and
+no longer opens, parses or hashes GM1 files. Owner host tests cover six admission
+scenarios, malformed headers/offsets/tokens, the exact SHA-256 fixture digest
+and all six original projectile/decorative sheets from a local Extreme install.
+The Win32 DLL builds with MSVC v143. Owner AOB bindings pass on local, Polish
+and EFIGS normal/Extreme fixture pairs; module component GUI/archive checks
+pass (23). The module's framework-cache binding and decoration-signature checks
+also pass on the Polish and EFIGS normal/Extreme pairs. These checks do not establish rendered
+gameplay or multiplayer/save/replay acceptance; 1.8.8 remains provisional.
+
+The complete module Python/Lua/x86 regression suite passed **137 tests** in
+915.831 seconds on the local normal/Extreme reference executables. It includes
+the new owner rejection/cleanup test and existing firing, targeting, range,
+turning, decoration, native save continuation and configuration cases.
+
 ## 1.8.7 provisional source and archive, 27 September
 
 The normal/Extreme reference-EXE harness completed 135 tests without failures

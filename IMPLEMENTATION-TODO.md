@@ -40,9 +40,10 @@ the new accepted-aim correction still needs a combined live direct-click test.
 
 ## Release acceptance still requiring live play
 
-- [ ] Finish [gmResourceModifier PR #7](https://github.com/UnofficialCrusaderPatch/ucp_gmResourceModifier/pull/7)
-  and move GM1 content validation/identity to that owner. Inherited reservation
-  is implemented; the consumer still has private parser/hash work.
+- [ ] Finish [gmResourceModifier PR #7](https://github.com/UnofficialCrusaderPatch/ucp_gmResourceModifier/pull/7).
+  Inherited reservation and complete-sheet validation/content identity now live
+  in that owner; consumer duplication is removed. Live native acceptance,
+  review, release and normal merge remain open.
 - [ ] Replace full entity/world scans and competing render/decorations lifecycle
   work with the responsible native/framework owners ([issue #9](https://github.com/Krarilotus/extension-projectileModifier/issues/9)).
 - [ ] Add opt-in threat priorities through native target eligibility/spatial

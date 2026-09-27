@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.8.8 (provisional test candidate)
+
+- Load and validate complete GM1 sheets once through gmResourceModifier 0.3.1.
+  The owner returns the loaded resource ID and SHA-256 content identity; the
+  projectile module no longer parses, hashes or rereads sprite files itself.
+- Keep the 1.8.7 simulation behavior and configuration syntax unchanged.
+
 ## 1.8.7 (provisional test candidate)
 
 - Add the explicit vanilla YAML reference and matching editor schema. Dynamic

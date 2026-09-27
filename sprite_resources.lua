@@ -21,52 +21,6 @@ end
 local function check(ok, message)
     assert(ok, '[custom-projectiles] sprites: ' .. message)
 end
-local function u32(s, off) return string.unpack('<I4', s, off+1) end
-local function u16(s, off) return string.unpack('<I2', s, off+1) end
-
-function M.validate_gm1(bytes, gm)
-    local sheet = assert(M.sheets[gm], 'unsupported base sheet')
-    check(type(bytes)=='string' and #bytes>=5208, 'truncated GM1 header')
-    local count, kind, size = u32(bytes,12), u32(bytes,20), u32(bytes,80)
-    check(count==sheet.count and kind==sheet.kind,
-        'expected complete ' .. sheet.name .. '.gm1 layout (' .. sheet.count .. ' images, type ' .. sheet.kind .. ')')
-    local pixels = 5208 + count*24
-    check(size<=16777216 and #bytes==pixels+size, 'invalid GM1 data size')
-    for index=0,count-1 do
-        local offset = u32(bytes,5208+index*4)
-        local length = u32(bytes,5208+count*4+index*4)
-        local header = 5208+count*8+index*16
-        local width, height = u16(bytes,header), u16(bytes,header+2)
-        check(bytes:sub(header+9,header+16)==string.rep('\0',8),
-            'projectile frames must be self-contained; linked/tiled image metadata is unsupported')
-        check(width>0 and height>0 and width<=2048 and height<=2048, 'invalid image dimensions')
-        check(length>0 and offset+length<=size, 'image data exceeds GM1 payload')
-        -- Validate token and pixel bounds before the native decoder/converter
-        -- touches user data. Animations store palette indices, type 1 RGB555.
-        local p, finish, x, y = pixels+offset+1, pixels+offset+length, 0, 0
-        local pixel_size = kind==2 and 1 or 2
-        while p<=finish do
-            local token=bytes:byte(p); p=p+1
-            local flag, run=token//32, token%32+1
-            if flag==4 then
-                -- Native sheets align each stream to four bytes with up to
-                -- three extra newline tokens after the declared last row.
-                check(y<height or (token==128 and finish-p+1<=2), 'invalid image padding')
-                y=y+1; x=0
-                check(y<=height+3, 'too many image rows')
-            else
-                check(flag==0 or flag==1 or flag==2, 'unsupported image token')
-                check(y<height and x+run<=width, 'image run exceeds dimensions')
-                x=x+run
-                if flag==0 then p=p+run*pixel_size
-                elseif flag==2 then p=p+pixel_size end
-                check(p<=finish+1, 'truncated image pixels')
-            end
-        end
-        check(y>=height or (y==height-1 and x==width), 'incomplete image rows')
-    end
-    return {count=count, kind=kind, size=size}
-end
 
 function M.definitions(input)
     if input==nil then return {} end
@@ -104,22 +58,38 @@ function M.prepare(definitions, decorations)
         if not spec.path then return end
         local key=spec.gm .. ':' .. spec.path
         if not assets[key] then
-            local file=assert(io.open(spec.path,'rb'), '[custom-projectiles] cannot open sprite sheet: '..spec.path)
-            local bytes=file:read(16777216+5208+184*24+1); file:close()
-            M.validate_gm1(bytes,spec.gm)
-            check(sha and sha.sha256, 'framework SHA256 service is unavailable')
-            assets[key]={path=spec.path, gm=spec.gm, hash=sha.sha256(bytes), names={}, decorations={}}
+            assets[key]={path=spec.path, gm=spec.gm, names={}, decorations={}}
             resources[#resources+1]=assets[key]
         end
         local asset=assets[key]
         local names = decoration and asset.decorations or asset.names
         names[#names+1]=name
-        spec.sha256=asset.hash
     end
     for name, spec in pairs(definitions) do add(name, spec, false) end
     for name, spec in pairs(decorations or {}) do add(name, spec, true) end
     check(#resources<=33, 'projectile and decoration sheets share at most 33 free GM slots')
     table.sort(resources,function(a,b) return a.gm==b.gm and a.path<b.path or a.gm<b.gm end)
+    if #resources==0 then return resources end
+    local modifier=assert(modules.gmResourceModifier, '[custom-projectiles] gmResourceModifier is required for custom sprites')
+    check(modifier.LoadCompleteGm1Resource and modifier.ReserveGm and modifier.GetReservedGm and modifier.FreeGm1Resource,
+        'gmResourceModifier 0.3.1 is required for complete inherited sprite sheets')
+    local loaded={}
+    local ok, err=pcall(function()
+        for _,asset in ipairs(resources) do
+            local sheet=assert(M.sheets[asset.gm], 'unsupported base sheet')
+            local resource, hash=modifier:LoadCompleteGm1Resource(asset.path,sheet.count,sheet.kind)
+            if type(resource)=='number' and resource>=0 then loaded[#loaded+1]=resource end
+            check(type(resource)=='number' and resource>=0 and type(hash)=='string' and
+                #hash==64 and hash:match('^[0-9a-f]+$'), 'failed to load or validate '..asset.path)
+            asset.resource, asset.hash=resource,hash
+            for _,name in ipairs(asset.names) do definitions[name].sha256=hash end
+            for _,name in ipairs(asset.decorations) do decorations[name].sha256=hash end
+        end
+    end)
+    if not ok then
+        for _,resource in ipairs(loaded) do modifier:FreeGm1Resource(resource) end
+        error(err)
+    end
     return resources
 end
 
@@ -129,11 +99,9 @@ function M.install(resources, bind)
     if #resources==0 then return end
     local modifier=assert(modules.gmResourceModifier, '[custom-projectiles] gmResourceModifier is required for custom sprites')
     check(modifier.ReserveGm and modifier.GetReservedGm,
-        'gmResourceModifier 0.3.0 is required for inherited sprite sheets')
+        'gmResourceModifier 0.3.1 is required for inherited sprite sheets')
     for _,asset in ipairs(resources) do
-        local resource=modifier:LoadGm1Resource(asset.path)
-        check(type(resource)=='number' and resource>=0, 'failed to load '..asset.path)
-        asset.reservation=modifier:ReserveGm(asset.gm,resource)
+        asset.reservation=modifier:ReserveGm(asset.gm,asset.resource)
         check(asset.reservation>=0, 'failed to reserve '..asset.path)
     end
     hooks.registerHookCallback('afterInit',function()
