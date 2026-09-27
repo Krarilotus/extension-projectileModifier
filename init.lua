@@ -147,6 +147,19 @@ assert(core.readSmallInteger(unit_tick_addr + 0x3A2) % 65536 == 0xFA81
 local unit_capacity = core.readInteger(unit_tick_addr + 0x3A4)
 assert(unit_capacity == (data.version.isExtreme() and 10000 or 2500),
     '[custom-projectiles] unsupported unit-array capacity modification')
+local spawn_site, entity_site, entity_array
+if next(config.projectiles or {}) or next(config.decorations or {}) then
+    spawn_site = locate('83 EC 08 53 8B 5C 24 34 83 FB 2B 56 8B F1')
+    entity_site = locate('51 53 55 56 8B F1 8B 0D ? ? ? ? B8 67 66 66 66 F7 E9')
+    -- The dispatcher loads EntityState as `this` immediately before calling
+    -- the resolved native spawner. Decode both operands from that call site.
+    local call_site = locate('52 51 50 B9 ? ? ? ? E8 ? ? ? ? 0F BF 86 EC 08 00 00 85 C0 5F 5E 5B 74 0F 69')
+    local target = (call_site + 13 + core.readInteger(call_site + 9)) % 4294967296
+    local entity_state = core.readInteger(call_site + 4)
+    assert(target == spawn_site and entity_state >= 0x700000 and entity_state % 4 == 0,
+        '[custom-projectiles] unsupported native entity spawner context')
+    entity_array = entity_state + 20
+end
 return {locate=locate, fire=fire_projectile_addr, acquire=acquire_target_addr, tick=unit_tick_addr,
     animation=animation_addr, releaseCycles=release_cycles, catapultRest=catapult_rest, trebuchetRest=trebuchet_rest, horse=horse_addr,
     hunter=hunter_addr, hunterScript=hunter_script, hunterSound=hunter_sound, soundThis=sound_this, hunterEnd=hunter_end, facePoint=face_point, faceUnit=face_unit,
@@ -154,12 +167,13 @@ return {locate=locate, fire=fire_projectile_addr, acquire=acquire_target_addr, t
     rows=tile_rows_addr, flags=tile_flags_addr, terrain=terrain_height_addr,
     teams=team_table_addr, buildings=building_base_addr, aic=aic_array_base,
     playerAic=player_aic_addr, cow=aic_cow_addr, units=unit_array_base,
+    spawn=spawn_site, entityUpdate=entity_site, entityArray=entity_array,
     this=unit_state_this, current=current_unit_id_addr, capacity=unit_capacity}
 end
 
 -- Private tables, non-overlapping scratch and persistent per-unit firing state.
-local TABLE_BYTES, OFF_REENTRY, OFF_SEED, OFF_SCATY, OFF_REMAP, OFF_COUNT, OFF_SPREAD, OFF_INTERVAL, OFF_SUPPRESS, OFF_FORCED, OFF_COOLDOWN, OFF_ORDER, OFF_RANGE, OFF_WALLMIN, OFF_MULTI, OFF_HEIGHT, OFF_MANNED, OFF_BLDCLASS, OFF_SCRATCH, OFF_CANDS, OFF_IMOVE, OFF_ISTAND, OFF_LASTPOS, OFF_MOVECD, OFF_STAGMIN, OFF_STAGMAX, OFF_PENDING, OFF_PENDCD, OFF_DMIN, OFF_DRAD, OFF_ATTINT, OFF_ATTCREW, OFF_ATTBOARD, OFF_ATTBR2, OFF_AICOW, OFF_COWREMAP, OFF_COWCOUNT, OFF_PRELOAD, OFF_PRELPOLL, OFF_SYNC, OFF_SYNCMAX, OFF_SYNCWAIT, OFF_INACC, OFF_INACCSET, OFF_AIONLY, OFF_UID, OFF_IDENTITY, OFF_NATIVESEEN, OFF_FORTIFIED, OFF_PROFILESTATE, OFF_NATIVECYCLE, OFF_NATIVEINT, OFF_NATIVEBLOCK, OFF_NATIVEATTACK, OFF_NATIVESTART, OFF_WEAPONSEEN, OFF_WEAPONCYCLE, OFF_WEAPONTICK, OFF_WEAPONPHASE, OFF_SPRITE, OFF_COWSPRITE, OFF_CURRENTVARIANT, OFF_VARIANTGM, OFF_VARIANTBASEGM, OFF_VARIANTCOUNT, OFF_ENTITYVARIANT, OFF_ENTITYUID, OFF_ENTITYTYPE, OFF_DECORVARIANT, OFF_DECORUID, OFF_DECORGM, OFF_DECORGRID, OFF_DECORNEXT, OFF_DECORRULEMAP, OFF_DECORRULEST, OFF_TURNBEFORE, OFF_STRICTRANGE, OFF_AUTOTARGET, OFF_RELEASECYCLE, DATA_SIZE
-local function layout(profile_count)
+local TABLE_BYTES, OFF_REENTRY, OFF_SEED, OFF_SCATY, OFF_REMAP, OFF_COUNT, OFF_SPREAD, OFF_INTERVAL, OFF_SUPPRESS, OFF_FORCED, OFF_COOLDOWN, OFF_ORDER, OFF_RANGE, OFF_WALLMIN, OFF_MULTI, OFF_HEIGHT, OFF_MANNED, OFF_BLDCLASS, OFF_SCRATCH, OFF_CANDS, OFF_IMOVE, OFF_ISTAND, OFF_LASTPOS, OFF_MOVECD, OFF_STAGMIN, OFF_STAGMAX, OFF_PENDING, OFF_PENDCD, OFF_DMIN, OFF_DRAD, OFF_ATTINT, OFF_ATTCREW, OFF_ATTBOARD, OFF_ATTBR2, OFF_AICOW, OFF_COWREMAP, OFF_COWCOUNT, OFF_PRELOAD, OFF_PRELPOLL, OFF_SYNC, OFF_SYNCMAX, OFF_SYNCWAIT, OFF_INACC, OFF_INACCSET, OFF_AIONLY, OFF_UID, OFF_IDENTITY, OFF_NATIVESEEN, OFF_FORTIFIED, OFF_PROFILESTATE, OFF_NATIVECYCLE, OFF_NATIVEINT, OFF_NATIVEBLOCK, OFF_NATIVEATTACK, OFF_NATIVESTART, OFF_WEAPONSEEN, OFF_WEAPONCYCLE, OFF_WEAPONTICK, OFF_WEAPONPHASE, OFF_SPRITE, OFF_COWSPRITE, OFF_CURRENTVARIANT, OFF_VARIANTGM, OFF_VARIANTBASEGM, OFF_VARIANTCOUNT, OFF_ENTITYVARIANT, OFF_ENTITYUID, OFF_ENTITYTYPE, OFF_DECORVARIANT, OFF_DECORUID, OFF_DECORGM, OFF_DECORGRID, OFF_DECORNEXT, OFF_DECORRULEMAP, OFF_DECORRULEST, OFF_TURNBEFORE, OFF_STRICTRANGE, OFF_AUTOTARGET, OFF_RELEASECYCLE, OFF_ACTIVECOUNT, OFF_ACTIVEIDS, OFF_ACTIVEINDEX, OFF_DECORACTIVECOUNT, OFF_DECORACTIVEIDS, OFF_DECORCELLSCOUNT, OFF_DECORCELLS, OFF_DECORWRITE, DATA_SIZE
+local function layout(profile_count, has_visuals, has_decorations)
     MAX_PROFILES = profile_count
     TABLE_BYTES = MAX_PROFILES * 4
     OFF_REENTRY   = 0x00
@@ -240,7 +254,17 @@ local function layout(profile_count)
     OFF_STRICTRANGE = OFF_TURNBEFORE + TABLE_BYTES
     OFF_AUTOTARGET = OFF_STRICTRANGE + TABLE_BYTES
     OFF_RELEASECYCLE = OFF_AUTOTARGET + TABLE_BYTES
-    DATA_SIZE = OFF_RELEASECYCLE + MAX_TYPES * 4
+    OFF_ACTIVECOUNT = OFF_RELEASECYCLE + MAX_TYPES * 4
+    OFF_ACTIVEIDS = OFF_ACTIVECOUNT + 4
+    OFF_ACTIVEINDEX = OFF_ACTIVEIDS + 3000 * 4
+    OFF_DECORACTIVECOUNT = OFF_ACTIVEINDEX + 3000 * 4
+    OFF_DECORACTIVEIDS = OFF_DECORACTIVECOUNT + 4
+    OFF_DECORCELLSCOUNT = OFF_DECORACTIVEIDS + 3000 * 4
+    OFF_DECORCELLS = OFF_DECORCELLSCOUNT + 4
+    OFF_DECORWRITE = OFF_DECORCELLS + 3000 * 4
+    DATA_SIZE = has_decorations and (OFF_DECORWRITE + 4)
+        or has_visuals and (OFF_ACTIVEINDEX + 3000 * 4)
+        or OFF_ACTIVECOUNT
 
 end
 
@@ -307,10 +331,14 @@ local function install(config)
     end
     local native = resolve(cadence.required(config), config)
     MAX_UNITS = native.capacity
-    layout(profile_count)
+    layout(profile_count, next(config.projectiles or {})~=nil or has_decorations, has_decorations)
+    local native_decorations = has_decorations and decorations.resolve(native.locate)
+    if native_decorations then
+        assert(native_decorations.entityState == native.entityArray - 20,
+            '[custom-projectiles] conflicting native entity-state bindings')
+    end
     local resources = sprites.prepare(config.projectiles or {}, config.decorations)
     for _, spec in pairs(config.projectiles or {}) do variant_by_id[spec.id] = spec end
-    local native_decorations = has_decorations and decorations.resolve(native.locate)
     release_cycles = native.releaseCycles or {}
     local fire_projectile_addr, acquire_target_addr, unit_tick_addr = native.fire, native.acquire, native.tick
     local tile_rows_addr, tile_flags_addr, terrain_height_addr = native.rows, native.flags, native.terrain
@@ -405,13 +433,21 @@ local function install(config)
         ENTITYVARIANT = data_addr + OFF_ENTITYVARIANT,
         ENTITYUID     = data_addr + OFF_ENTITYUID,
         ENTITYTYPE    = data_addr + OFF_ENTITYTYPE,
-        ENTITYARRAY   = core.readInteger(fire_projectile_addr+0x416)+20,
+        ACTIVECOUNT   = data_addr + OFF_ACTIVECOUNT,
+        ACTIVEIDS     = data_addr + OFF_ACTIVEIDS,
+        ACTIVEINDEX   = data_addr + OFF_ACTIVEINDEX,
+        ENTITYARRAY   = native.entityArray or 0,
         HASDECOR      = has_decorations and 1 or 0,
         DECORVARIANT  = data_addr + OFF_DECORVARIANT,
         DECORUID      = data_addr + OFF_DECORUID,
         DECORGM       = data_addr + OFF_DECORGM,
         DECORGRID     = data_addr + OFF_DECORGRID,
         DECORNEXT     = data_addr + OFF_DECORNEXT,
+        DECORACTIVECOUNT = data_addr + OFF_DECORACTIVECOUNT,
+        DECORACTIVEIDS = data_addr + OFF_DECORACTIVEIDS,
+        DECORCELLSCOUNT = data_addr + OFF_DECORCELLSCOUNT,
+        DECORCELLS = data_addr + OFF_DECORCELLS,
+        DECORWRITE = data_addr + OFF_DECORWRITE,
         DECORRULEMAP  = data_addr + OFF_DECORRULEMAP,
         DECORRULEST   = data_addr + OFF_DECORRULEST,
         WEAPONSEENT   = data_addr + OFF_WEAPONSEEN,
@@ -548,13 +584,14 @@ local function install(config)
     local decoration_filter
     if has_decorations then
         local runtime = require('decoration_runtime')
+        values.UPDATEDECOR = assemble_blob(runtime.update, values)
         values.REBUILDDECOR = assemble_blob(runtime.rebuild, values)
         values.DECORPROFILE = assemble_blob(runtime.profile, values)
         values.BRAZIERRESUME = native_decorations.filterResume
         values.BRAZIERNEXT = native_decorations.filterNext
         decoration_filter = assemble_blob(runtime.native_filter, values)
     else
-        values.REBUILDDECOR, values.DECORPROFILE = 0, 0
+        values.UPDATEDECOR, values.REBUILDDECOR, values.DECORPROFILE = 0, 0, 0
     end
     values.PROFILE = assemble_blob(templates.profile_code, values)
     values.FIXSCATTER = assemble_blob(templates.fixscatter_code, values)
@@ -635,11 +672,10 @@ local function install(config)
     local spawn_site, entity_site, spawn_hook, entity_hook
     if #resources>0 or has_decorations then
         local runtime=require('sprite_runtime')
-        spawn_site=native.locate('83 EC 08 53 8B 5C 24 34 83 FB 2B 56 8B F1')
-        entity_site=native.locate('51 53 55 56 8B F1 8B 0D ? ? ? ? B8 67 66 66 66 F7 E9')
-        values.ENTITYARRAY=core.readInteger(fire_projectile_addr+0x416)+20
+        spawn_site, entity_site = native.spawn, native.entityUpdate
         values.SPRITEONE=assemble_blob(runtime.one,values)
         values.SPRITEALL=assemble_blob(runtime.all,values)
+        values.SPRITEREBUILD=assemble_blob(runtime.rebuild,values)
         values.SPAWNRESUME=spawn_site+8
         values.SPAWNORIGINAL=assemble_blob(runtime.spawn_original,values)
         spawn_hook=assemble_blob(runtime.spawn,values)
@@ -649,6 +685,12 @@ local function install(config)
     end
 
     -- Prepare persistence and all code before either entry point is redirected.
+    local rebuild_sprites = values.SPRITEREBUILD and core.exposeCode(values.SPRITEREBUILD,0,0)
+    local rebuild_decorations = has_decorations and core.exposeCode(values.REBUILDDECOR,0,0)
+    local rebuild = rebuild_sprites or rebuild_decorations
+    if rebuild_sprites and rebuild_decorations then
+        rebuild = function() rebuild_sprites(); rebuild_decorations() end
+    end
     persistent = require('state').new({
         {'seed', data_addr + OFF_SEED, 4},
         {'cooldown', data_addr + OFF_COOLDOWN, MAX_UNITS * 4},
@@ -670,7 +712,7 @@ local function install(config)
         {'decoration-variant', data_addr + OFF_DECORVARIANT, 3000*4},
         {'decoration-uid', data_addr + OFF_DECORUID, 3000*4},
         {'decoration-gm', data_addr + OFF_DECORGM, 34*4, true},
-    }, config, MAX_PROFILES, has_decorations and core.exposeCode(values.REBUILDDECOR,0,0) or nil)
+    }, config, MAX_PROFILES, rebuild)
     sprites.install(resources,function(asset)
         for _, name in ipairs(asset.decorations or {}) do
             set_entry(OFF_DECORGM, config.decorations[name].id, asset.slot)
@@ -683,6 +725,7 @@ local function install(config)
         end
     end)
     if has_decorations then
+        values.REBUILDDECORCALL = rebuild_decorations
         local open_menu, choose = require('decoration_ui').prepare(config.decorations)
         choose(decorations.install(config.decorations, native_decorations, values, open_menu))
         core.writeCode(native_decorations.filter, {0xE9,

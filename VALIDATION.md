@@ -1,5 +1,21 @@
 # Validation — unreleased work
 
+## 1.8.9 active visual indices, 28 September
+
+The existing projectile spawn and entity-update hooks now visit only active
+custom projectile/decor IDs; decoration-grid updates clear only touched cells.
+Scratch indices reconstruct after new-world/load and placement, outside the
+saved format-5 state. Focused normal/Extreme x86 tests cover stale/reused IDs,
+render visit counts, moved/dead decorations, native equal-priority ordering,
+and save continuation. A two-decoration update remains under 1000 emulated
+instructions. The complete regression suite passed **140 tests** in 918.294
+seconds before the final visual-binding correction. After that correction,
+all eight sprite/resource and twelve decoration regressions passed; these
+include a new fail-closed spawner-call/pointer/ambiguity test on both images.
+The binding is decoded with UCP's `core.AOBScan` and cross-checked against the
+resolved native spawner and decoration receiver. No live rendered-game,
+multiplayer, replay or crowded-match performance pass is claimed yet.
+
 ## 1.8.8 owner loading refactor, 27 September
 
 The GM owner now validates complete inherited sheets and hashes the exact bytes

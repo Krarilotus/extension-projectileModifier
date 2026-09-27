@@ -137,7 +137,7 @@ function M.install(definitions, native, values, open_menu)
     local height=core.exposeCode(native.height,2,1)
     local cost=core.exposeCode(native.cost,4,1)
     local debit=core.exposeCode(native.debit,5,1)
-    local rebuild=core.exposeCode(values.REBUILDDECOR,0,0)
+    local rebuild=assert(values.REBUILDDECORCALL, 'missing decoration rebuild callback')
     local cost_buffer=core.allocate(8)
     local tilemap=values.TILEFLAGS-0x165160
     local function execute(player,x,y,variant)

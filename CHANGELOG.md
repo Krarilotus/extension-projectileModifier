@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.8.9 (provisional test candidate)
+
+- Visit only active custom projectiles and decorations during entity updates.
+  Rebuild temporary indices on new world/load and decoration placement using
+  existing hooks; save format, native projectile behavior and YAML stay the same.
+- Clear only occupied decoration-grid cells each update, retaining the native
+  entity-ID order for equal-priority proximity rules.
+- Resolve the visual entity-state pointer from a verified UCP AOB call site,
+  checking its decoded target against the native spawner before loading art.
+
 ## 1.8.8 (provisional test candidate)
 
 - Load and validate complete GM1 sheets once through gmResourceModifier 0.3.1.

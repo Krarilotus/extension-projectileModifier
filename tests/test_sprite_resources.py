@@ -32,7 +32,7 @@ class SpriteResourcesTests(unittest.TestCase):
         self.assertEqual(loads,[b'a.gm1',b'b.gm1'])
         self.assertEqual(freed,[7])
 
-    def prepare(self,extreme=False):
+    def prepare(self,extreme=False,mutate=None):
         h=Harness(extreme);m=self.module(h)
         (ROOT/'tests/output').mkdir(parents=True,exist_ok=True)
         directory=tempfile.TemporaryDirectory(dir=ROOT/'tests/output')
@@ -48,6 +48,7 @@ class SpriteResourcesTests(unittest.TestCase):
         h.lua.execute(b"modules.gmResourceModifier={LoadCompleteGm1Resource=function(self,p,c,t) return load_resource(p,c,t) end, FreeGm1Resource=function(self,r) return free_resource(r) end, ReserveGm=function(self,b,r) return reserve_resource(b,r) end, GetReservedGm=function(self,t) return get_reserved(t) end}; hooks={registerHookCallback=function(h,f) register_after(h,f) end}")
         def unexpected_hook(*args):raise AssertionError('consumer installed a private resource loader hook')
         h.lua.globals().core.hookCode=unexpected_hook
+        if mutate: mutate(h)
         config={'projectiles':{'test_arrow':{'inherits':'arrow','sprites':path}},
                 'units':{'Catapult':{'projectile':'test_arrow','count':1}}}
         h.module.apply(h.config(config))
@@ -71,6 +72,27 @@ class SpriteResourcesTests(unittest.TestCase):
         h.unit(1,39);h.put(state+8,25)
         return h,state,config
 
+    def test_visual_binding_decodes_native_spawner_and_rejects_conflicts(self):
+        pattern=b'52 51 50 B9 ? ? ? ? E8 ? ? ? ? 0F BF 86 EC 08 00 00 85 C0 5F 5E 5B 74 0F 69'
+        for extreme in (False,True):
+            h,state,_=self.prepare(extreme)
+            site=h.scan(pattern)
+            self.assertEqual(state,h.get(site+4))
+            self.assertEqual(h.v['ENTITYARRAY'],state+20)
+            for changed in ('call','pointer','ambiguous'):
+                with self.subTest(extreme=extreme,changed=changed):
+                    observed=[]
+                    def mutate(host):
+                        observed.append(host)
+                        call=host.scan(pattern)
+                        if changed=='call': host.put(call+9,0)
+                        elif changed=='pointer': host.put(call+4,0x400000)
+                        else: host.uc.mem_write(0x6f0000,bytes(host.uc.mem_read(call,28)))
+                    with self.assertRaisesRegex(Exception,'entity spawner context|ambiguous native'):
+                        self.prepare(extreme,mutate)
+                    self.assertEqual(observed[0].allocations,[])
+                    self.assertEqual(observed[0].writes,[])
+
     def test_native_spawn_selects_variant_and_preserves_simulation_fields(self):
         for extreme in [False,True]:
             with self.subTest(extreme=extreme):
@@ -88,6 +110,32 @@ class SpriteResourcesTests(unittest.TestCase):
                 h.put(entity+0x2a,14,2)
                 h.call(h.v['SPRITEALL'],registers={r.UC_X86_REG_EDX:1})
                 self.assertEqual(h.get(h.v['ENTITYVARIANT']+25*4),0)
+
+    def test_render_visits_only_active_custom_entities_and_reuses_slots(self):
+        for extreme in (False,True):
+            with self.subTest(extreme=extreme):
+                h,state,_=self.prepare(extreme)
+                def visits():
+                    seen=[]
+                    h.call(h.v['SPRITEALL'],registers={r.UC_X86_REG_EDX:1},
+                           callbacks={h.v['SPRITEONE']:lambda host:seen.append(host.uc.reg_read(r.UC_X86_REG_EAX))})
+                    return seen
+                self.assertEqual(visits(),[])
+                h.call(h.v['FIREPROJ'],[1,2,352,320,30],{r.UC_X86_REG_ECX:h.v['UNITSTATE']})
+                self.assertEqual(h.get(h.v['ACTIVECOUNT']),1)
+                self.assertEqual(h.get(h.v['ACTIVEINDEX']+25*4),1)
+                self.assertEqual(visits(),[25])
+                entity=state+20+25*232
+                h.put(entity+0x2a,14,2)
+                self.assertEqual(visits(),[25])
+                self.assertEqual(h.get(h.v['ACTIVECOUNT']),0)
+                self.assertEqual(visits(),[])
+                h.put(entity+0x28,0,2)
+                h.put(state+8,25)
+                h.put(h.v['NATIVESEENT']+4,0)
+                h.call(h.v['FIREPROJ'],[1,2,352,320,30],{r.UC_X86_REG_ECX:h.v['UNITSTATE']})
+                self.assertEqual(h.get(h.v['ACTIVECOUNT']),1)
+                self.assertEqual(visits(),[25])
 
     def test_failed_admission_exposes_no_partial_variant_layout(self):
         h=Harness();m=self.module(h);callbacks=[];bound=[];fatal=[];reservations=[]
@@ -147,6 +195,8 @@ class SpriteResourcesTests(unittest.TestCase):
                 custom.call(address,registers={r.UC_X86_REG_ECX:state})
                 expected=bytes(custom.uc.mem_read(state+20+25*232,232))
                 custom.uc.mem_write(state,original);saved.deserialize(saved,handle)
+                self.assertEqual(custom.get(custom.v['ACTIVECOUNT']),1)
+                self.assertEqual(custom.get(custom.v['ACTIVEINDEX']+25*4),1)
                 custom.call(address,registers={r.UC_X86_REG_ECX:state})
                 self.assertEqual(bytes(custom.uc.mem_read(state+20+25*232,232)),expected)
 
