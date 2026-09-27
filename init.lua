@@ -580,6 +580,7 @@ local function install(config)
     values.VOLLEY = volley_addr
     values.MANUALORDER = assemble_blob(templates.manual_order_code, values)
     values.NATIVECONTEXT = assemble_blob(cadence.context_code, values)
+    values.ACCEPTEDVALID = assemble_blob(cadence.accepted_code, values)
     local acquire_hook
     if manual_only then
         values.RESUME = acquire_target_addr + 6

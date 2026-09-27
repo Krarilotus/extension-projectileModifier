@@ -1611,12 +1611,30 @@ t_notboarded:
     jz t_failed
     jmp t_shoot
 t_nativeaim:
+    ; Random-target volleys explicitly fan out to fresh candidates. Refresh
+    ; that bounded list at release, then restore the accepted native aim/order.
+    ; Ordinary volleys never rescan here or change their facing.
+    mov edx, [S_PROFILE]
+    cmp dword [MULTIT+edx*4], 0
+    je t_nativeaim_ready
+    push edx
+    push dword [S_ID]
+    call PICKTARGET
+    add esp, 8
+    call RESTORETARGET
+t_nativeaim_ready:
     mov esi, [ebp+36]
     mov eax, [esi]
     imul eax, eax, 0x490
     add eax, UNITARRAY
     mov [S_UNITPTR], eax
     mov dword [S_MODE], 3       ; keep the native shot's exact coordinates
+    movzx ecx, word [eax+0x344]
+    cmp ecx, 1
+    jl t_shoot
+    cmp ecx, MAXUNITS
+    jae t_shoot
+    mov dword [S_MODE], 1       ; admitted unit aim retains AI cow choice
 t_shoot:
     mov dword [S_EXPLICIT], 1
     mov eax, [S_ID]
@@ -1699,7 +1717,12 @@ t_pendingfired:
     add esp, 8
 t_afterqueue:
     cmp dword [ebp+36], 0
-    jne t_reset                 ; native aim/order was never replaced
+    je t_restoreorder
+    cmp dword [S_MULTI], 0
+    je t_reset                 ; ordinary native aim/order was never replaced
+    call RESTORETARGET          ; random damage attribution changed target ID/UID
+    jmp t_reset
+t_restoreorder:
     call RESTORETARGET
     jmp t_reset
 t_failed:

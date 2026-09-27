@@ -1,16 +1,16 @@
-# Custom Projectiles 1.8.6 (test candidate)
+# Custom Projectiles 1.8.7 (test candidate)
 
 Configure projectile types, volley sizes and automatic firing for all 77 unit
 types using one readable YAML file. Based on Monsterfish's supplied 1.2.0 module.
 Requires UCP 3.0.7+, Crusader/Extreme 1.41 and the declared map-extensions,
-gmResourceModifier, protocol and ui dependencies (the launcher resolves them).
+gmResourceModifier, protocol and ui dependencies. The 0.3.0 GM owner build is
+currently a draft dependency; the public Store does not resolve it yet.
 The ui dependency requires version 1.0.1 or later and launcher 1.0.12 or later.
 UI 1.0.0 has a native menu-array overrun that can crash startup.
-UI 1.0.1 is available in the 3.0.7 store. The tester bundle's companion uses
-the same source commit `d3a807cfee70308f707ea81ddb92ac8b1d375bd9`.
+UI 1.0.1 is available in the 3.0.7 store.
 
-The [native integration audit](https://github.com/Krarilotus/extension-projectileModifier/blob/1d1b291/NATIVE-AUDIT.md) records the remaining work;
-this branch does not replace the published 1.8.6 tester archive.
+The [native integration audit](NATIVE-AUDIT.md) records the remaining work.
+This is a provisional test build; it does not replace an accepted store release.
 
 ## Quick configuration guide
 
@@ -27,7 +27,7 @@ field table below explains every supported setting; the schema also catches
 misspelled names and invalid types. Additional cross-field checks run at startup.
 
 **Automatic attack is per unit type**, under `units`, not a separate GUI category.
-The only GUI control is the file picker in **Customizations ? Balance Changes**.
+The only GUI control is the file picker in **Customizations > Balance Changes**.
 A setting under `Catapult` applies to all catapults (or AI-owned catapults only
 with `ai_only: true`), not one individually selected catapult.
 
@@ -40,6 +40,7 @@ with `ai_only: true`), not one individually selected catapult.
 | Fire only while standing | `interval_standing: 700`, `interval_moving: 0` |
 | A fallback rate for other stances | `interval`; moving/standing/docked overrides take precedence; zero on an override holds fire |
 | Automatically search for buildings | `targets: [buildings, units]`; first kind that finds a target wins; boulders alone do not enable building searches |
+| Allow automatic attacks | `auto_targeting: true` or `false` per unit type; `false` keeps human manual attack orders |
 | Search distance | `range` in tiles for the module's automatic search; this is not the native manual-order range override |
 | Exact aim | `inaccuracy: 0` and `spread: 0`; moving targets can still move before impact |
 | An eighth-tile aim-error radius | `inaccuracy: 1`; **8 native coordinate units = 1 tile**; use whole numbers |
@@ -70,13 +71,10 @@ cannot skip native aiming/reload/firing frames; turning or missing crew may dela
 release. A human's explicit native attack order takes priority over automatic
 search priorities. `cluster` adds a density threshold for AI owners.
 
-**Build distinction:** the existing 1.8.6 tester uses omission or `{}` to leave
-settings alone. The follow-up development branch adds `native` for dynamic rules,
-`auto_targeting: false` to disable autonomous attacks per unit type while retaining
-human manual orders, and `strict_range`. Those fields require that follow-up
-build and its schema; they are not supported by the old downloadable 1.8.6 ZIP.
-Neither source merging nor committing the pending movement/aiming fixes publishes
-a tested release. See [VALIDATION.md](VALIDATION.md) for acceptance limits.
+**Build distinction:** `native` for dynamic rules, `auto_targeting: false` for
+manual-only attack, and `strict_range` require 1.8.7 and its matching schema.
+The old 1.8.6 tester does not understand these fields. See [VALIDATION.md](VALIDATION.md)
+for acceptance limits.
 
 Only `units`, `projectiles` and `decorations` belong at the top of a projectile
 file. Do not paste GitHub workflow keys (`name`, `on`) or UCP `config-sparse`
@@ -84,8 +82,12 @@ wrappers into it. Use spaces for indentation and restart the game after edits.
 
 ## Installation and use
 
-Import `custom-projectiles-1.8.6.zip` into the launcher and enable the module and its dependencies. This unsigned local test candidate requires development module
-loading. It is not a signed store release; see VALIDATION.md for test limits.
+Import `custom-projectiles-1.8.7.zip` and the matching
+`gmResourceModifier-0.3.0.zip` draft dependency into a developer launcher, then
+enable them with map-extensions, protocol and ui. For the direct enemy-click
+catapult check, also enable the separate Fixed Engineers 0.2.0 tester. This
+unsigned test candidate requires development module loading. It is not a
+signed store release; see VALIDATION.md for test limits.
 
 Native reload timing covers catapults, trebuchets, mangonels, both ballistas,
 European/Arabian foot archers, crossbowmen, slingers, firethrowers, horse archers

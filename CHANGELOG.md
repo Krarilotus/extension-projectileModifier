@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.8.7 (provisional test candidate)
+
+- Add the explicit vanilla YAML reference and matching editor schema. Dynamic
+  game rules use `native`; automatic attack can be disabled per unit type.
+- Keep an accepted siege aim through its loaded release, then return to native
+  aiming if the target dies or its unit slot is reused. Restore AI cow choice
+  and refresh candidates only for explicitly random volleys, restoring the
+  accepted target identity after damage attribution for each shot.
+- Correct automatic range tests using eighth-tile coordinates. Include a
+  regression for priest and monk selection with a firethrower projectile.
+- Reserve inherited GM artwork through gmResourceModifier 0.3.0's owner API.
+  The owner PR and rendered-game acceptance are still pending.
+
 ## 1.8.6 (test candidate)
 
 - Move the catapult cooldown pause from the raised pre-release frame to the

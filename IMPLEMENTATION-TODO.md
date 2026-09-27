@@ -3,8 +3,7 @@
 The checkmarks below record bounded implementation milestones, not completion of
 the requested release. Earlier live results apply to their recorded prototype
 versions. The native integration audit identified unfinished ownership work and
-the new cooldown retarget correction still needs a successful live changed-order
-test. No new completed release is implied by the older tester delivery entries.
+the new accepted-aim correction still needs a combined live direct-click test.
 
 - [x] Native reload timing for all 12 ranged types: five siege engines, five foot
   shooters, horse archers and hunters. Preserve release frames/minimum cycles,
@@ -41,14 +40,14 @@ test. No new completed release is implied by the older tester delivery entries.
 
 ## Release acceptance still requiring live play
 
-- [ ] Finish inherited-sheet reservation in gmResourceModifier and remove private
-  GM1 validation/loading/identity work from this consumer. The nested native loader
-  hook and sheet-copying code are removed in this branch; the owner API remains a
-  prerequisite under development.
+- [ ] Finish [gmResourceModifier PR #7](https://github.com/UnofficialCrusaderPatch/ucp_gmResourceModifier/pull/7)
+  and move GM1 content validation/identity to that owner. Inherited reservation
+  is implemented; the consumer still has private parser/hash work.
 - [ ] Replace full entity/world scans and competing render/decorations lifecycle
-  work with the responsible native/framework owners.
+  work with the responsible native/framework owners ([issue #9](https://github.com/Krarilotus/extension-projectileModifier/issues/9)).
 - [ ] Add opt-in threat priorities through native target eligibility/spatial
-  ownership; confirm monk/priest selection in a real mixed-unit scenario.
+  ownership; confirm monk/priest selection in a real mixed-unit scenario
+  ([issue #10](https://github.com/Krarilotus/extension-projectileModifier/issues/10)).
 - [ ] Verify the new default-ON `turn_before_shot` correction for changed human
   orders during cooldown, including an explicit OFF baseline.
 - [ ] Finish required save/recorder enrollment and owner-supplied content identity.
@@ -71,6 +70,6 @@ release or merge is implied by this test candidate.
 # Latest reported movement/aiming gap
 
 See [MOVING-CATAPULT-STATUS.md](MOVING-CATAPULT-STATUS.md): direct enemy clicks
-omit native path cleanup; a separate local module correction preserves accepted
-aim after Halt. Both are local candidates, with corrected in-game/composition
-acceptance still outstanding. No updated public ZIP is claimed.
+omit native path cleanup; Fixed Engineers PR #4 owns that correction, while this
+module preserves the accepted aim after Halt. Combined in-game/composition
+acceptance is still outstanding.

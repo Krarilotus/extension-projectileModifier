@@ -1,10 +1,9 @@
 # Native integration audit, 12 September 2026
 
-This is an audit of the implemented 1.8.6 candidate, not a release acceptance
-statement. Original source branch `main` and the store PR branch are preserved.
-Corrections are being prepared in `fix/native-binding-audit`. Store PR #31
-remains provisional. User scope also includes aiming before a retargeted shot,
-optional threat priorities and investigation of reported monk targeting.
+This audit began with the 1.8.6 candidate and tracks provisional 1.8.7 source;
+it is not release acceptance. Original source `main` and Store PR #31 remain
+preserved. User scope also includes combined live retargeting, optional threat
+priorities and investigation of reported monk targeting.
 
 ## Confirmed findings
 
@@ -13,10 +12,10 @@ optional threat priorities and investigation of reported monk targeting.
 | Fixed normal/Extreme unit-array roots | `addresses.lua` selected VAs. Decode the two native dispatcher operands and verified update-loop capacity. | Removed in this branch; issue #2. |
 | Discovery bypassed the framework cache | `init.lua:resolve` called bounded `scanForAOB` twice. Use `core.AOBScan` for discovery and check ambiguity on both sides of a cached match. | Corrected; real framework cache exercised in tests, including a new earlier match. |
 | Unconditional accuracy hooks | Both native scatter stages were patched even with accuracy omitted everywhere. | Corrected; only effective profiles with explicit accuracy require these bindings and three assembly routines. |
-| Retargeting can fire before turning | 1.8.5 live trace records a trebuchet shooting at new coordinates before its next aiming phase. Initial-state comparisons did not cover this transition. | Open; reproduce loaded/reload/release transitions before correction. |
+| Retargeting can fire before turning | 1.8.5 live trace records a trebuchet shooting at new coordinates before its next aiming phase. | Provisional accepted-aim correction in PR #8; emulated normal/Extreme Halt, death and slot-reuse regressions pass; combined live direct-click test remains open. |
 | Full-world automatic target scans | `templates.lua:scanUnit` visits every unit slot per search; building/wall scans and the 256-candidate cluster loop also need review. Multiple shooters multiply the cost. | Open; investigate native spatial/target owners before extending priorities. |
 | Full entity scans every update | `spriteUpdate` invokes `spriteAll` twice, each visiting 2999 slots. Decorations additionally rebuild a 10000-cell grid and scan the entity pool. | Open; owner-side render/lifecycle integration is required before claiming this efficient. |
-| Private GM slot allocator/loader interception | `sprite_resources.clone/install` duplicate GM header/offset discovery and intercept the native loader inside gmResourceModifier's own loading lifecycle. | Open; extend the resource owner to reserve additional sheets before its replacers are initialized; remove the consumer's clone and loader hook. |
+| Private GM slot allocator/loader interception | `sprite_resources.clone/install` duplicated GM header/offset discovery and intercepted the native loader inside gmResourceModifier's own loading lifecycle. | Removed in PR #8; GM owner PR #7 implements reservation, while consumer parsing/hash and content identity remain open. |
 | English-only validation and conflict errors | `configuration.lua`, `state.lua`, resource validation and native resolver diagnostics are English-only. Nine GUI preview catalogs do not cover these errors. | Open; inspect native-language and launcher diagnostic owners. |
 | No separate OFF controls for simple corrections | One file picker exists; previous automatic bug corrections were not exposed separately. | Open; preserve the user's compact, file-based interface and explicit existing choices. |
 | Redundant legacy settings | `suppress_default`, `sync_to_animation`, `sync_max_wait`, `preload` and unit/tile aliases require a semantic/caller audit before removal. | Open; do not break existing presets or silently reinterpret omitted fields. |
@@ -306,3 +305,29 @@ tests on the two reference families plus official PL/EFIGS files also pass. Thes
 do not replace real rendering, multiplayer, save/replay and GUI acceptance.
 The consumer's GM1 validation/hash read and full entity render scans still remain;
 they are explicitly unfinished and this is not a completed PR/release update.
+
+## 27 September 2026: accepted aim and owner review
+
+The new `acceptedTargetValid` runs only for a configured siege engine waiting in
+native loaded state 2 with an automatic accepted unit target. It checks the
+native unit slot's live state, health and matching UID, then returns control to
+the original idle/aiming transition if that particular target vanished. The
+native `ACQUIRE` routine was reused at initial acquisition. Calling it again
+while a loaded shot is waiting changes the accepted order and coordinates, so
+it is not a read-only liveness API for this boundary. This O(1) check adds no
+hook, scan, RNG draw, persistent table or alternate damage/shot allocator.
+Native `FIREPROJ` continues to own release, ammunition and projectile creation.
+The correction still needs a combined live direct-click test with Fixed
+Engineers PR #4 and paired multiplayer/replay acceptance.
+
+Explicit `random_targets` still uses the existing `PICKTARGET` candidate list;
+only that opted-in native-release path refreshes it, then restores the native
+accepted order. A random volley temporarily sets each victim's native target
+ID/UID for damage attribution and restores the accepted ID/UID afterward.
+Normal native release performs no target search. A normal and Extreme harness
+test confirms candidate coordinates and order/identity restoration.
+The GM owner API is now proposed in
+[gmResourceModifier PR #7](https://github.com/UnofficialCrusaderPatch/ucp_gmResourceModifier/pull/7),
+with two passing CI checks. Its content validation/identity and actual
+rendering remain open. The private consumer GM1 parser and render/decorations
+full-world scans remain unfinished architectural debt.

@@ -155,6 +155,36 @@ nc_done:
     ret
 ]]
 
+-- The native target ID/UID pair survives a configured automatic aim. A lost
+-- target must return to native idle/aiming before another volley; searching at
+-- release could replace the point after the engine has already turned.
+M.accepted_code = [[
+acceptedTargetValid:
+    mov eax, [esp+4]
+    imul eax, eax, 0x490
+    add eax, UNITARRAY
+    movzx ecx, word [eax+0x344]
+    cmp ecx, 1
+    jl at_valid                  ; ground/wall point, no unit identity
+    cmp ecx, MAXUNITS
+    jae at_valid                 ; native no-unit sentinel
+    imul ecx, ecx, 0x490
+    add ecx, UNITARRAY
+    cmp word [ecx+0x8C], 2
+    jne at_invalid
+    cmp dword [ecx+0x3C8], 0
+    jle at_invalid
+    mov edx, [ecx+0x98]
+    cmp edx, [eax+0xA0]
+    jne at_invalid
+at_valid:
+    mov eax, 1
+    ret
+at_invalid:
+    xor eax, eax
+    ret
+]]
+
 -- Tick cached interval/crew eligibility is used by the later animation pass.
 -- This prevents movement hysteresis from advancing twice in one simulation tick.
 M.release_code = [[
@@ -231,6 +261,29 @@ nativeIdle:
     mov eax, [S_ID]
     imul eax, eax, 0x490
     add eax, UNITARRAY
+    cmp word [eax+0x2C0], 2
+    jne ni_phase
+    cmp word [eax+0x3B0], 0
+    jne ni_done
+    push dword [S_PROFILE]
+    push dword [S_ID]
+    call NATIVECONTEXT
+    add esp, 8
+    cmp eax, 2
+    jne ni_done
+    push dword [S_ID]
+    call ACCEPTEDVALID
+    add esp, 4
+    test eax, eax
+    jnz ni_done
+    ; The old target vanished during reload. No stone has been charged. Let
+    ; native idle acquire a fresh target and pass through aiming state 8.
+    mov eax, [S_ID]
+    imul eax, eax, 0x490
+    add eax, UNITARRAY
+    mov word [eax+0x2C0], 0
+    mov dword [eax+0x2B0], 0
+ni_phase:
     cmp word [eax+0x8E], 74
     je ni_horse
     cmp word [eax+0x2C0], 0

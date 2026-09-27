@@ -9,6 +9,20 @@ import test_hunter_cadence as hunter_tests
 
 
 class TargetPolicyTests(unittest.TestCase):
+    def test_monk_and_priest_are_unit_targets_without_a_type_filter(self):
+        for extreme in (False, True):
+            for kind in (33, 37):  # Priest, Monk in the game's unit table
+                with self.subTest(extreme=extreme, kind=kind):
+                    observer = projectile_tests.NativeTests()
+                    h = observer.prepare({'Catapult': {'interval': 100,
+                        'sync_to_animation': False, 'targets': ['units'],
+                        'projectile': 'firethrower_pot'}}, extreme)
+                    h.unit(1, 39)
+                    h.unit(2, kind, owner=2, x=44)
+                    shots = observer.tick(h, 1)
+                    self.assertEqual(len(shots), 1)
+                    self.assertEqual(shots[0][9], 34)
+
     def test_fractional_unit_range_and_exact_boundary(self):
         for extreme in (False, True):
             for strict in (True, False):

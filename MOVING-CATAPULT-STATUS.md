@@ -1,16 +1,14 @@
-# Moving catapult and wrong-facing release: local work, not a shipped fix
+# Moving catapult and wrong-facing release: provisional source correction
 
 13 September 2026. Direct enemy clicking is confirmed by the user.
 
 The missing movement cleanup is in the original tribe command dispatcher. A
-focused correction is isolated in `../ucp3-fixes-siege-target-stop`, branch
-`fix/siege-target-stop`, preserving the existing fixes worker's branch. See its
-`SIEGE-TARGET-STOP-STATUS.md` for native owner, AOB/ABI evidence and acceptance
-gaps. No duplicate command hook was added to this projectile module.
+focused correction is in [Fixed Engineers PR #4](https://github.com/Krarilotus/ucp3-fixes/pull/4).
+No duplicate command hook was added to this projectile module.
 
 A second defect is in this module: automatic target selection at the loaded
 release transition can replace a previously accepted aim without running the
-native turn state again. The local correction retains the native accepted aim
+native turn state again. The correction retains the native accepted aim
 through that volley and lets the next selection pass through native aiming.
 The existing `turn_before_shot: false` control retains the old behavior.
 `cadence.context_code` shares this decision between the existing animation gate,
@@ -25,6 +23,9 @@ and native target coordinates. It introduces no target cache, hook or timer.
   west while facing west, then tick 727 fired east while facing east (2).
 - All three manual-release regressions passed, including last-stone unit,
   ground, wall and building orders and saved stagger continuation.
+- Emulated normal and Extreme releases retain the loaded aim after Halt; a dead
+  target or recycled unit ID re-enters native aiming before the next shot.
+  Explicit random volleys refresh their candidate list at release.
 - Earlier range/autonomy/native-config revision passed 130 tests and 23
   GUI/archive checks. Those runs PRECEDE this final accepted-aim change and
   must not be presented as validation of the final diff.
@@ -34,12 +35,10 @@ and native target coordinates. It introduces no target cache, hook or timer.
 
 ## Explicit gap / next PR status
 
-**Implementation is local and unshipped.** The final accepted-aim change still
-needs full regression coverage, especially automatic target disappearance,
-range/crew eligibility, random/stagger behavior and save/replay. Corrected
-movement plus facing needs an actual enemy-click gameplay test and multiplayer
-acceptance. Do not distribute the stale local 1.8.6 archive as this correction.
-No public ZIP or PR has been updated for these changes in this session.
+**Source remains provisional.** Corrected movement plus facing needs a combined
+actual-game direct-enemy-click test and multiplayer acceptance. The old 1.8.6
+tester does not contain this correction. Fixed Engineers PR #4 and projectile
+PR #8 must both be present for the combined path.
 
 The larger architecture gaps remain open: GM content validation/identity owner,
 render/decorations world scans, threat priorities, synchronized persistence
