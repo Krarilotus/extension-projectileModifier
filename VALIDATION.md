@@ -6,12 +6,14 @@ The 1.8.10 flat-rank test candidate is superseded. Normal Crusader and Extreme
 1.41 x86 tests execute the production Lua/FASM hooks against both reference PE
 images. Focused target-policy, binding and configuration tests passed (28 tests
 before the additional scheduled-list, formerly non-shooting-unit and decoded
-range-table cases, which also passed individually). They cover Monk/Priest
+range-table cases, which also passed individually). The complete suite passed
+**149 tests in 1048.561 seconds** after the runtime hook implementation; later
+variable-name-only cleanup and added cases passed focused tests. They cover Monk/Priest
 distance bias, native/manual order precedence, exact versus rounded range,
 continued selection after an out-of-range candidate, ordinary acquisition
 without an interval, decoration-only profiles, unchanged module RNG and
 effective-profile firing state, conditional hook installation, occupied sites
-and UCP AOB-cache resolution. The full suite is being rerun on the final source.
+and UCP AOB-cache resolution.
 
 All 23 GUI component/archive checks pass. The 1.8.11 ZIP is deterministic and
 contains the schema, full vanilla reference and nine localized descriptions.
