@@ -882,11 +882,11 @@ apply_unit = function(name, cfg, profile)
     local id = profile or configuration.units[name]
     if cfg.threat_priority then
         -- Immutable tile-equivalent biases for the native acquisition score.
-        local ranks = core.allocate(MAX_TYPES, true)
-        for target, rank in pairs(cfg.threat_priority) do
-            core.writeByte(ranks + configuration.units[target], rank)
+        local bonuses = core.allocate(MAX_TYPES, true)
+        for target, bonus in pairs(cfg.threat_priority) do
+            core.writeByte(bonuses + configuration.units[target], bonus)
         end
-        set_entry(OFF_PRIORITYPTR, id, ranks)
+        set_entry(OFF_PRIORITYPTR, id, bonuses)
         core.writeByte(data_addr + OFF_PRIORITYTYPE + configuration.units[name], 1)
     end
     set_entry(OFF_TURNBEFORE, id, cfg.turn_before_shot == false and 0 or 1)

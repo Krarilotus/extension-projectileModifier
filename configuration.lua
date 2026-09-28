@@ -103,14 +103,14 @@ local function validate_flat(config, variants)
                 object(value, field)
                 local priorities = {}
                 local any_bonus = false
-                for target, rank in pairs(value) do
+                for target, bonus in pairs(value) do
                     if not M.units[target] then fail(field .. '.' .. tostring(target), 'unknown target unit name') end
-                    if type(rank) ~= 'number' or rank ~= rank or rank % 1 ~= 0
-                        or rank < 0 or rank > 255 then
+                    if type(bonus) ~= 'number' or bonus ~= bonus or bonus % 1 ~= 0
+                        or bonus < 0 or bonus > 255 then
                         fail(field .. '.' .. target, 'expected an integer from 0 to 255')
                     end
-                    priorities[target] = rank
-                    if rank > 0 then any_bonus = true end
+                    priorities[target] = bonus
+                    if bonus > 0 then any_bonus = true end
                 end
                 if any_bonus then out[key] = priorities end
             else

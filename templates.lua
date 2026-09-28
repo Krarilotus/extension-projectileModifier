@@ -782,7 +782,7 @@ ncr_reject:
 
 -- The native owner already computed Chebyshev distance plus its attention
 -- term. Adjust only that score; let its shooter/target-type, LOS and engaged
--- candidate policy run unchanged. One rank point equals one tile (8 micro).
+-- candidate policy run unchanged. One bonus point equals one tile (8 micro).
 priority_score_hook_code = [[
 nativeTargetScore:
     pushad
