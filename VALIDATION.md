@@ -1,5 +1,30 @@
 # Validation — unreleased work
 
+## 1.8.11 native automatic target score, 28 September
+
+The 1.8.10 flat-rank test candidate is superseded. Normal Crusader and Extreme
+1.41 x86 tests execute the production Lua/FASM hooks against both reference PE
+images. Focused target-policy, binding and configuration tests passed (28 tests
+before the additional scheduled-list, formerly non-shooting-unit and decoded
+range-table cases, which also passed individually). They cover Monk/Priest
+distance bias, native/manual order precedence, exact versus rounded range,
+continued selection after an out-of-range candidate, ordinary acquisition
+without an interval, decoration-only profiles, unchanged module RNG and
+effective-profile firing state, conditional hook installation, occupied sites
+and UCP AOB-cache resolution. The full suite is being rerun on the final source.
+
+All 23 GUI component/archive checks pass. The 1.8.11 ZIP is deterministic and
+contains the schema, full vanilla reference and nine localized descriptions.
+One x86 probe with 1,000 eligible candidates took about 0.01 seconds for the
+opted-in Catapult selection on each reference image; this is a harness
+measurement, not crowded live-game performance acceptance.
+
+An isolated test game was prepared with 1.8.11 and GM owner 0.3.1. The current
+Computer Use runtime returned `Native app bindings are unavailable for windows`
+before game launch, so no rendered gameplay or installed launcher result is
+claimed. The desktop queue slot was released immediately. Paired multiplayer,
+save/replay and other executable variants also remain unverified.
+
 ## 1.8.10 flat-rank prototype (superseded), 28 September
 
 These historical results refer to the withdrawn flat-rank prototype, not the
