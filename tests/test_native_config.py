@@ -17,7 +17,7 @@ class NativeConfigTests(unittest.TestCase):
             c=h.lua.execute(b"return (require('configuration'))")
             canonical={key.decode() for key in c.numbers.keys() if not key.endswith(b'_tiles')}
             canonical|={key.decode() for key in c.booleans.keys()}
-            canonical|={'projectile','cow_projectile','targets','on_fortification','near_decorations'}
+            canonical|={'projectile','cow_projectile','targets','threat_priority','on_fortification','near_decorations'}
             self.assertEqual(len(source['units']),77)
             self.assertTrue(all(set(fields)==canonical for fields in source['units'].values()))
             projectile_tests.ConfigTests().load_file(h,ROOT/'vanilla-projectiles.yml')
@@ -55,6 +55,24 @@ class NativeConfigTests(unittest.TestCase):
                 'units':{'Catapult':{'projectile':'native'}}}
         result=c.validate(h.config(source))
         self.assertEqual(result[b'units'][b'Catapult'][b'projectile'],result[b'projectiles'][b'native'][b'id'])
+
+    def test_threat_priority_validates_and_can_be_cleared_by_native(self):
+        h=Harness();c=h.lua.execute(b"return (require('configuration'))")
+        validator=Draft202012Validator(json.loads((ROOT/'projectile-config.schema.json').read_text()))
+        source={'units':{'Catapult':{'interval':700,'threat_priority':{'Monk':10},
+            'on_fortification':{'threat_priority':'native'}}}}
+        validator.validate(source)
+        result=c.validate(h.config(source))[b'units'][b'Catapult']
+        self.assertEqual(result[b'threat_priority'][b'Monk'],10)
+        self.assertIsNone(result[b'on_fortification'][b'threat_priority'])
+        source['units']['Catapult']['threat_priority']={'Monk':0}
+        validator.validate(source)
+        self.assertIsNone(c.validate(h.config(source))[b'units'][b'Catapult'][b'threat_priority'])
+        for invalid in ({'Unknown':1},{'Monk':256},{'Monk':-1},{'Monk':1.5}):
+            source['units']['Catapult']['threat_priority']=invalid
+            self.assertFalse(validator.is_valid(source))
+            with self.assertRaisesRegex(Exception,'threat_priority'):
+                c.validate(h.config(source))
 
 
 if __name__ == '__main__':

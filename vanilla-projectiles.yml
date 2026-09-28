@@ -29,6 +29,9 @@
 #   interval_moving: 200          # 0..60000; 0 holds fire while moving.
 #   interval_standing: 100        # 0..60000; while stopped, not specifically docked.
 #   targets: [units, buildings]   # 1..4 distinct kinds, in priority order.
+#   threat_priority:              # Optional native automatic target-score bias.
+#     Monk: 3                     # Treat Monk as up to 3 tiles closer in the native score.
+#                                # Eligibility, range, LOS and other native rules still apply.
 #   range: 20                    # 1..100 tiles; automatic targeting only.
 #   require_manned: 1            # 0..4 engineers aboard; true=1, false=0.
 #   random_targets: false        # Pick per projectile; targets can repeat.
@@ -134,6 +137,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -171,6 +175,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -208,6 +213,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -245,6 +251,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -282,6 +289,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -319,6 +327,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -356,6 +365,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -393,6 +403,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -430,6 +441,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -467,6 +479,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -504,6 +517,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -541,6 +555,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -578,6 +593,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -615,6 +631,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -652,6 +669,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -689,6 +707,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -726,6 +745,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -763,6 +783,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -800,6 +821,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -837,6 +859,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -874,6 +897,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -911,6 +935,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -948,6 +973,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -985,6 +1011,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -1022,6 +1049,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -1059,6 +1087,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -1096,6 +1125,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -1133,6 +1163,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -1170,6 +1201,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -1207,6 +1239,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -1244,6 +1277,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -1281,6 +1315,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -1318,6 +1353,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -1355,6 +1391,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -1392,6 +1429,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -1429,6 +1467,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -1466,6 +1505,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -1503,6 +1543,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -1540,6 +1581,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -1577,6 +1619,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -1614,6 +1657,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -1651,6 +1695,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -1688,6 +1733,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -1725,6 +1771,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -1762,6 +1809,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -1799,6 +1847,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -1836,6 +1885,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -1873,6 +1923,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -1910,6 +1961,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -1947,6 +1999,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -1984,6 +2037,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -2021,6 +2075,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -2058,6 +2113,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -2095,6 +2151,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -2132,6 +2189,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -2169,6 +2227,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -2206,6 +2265,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -2243,6 +2303,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -2280,6 +2341,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -2317,6 +2379,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -2354,6 +2417,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -2391,6 +2455,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -2428,6 +2493,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -2465,6 +2531,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -2502,6 +2569,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -2539,6 +2607,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -2576,6 +2645,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -2613,6 +2683,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -2650,6 +2721,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -2687,6 +2759,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -2724,6 +2797,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -2761,6 +2835,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -2798,6 +2873,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -2835,6 +2911,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -2872,6 +2949,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -2909,6 +2987,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native
@@ -2946,6 +3025,7 @@ units:
     interval_moving: native
     interval_standing: native
     targets: native
+    threat_priority: native
     range: native
     require_manned: native
     random_targets: native

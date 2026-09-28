@@ -12,7 +12,7 @@ local MAX_TYPES        = constants.MAX_UNIT_TYPES
 local MAX_PROFILES     = MAX_TYPES * 2
 local MAX_UNITS
 
-local function resolve(native_cadence, config)
+local function resolve(native_cadence, config, has_priorities)
 local function locate(pattern)
     local ok, address = pcall(core.AOBScan, pattern)
     assert(ok and type(address) == 'number' and address >= 0x400000 and address < 0x700000,
@@ -40,6 +40,50 @@ local fire_projectile_addr = locate("53 56 57 8B 7C 24 14 33 C0 33 D2 83 FF 03 0
 -- UnitsState::acquireShootTarget(unitID) -> bool, thiscall, ret 4.
 -- Fills unit+0xBE/0xC0/0xC2 with the target position.
 local acquire_target_addr = locate("83 EC 40 53 56 57 8B 7C 24 50 69 FF 90 04 00 00 8B F1 0F BF 84 37 AA 06 00 00")
+local priority_gate, priority_gate_continue, priority_reject, prepare_target_addr
+local priority_score, priority_score_continue, priority_score_else
+local priority_range, priority_range_continue, native_range_table
+local priority_candidate_range, priority_candidate_continue, priority_candidate_reject
+if has_priorities then
+    -- Existing UnitsState::prepareProjectileTarget(shooter, target, lead) owns
+    -- target coordinates/prediction after native automatic acquisition.
+    prepare_target_addr = locate('8B 44 24 08 55 56 33 ED 83 F8 FF 57 75 32 8B 44 24 10 8B D0 69 D2 90 04 00 00')
+    -- Two locations inside the same native acquisition owner. Both 1.41
+    -- families share these instruction contexts; bind before patching entry.
+    priority_gate = locate('8B 44 24 10 83 F8 02 0F 84 ? ? ? ? 83 F8 03 0F 84 ? ? ? ? 8B 4C 24 30 8B C1')
+    local reject_first = (priority_gate + 13 + core.readInteger(priority_gate + 9)) % 4294967296
+    local reject_second = (priority_gate + 22 + core.readInteger(priority_gate + 18)) % 4294967296
+    assert(reject_first == reject_second and reject_first > priority_gate
+        and core.readByte(reject_first) == 0x5D,
+        '[custom-projectiles] unsupported native auto-target return')
+    priority_gate_continue, priority_reject = priority_gate + 22, reject_first
+    local score_context = locate('0F BF 94 33 F0 09 00 00 8B 44 24 10 6B D2 32 03 EA 83 F8 04 75 ? 0F BF 84 33 A2 06 00 00')
+    priority_score = score_context + 17
+    local branch = core.readByte(priority_score + 4)
+    if branch >= 128 then branch = branch - 256 end
+    priority_score_continue = priority_score + 5
+    priority_score_else = priority_score_continue + branch
+    assert(priority_score_else > priority_score_continue
+        and core.readByte(priority_score_else) == 0x83
+        and core.readByte(priority_score_else + 1) == 0xF8
+        and core.readByte(priority_score_else + 2) == 0x14,
+        '[custom-projectiles] unsupported native target score branch')
+    local range_context = locate('89 44 24 0C 8B 04 85 ? ? ? ? 0F AF C0 66 83 BC 37 B0 09 00 00 04')
+    priority_range = range_context + 4
+    native_range_table = core.readInteger(priority_range + 3)
+    assert(native_range_table >= 0x400000 and native_range_table < 0x700000
+        and native_range_table % 4 == 0,
+        '[custom-projectiles] unsupported native range table')
+    priority_range_continue = priority_range + 7
+    local candidate_context = locate('0F AF D0 8B C1 0F AF C1 03 D0 3B 54 24 34 0F 8F ? ? ? ? 0F BF 8C 33 CA 06 00 00')
+    priority_candidate_range = candidate_context + 10
+    priority_candidate_continue = priority_candidate_range + 10
+    priority_candidate_reject = (priority_candidate_continue
+        + core.readInteger(priority_candidate_range + 6)) % 4294967296
+    assert(priority_candidate_reject > priority_candidate_continue
+        and core.readByte(priority_candidate_reject) == 0x8B,
+        '[custom-projectiles] unsupported native candidate range branch')
+end
 
 -- Native scatter is applied BEFORE the projectile dispatcher: one routine for
 -- ground aim, followed by a second height-dependent error stage. Override both
@@ -161,6 +205,15 @@ if next(config.projectiles or {}) or next(config.decorations or {}) then
     entity_array = entity_state + 20
 end
 return {locate=locate, fire=fire_projectile_addr, acquire=acquire_target_addr, tick=unit_tick_addr,
+    prepareTarget=prepare_target_addr,
+    priorityGate=priority_gate, priorityGateContinue=priority_gate_continue,
+    priorityReject=priority_reject, priorityScore=priority_score,
+    priorityScoreContinue=priority_score_continue, priorityScoreElse=priority_score_else,
+    priorityRange=priority_range, priorityRangeContinue=priority_range_continue,
+    nativeRangeTable=native_range_table,
+    priorityCandidateRange=priority_candidate_range,
+    priorityCandidateContinue=priority_candidate_continue,
+    priorityCandidateReject=priority_candidate_reject,
     animation=animation_addr, releaseCycles=release_cycles, catapultRest=catapult_rest, trebuchetRest=trebuchet_rest, horse=horse_addr,
     hunter=hunter_addr, hunterScript=hunter_script, hunterSound=hunter_sound, soundThis=sound_this, hunterEnd=hunter_end, facePoint=face_point, faceUnit=face_unit,
     groundAim=ground_aim_addr, aimError=aim_error_addr,
@@ -172,8 +225,8 @@ return {locate=locate, fire=fire_projectile_addr, acquire=acquire_target_addr, t
 end
 
 -- Private tables, non-overlapping scratch and persistent per-unit firing state.
-local TABLE_BYTES, OFF_REENTRY, OFF_SEED, OFF_SCATY, OFF_REMAP, OFF_COUNT, OFF_SPREAD, OFF_INTERVAL, OFF_SUPPRESS, OFF_FORCED, OFF_COOLDOWN, OFF_ORDER, OFF_RANGE, OFF_WALLMIN, OFF_MULTI, OFF_HEIGHT, OFF_MANNED, OFF_BLDCLASS, OFF_SCRATCH, OFF_CANDS, OFF_IMOVE, OFF_ISTAND, OFF_LASTPOS, OFF_MOVECD, OFF_STAGMIN, OFF_STAGMAX, OFF_PENDING, OFF_PENDCD, OFF_DMIN, OFF_DRAD, OFF_ATTINT, OFF_ATTCREW, OFF_ATTBOARD, OFF_ATTBR2, OFF_AICOW, OFF_COWREMAP, OFF_COWCOUNT, OFF_PRELOAD, OFF_PRELPOLL, OFF_SYNC, OFF_SYNCMAX, OFF_SYNCWAIT, OFF_INACC, OFF_INACCSET, OFF_AIONLY, OFF_UID, OFF_IDENTITY, OFF_NATIVESEEN, OFF_FORTIFIED, OFF_PROFILESTATE, OFF_NATIVECYCLE, OFF_NATIVEINT, OFF_NATIVEBLOCK, OFF_NATIVEATTACK, OFF_NATIVESTART, OFF_WEAPONSEEN, OFF_WEAPONCYCLE, OFF_WEAPONTICK, OFF_WEAPONPHASE, OFF_SPRITE, OFF_COWSPRITE, OFF_CURRENTVARIANT, OFF_VARIANTGM, OFF_VARIANTBASEGM, OFF_VARIANTCOUNT, OFF_ENTITYVARIANT, OFF_ENTITYUID, OFF_ENTITYTYPE, OFF_DECORVARIANT, OFF_DECORUID, OFF_DECORGM, OFF_DECORGRID, OFF_DECORNEXT, OFF_DECORRULEMAP, OFF_DECORRULEST, OFF_TURNBEFORE, OFF_STRICTRANGE, OFF_AUTOTARGET, OFF_RELEASECYCLE, OFF_ACTIVECOUNT, OFF_ACTIVEIDS, OFF_ACTIVEINDEX, OFF_DECORACTIVECOUNT, OFF_DECORACTIVEIDS, OFF_DECORCELLSCOUNT, OFF_DECORCELLS, OFF_DECORWRITE, DATA_SIZE
-local function layout(profile_count, has_visuals, has_decorations)
+local TABLE_BYTES, OFF_REENTRY, OFF_SEED, OFF_SCATY, OFF_REMAP, OFF_COUNT, OFF_SPREAD, OFF_INTERVAL, OFF_SUPPRESS, OFF_FORCED, OFF_COOLDOWN, OFF_ORDER, OFF_RANGE, OFF_WALLMIN, OFF_MULTI, OFF_HEIGHT, OFF_MANNED, OFF_BLDCLASS, OFF_SCRATCH, OFF_CANDS, OFF_IMOVE, OFF_ISTAND, OFF_LASTPOS, OFF_MOVECD, OFF_STAGMIN, OFF_STAGMAX, OFF_PENDING, OFF_PENDCD, OFF_DMIN, OFF_DRAD, OFF_ATTINT, OFF_ATTCREW, OFF_ATTBOARD, OFF_ATTBR2, OFF_AICOW, OFF_COWREMAP, OFF_COWCOUNT, OFF_PRELOAD, OFF_PRELPOLL, OFF_SYNC, OFF_SYNCMAX, OFF_SYNCWAIT, OFF_INACC, OFF_INACCSET, OFF_AIONLY, OFF_UID, OFF_IDENTITY, OFF_NATIVESEEN, OFF_FORTIFIED, OFF_PROFILESTATE, OFF_NATIVECYCLE, OFF_NATIVEINT, OFF_NATIVEBLOCK, OFF_NATIVEATTACK, OFF_NATIVESTART, OFF_WEAPONSEEN, OFF_WEAPONCYCLE, OFF_WEAPONTICK, OFF_WEAPONPHASE, OFF_SPRITE, OFF_COWSPRITE, OFF_CURRENTVARIANT, OFF_VARIANTGM, OFF_VARIANTBASEGM, OFF_VARIANTCOUNT, OFF_ENTITYVARIANT, OFF_ENTITYUID, OFF_ENTITYTYPE, OFF_DECORVARIANT, OFF_DECORUID, OFF_DECORGM, OFF_DECORGRID, OFF_DECORNEXT, OFF_DECORRULEMAP, OFF_DECORRULEST, OFF_TURNBEFORE, OFF_STRICTRANGE, OFF_AUTOTARGET, OFF_RELEASECYCLE, OFF_PRIORITYPTR, OFF_PRIORITYTYPE, OFF_ACTIVECOUNT, OFF_ACTIVEIDS, OFF_ACTIVEINDEX, OFF_DECORACTIVECOUNT, OFF_DECORACTIVEIDS, OFF_DECORCELLSCOUNT, OFF_DECORCELLS, OFF_DECORWRITE, DATA_SIZE
+local function layout(profile_count, has_visuals, has_decorations, has_priorities)
     MAX_PROFILES = profile_count
     TABLE_BYTES = MAX_PROFILES * 4
     OFF_REENTRY   = 0x00
@@ -194,7 +247,7 @@ local function layout(profile_count, has_visuals, has_decorations)
     OFF_MANNED    = OFF_HEIGHT   + TABLE_BYTES     -- crew members required
     OFF_BLDCLASS  = OFF_MANNED   + TABLE_BYTES     -- byte per building type
     OFF_SCRATCH   = OFF_BLDCLASS + constants.MAX_BUILDING_TYPES
-    OFF_CANDS     = OFF_SCRATCH  + 0x100           -- scratch includes fields through 0xB0
+    OFF_CANDS     = OFF_SCRATCH  + 0x100           -- scratch includes fields through 0xD4
     OFF_IMOVE     = OFF_CANDS    + constants.MAX_CANDIDATES * 4
     OFF_ISTAND    = OFF_IMOVE    + TABLE_BYTES
     OFF_LASTPOS   = OFF_ISTAND   + TABLE_BYTES     -- packed position, per unit
@@ -254,7 +307,9 @@ local function layout(profile_count, has_visuals, has_decorations)
     OFF_STRICTRANGE = OFF_TURNBEFORE + TABLE_BYTES
     OFF_AUTOTARGET = OFF_STRICTRANGE + TABLE_BYTES
     OFF_RELEASECYCLE = OFF_AUTOTARGET + TABLE_BYTES
-    OFF_ACTIVECOUNT = OFF_RELEASECYCLE + MAX_TYPES * 4
+    OFF_PRIORITYPTR = OFF_RELEASECYCLE + MAX_TYPES * 4
+    OFF_PRIORITYTYPE = OFF_PRIORITYPTR + (has_priorities and TABLE_BYTES or 0)
+    OFF_ACTIVECOUNT = OFF_PRIORITYTYPE + (has_priorities and MAX_TYPES or 0)
     OFF_ACTIVEIDS = OFF_ACTIVECOUNT + 4
     OFF_ACTIVEINDEX = OFF_ACTIVEIDS + 3000 * 4
     OFF_DECORACTIVECOUNT = OFF_ACTIVEINDEX + 3000 * 4
@@ -324,14 +379,20 @@ local function install(config)
     local profile_count = MAX_TYPES * 2
     for _, cfg in pairs(config.units) do profile_count = profile_count + 2 * #(cfg.near_decorations or {}) end
     local manual_only = false
+    local has_priorities = false
     for _, cfg in pairs(config.units) do
+        if configuration.any_profile(cfg, function(profile)
+            return profile.threat_priority ~= nil
+        end) then
+            has_priorities = true
+        end
         if configuration.any_profile(cfg, function(profile) return profile.auto_targeting == false end) then
-            manual_only = true; break
+            manual_only = true
         end
     end
-    local native = resolve(cadence.required(config), config)
+    local native = resolve(cadence.required(config), config, has_priorities)
     MAX_UNITS = native.capacity
-    layout(profile_count, next(config.projectiles or {})~=nil or has_decorations, has_decorations)
+    layout(profile_count, next(config.projectiles or {})~=nil or has_decorations, has_decorations, has_priorities)
     local native_decorations = has_decorations and decorations.resolve(native.locate)
     if native_decorations then
         assert(native_decorations.entityState == native.entityArray - 20,
@@ -405,6 +466,7 @@ local function install(config)
         CURUNIT       = current_unit_id_addr,
         FIREPROJ      = fire_projectile_addr,
         ACQUIRE       = acquire_target_addr,
+        PREPTARGET    = native.prepareTarget or 0,
         MAXTYPES      = MAX_TYPES,
         MAXPROFILES   = MAX_PROFILES,
         FORTIFIEDT    = data_addr + OFF_FORTIFIED,
@@ -423,6 +485,18 @@ local function install(config)
         TURNBEFORET   = data_addr + OFF_TURNBEFORE,
         STRICTRANGET  = data_addr + OFF_STRICTRANGE,
         AUTOTARGETT   = data_addr + OFF_AUTOTARGET,
+        HASPRIORITY   = has_priorities and 1 or 0,
+        PRIORITYPTRT  = data_addr + OFF_PRIORITYPTR,
+        PRIORITYTYPET = data_addr + OFF_PRIORITYTYPE,
+        FORCEACQUIRE  = data_addr + OFF_SCRATCH + 0xD0,
+        NATIVEGATECONT = native.priorityGateContinue or 0,
+        NATIVEREJECT = native.priorityReject or 0,
+        NATIVESCORECONT = native.priorityScoreContinue or 0,
+        NATIVESCOREELSE = native.priorityScoreElse or 0,
+        NATIVERANGECONT = native.priorityRangeContinue or 0,
+        NATIVERANGET = native.nativeRangeTable or 0,
+        NATIVECANDCONT = native.priorityCandidateContinue or 0,
+        NATIVECANDREJECT = native.priorityCandidateReject or 0,
         RELEASECYCLET = data_addr + OFF_RELEASECYCLE,
         SPRITET       = data_addr + OFF_SPRITE,
         COWSPRITET    = data_addr + OFF_COWSPRITE,
@@ -593,7 +667,15 @@ local function install(config)
     else
         values.UPDATEDECOR, values.REBUILDDECOR, values.DECORPROFILE = 0, 0, 0
     end
+    values.PROFILEINDEX = assemble_blob(templates.profile_index_code, values)
     values.PROFILE = assemble_blob(templates.profile_code, values)
+    local priority_gate_hook, priority_score_hook, priority_range_hook, priority_candidate_hook
+    if has_priorities then
+        priority_gate_hook = assemble_blob(templates.priority_gate_hook_code, values)
+        priority_score_hook = assemble_blob(templates.priority_score_hook_code, values)
+        priority_range_hook = assemble_blob(templates.priority_range_hook_code, values)
+        priority_candidate_hook = assemble_blob(templates.priority_candidate_hook_code, values)
+    end
     values.FIXSCATTER = assemble_blob(templates.fixscatter_code, values)
     values.RND = assemble_blob(templates.rand_code, values)
     values.SETSTAGGER = assemble_blob(templates.stagger_code, values)
@@ -769,6 +851,21 @@ local function install(config)
             0xE9, core.itob(core.getRelativeAddress(acquire_target_addr, acquire_hook, -5)), 0x90
         })
     end
+    if has_priorities then
+        core.writeCode(native.priorityGate, {
+            0xE9, core.itob(core.getRelativeAddress(native.priorityGate, priority_gate_hook, -5)), 0x90, 0x90
+        })
+        core.writeCode(native.priorityScore, {
+            0xE9, core.itob(core.getRelativeAddress(native.priorityScore, priority_score_hook, -5))
+        })
+        core.writeCode(native.priorityRange, {
+            0xE9, core.itob(core.getRelativeAddress(native.priorityRange, priority_range_hook, -5)), 0x90, 0x90
+        })
+        core.writeCode(native.priorityCandidateRange, {
+            0xE9, core.itob(core.getRelativeAddress(native.priorityCandidateRange, priority_candidate_hook, -5)),
+            0x90, 0x90, 0x90, 0x90, 0x90
+        })
+    end
     if spawn_site then
         core.writeCode(spawn_site, {0xE9,core.itob(core.getRelativeAddress(spawn_site,spawn_hook,-5)),0x90,0x90,0x90})
         core.writeCode(entity_site, {0xE9,core.itob(core.getRelativeAddress(entity_site,entity_hook,-5)),0x90})
@@ -783,6 +880,15 @@ end
 -- Only configuration.validate's normalized effective profiles reach this writer.
 apply_unit = function(name, cfg, profile)
     local id = profile or configuration.units[name]
+    if cfg.threat_priority then
+        -- Immutable tile-equivalent biases for the native acquisition score.
+        local ranks = core.allocate(MAX_TYPES, true)
+        for target, rank in pairs(cfg.threat_priority) do
+            core.writeByte(ranks + configuration.units[target], rank)
+        end
+        set_entry(OFF_PRIORITYPTR, id, ranks)
+        core.writeByte(data_addr + OFF_PRIORITYTYPE + configuration.units[name], 1)
+    end
     set_entry(OFF_TURNBEFORE, id, cfg.turn_before_shot == false and 0 or 1)
     set_entry(OFF_STRICTRANGE, id, cfg.strict_range == false and 0 or 1)
     set_entry(OFF_AUTOTARGET, id, cfg.auto_targeting == false and 0 or 1)

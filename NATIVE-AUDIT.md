@@ -1,9 +1,15 @@
 # Native integration audit, 12 September 2026
 
-This audit began with the 1.8.6 candidate and tracks provisional 1.8.9 source;
+This audit began with the 1.8.6 candidate and tracks provisional 1.8.10 source;
 it is not release acceptance. Original source `main` and Store PR #31 remain
 preserved. User scope also includes combined live retargeting, optional threat
 priorities and investigation of reported monk targeting.
+
+**28 September correction:** The game's `UnitsState::acquireShootTarget` does
+have a distance-, attention- and target-type-sensitive automatic selection
+policy. The 1.8.10 flat-rank prototype was not integrated with it and has been
+reverted. [NATIVE-TARGET-RESEARCH.md](NATIVE-TARGET-RESEARCH.md) records the
+native owner, separate AI pathfinding query and remaining integration boundary.
 
 ## Confirmed findings
 
@@ -13,7 +19,7 @@ priorities and investigation of reported monk targeting.
 | Discovery bypassed the framework cache | `init.lua:resolve` called bounded `scanForAOB` twice. Use `core.AOBScan` for discovery and check ambiguity on both sides of a cached match. | Corrected; real framework cache exercised in tests, including a new earlier match. |
 | Unconditional accuracy hooks | Both native scatter stages were patched even with accuracy omitted everywhere. | Corrected; only effective profiles with explicit accuracy require these bindings and three assembly routines. |
 | Retargeting can fire before turning | 1.8.5 live trace records a trebuchet shooting at new coordinates before its next aiming phase. | Provisional accepted-aim correction in PR #8; emulated normal/Extreme Halt, death and slot-reuse regressions pass; combined live direct-click test remains open. |
-| Full-world automatic target scans | `templates.lua:scanUnit` visits every unit slot per search; building/wall scans and the 256-candidate cluster loop also need review. Multiple shooters multiply the cost. | Open; investigate native spatial/target owners before extending priorities. |
+| Full-world automatic target scans | `templates.lua:scanUnit` visits every unit slot per search; building/wall scans and the 256-candidate cluster loop also need review. Multiple shooters multiply the cost. | Existing cost remains for cluster, random volleys and configurations without the opt-in score map. Configured non-random unit targeting with a score map uses the native scheduled candidate list. No second world scan was added; broader performance/eligibility review remains open. |
 | Full entity scans every update | 1.8.8 `spriteUpdate` invoked `spriteAll` twice across 2999 slots, while decorations cleared 10000 cells and scanned 2999 entities each update. | 1.8.9 replaces these per-update sweeps with active IDs and touched grid cells within the existing spawn/update hooks. One bounded census remains at new-world/load and decoration placement. Live rendered performance acceptance remains open. |
 | Private GM slot allocator/loader interception | `sprite_resources.clone/install` duplicated GM header/offset discovery and intercepted the native loader inside gmResourceModifier's own loading lifecycle. | Removed in PR #8. GM owner PR #7 now also implements complete-sheet validation and content identity; 1.8.8 removes the consumer parser, file read and hash. Live acceptance remains open. |
 | English-only validation and conflict errors | `configuration.lua`, `state.lua`, resource validation and native resolver diagnostics are English-only. Nine GUI preview catalogs do not cover these errors. | Open; inspect native-language and launcher diagnostic owners. |
@@ -45,6 +51,7 @@ cluster thresholds and current commands need examination in the failing match.
 | Working unit/projectile balance extension | `rebalancer/init.lua`, `templates.lua`, `constants.lua`, revision `8d5b47e1d61cab8c0f4b1f301669d2541788facd`. It exposes native table/operand balance changes; it does not provide a runtime projectile-target query service. Preserve its source and resolve actual overlap before changing target ownership. |
 | Effective configuration profiles | `configuration.validate` already merges sparse base/wall/decoration fields before installation. `cadence.enabled` privately repeated profile traversal. The small `configuration.any_profile` helper now owns traversal for cadence and conditional accuracy; no independent cache, resolver or per-tick traversal. |
 | Native aim/projectile/damage ownership | Original `UnitsState::acquireShootTarget`, `shootProjectile`, siege state handlers and tile-facing function, plus OpenSHC declarations at `126f25c9a53c14270ccd10c6a5db6f05bd143204`. Reference annotations are research evidence, not deployed bindings. Existing native dispatch remains responsible for allocation, projectile physics, damage and lifecycle. No copied damage/turning implementation is justified by this audit. |
+| Automatic threat scoring owner | The game already has a distance-and-attention scorer inside `UnitsState::acquireShootTarget`, fed by its scheduled per-player candidate list. The framework/rebalancer do not expose its score or the Catapult/Trebuchet early gate. This change resolves those native instruction contexts with UCP AOB facilities, adjusts only the pre-transform base score for opted-in shooter/target types, and bypasses the siege early gate only during this module's synchronous scheduled call. The native owner keeps candidate enumeration, range/LOS/type/engagement policy, target preparation and attention updates. No independent scorer is retained. |
 | Save/new-world callbacks | Existing `map-extensions:registerSection` registration in `init.lua` and `state.lua`. Retain the owner and saved layout; actual multiplayer/replay acceptance is still outstanding. |
 | GM resource loading | gmResourceModifier 0.2.0 `init.lua` and `ColorAdapter::detouredLoadGmFiles`, `SetGm`, `Replacer::readyOrigResource` at `019039afcb29f3806aa30c7157ae5a1253c06673`. It loads assets, initializes 240 replacers from native headers, then applies queued replacements. `SetGm` requires compatible existing image counts; it exposes no additional-sheet reservation. Extend this lifecycle, not a second loader intercept. Current open PR5 is discovery metadata, issue4 is GUI texture packs; neither supplies this missing API. |
 | UI and synchronized commands | UI 1.0.1 `ui/game.lua`, `ui/modalmenu.lua`, and protocol 1.0.0 `init.lua`, `game/interface.lua` in the original worktree. Keep native menu creation and lockstep decoration commands with these owners; no new input/command handler is introduced for unit aiming. |

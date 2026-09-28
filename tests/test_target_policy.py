@@ -9,6 +9,147 @@ import test_hunter_cadence as hunter_tests
 
 
 class TargetPolicyTests(unittest.TestCase):
+    @staticmethod
+    def native_candidates(h, *unit_ids):
+        # Reproduce the preceding native per-player candidate-list update;
+        # the extension must consume this list rather than scan the world.
+        site = h.scan(b'69 C9 F4 39 00 00 69 C0 ? ? ? ? 05')
+        stride = 0x39f4
+        h.put(h.get(site+19)+stride, len(unit_ids))
+        for offset, unit_id in enumerate(unit_ids):
+            h.put(h.get(site+43)+stride+offset*2, unit_id, 2)
+            h.put(h.get(site+13)+h.get(site+8)+offset*4, unit_id)
+
+    def test_opt_in_threat_priority_preserves_range_order_and_rng(self):
+        for extreme in (False, True):
+            for ranks, expected in ((None, 2),
+                                    ({'Monk': 3}, 3),
+                                    ({'Monk': 1}, 2)):
+                with self.subTest(extreme=extreme, ranks=ranks):
+                    settings = {'interval': 100, 'sync_to_animation': False,
+                                'targets': ['units'], 'range': 20}
+                    if ranks is not None: settings['threat_priority'] = ranks
+                    h = projectile_tests.NativeTests().prepare({'Catapult': settings}, extreme)
+                    shooter = h.unit(1, 39)
+                    h.unit(2, 33, owner=2, x=42)  # Priest has the lower unit ID
+                    distant = h.unit(3, 37, owner=2, x=44)
+                    h.put(shooter+0x362, 100, 2)
+                    self.native_candidates(h, 2, 3)
+                    seed = h.get(h.v['SEED'])
+                    self.assertEqual(h.call(h.v['PICKTARGET'], [1, 39]), 1)
+                    self.assertEqual(h.get(shooter+0x344, 2), expected)
+                    self.assertEqual(h.get(h.v['SEED']), seed)
+                    h.call(h.v['RESTORETARGET'])
+                    h.put(distant+0xB6, 600, 2)
+                    h.put(distant+0xC4, 75, 2)
+                    # The native list's stale distant entry is rejected by
+                    # its native identity/range checks before score comparison.
+                    self.assertEqual(h.call(h.v['PICKTARGET'], [1, 39]), 1)
+                    self.assertEqual(h.get(shooter+0x344, 2), 2)
+                    h.call(h.v['RESTORETARGET'])
+                    h.put(distant+0xB6, 352, 2)
+                    h.put(distant+0xC4, 44, 2)
+                    h.put(shooter+0x362, 100, 2)
+                    h.put(shooter+0x39c, 4, 2)  # explicit human attack order
+                    h.put(shooter+0x39e, 2, 2)
+                    h.put(shooter+0x3a0, 2)
+                    self.assertEqual(h.call(h.v['PICKTARGET'], [1, 39]), 2)
+
+
+    def test_native_wall_override_clears_inherited_threat_priority(self):
+        for extreme in (False, True):
+            h = projectile_tests.NativeTests().prepare({'Catapult': {
+                'interval': 100, 'sync_to_animation': False, 'targets': ['units'],
+                'threat_priority': {'Monk': 10},
+                'on_fortification': {'threat_priority': 'native'}}}, extreme)
+            shooter = h.unit(1, 39)
+            h.unit(2, 33, owner=2, x=42)
+            h.unit(3, 37, owner=2, x=44)
+            h.put(shooter+0x362, 100, 2)
+            self.native_candidates(h, 2, 3)
+            self.assertEqual(h.call(h.v['PICKTARGET'], [1, 39]), 1)
+            self.assertEqual(h.get(shooter+0x344, 2), 3)
+            h.call(h.v['RESTORETARGET'])
+            self.assertEqual(h.call(h.v['PICKTARGET'], [1, 39+80]), 1)
+            self.assertEqual(h.get(shooter+0x344, 2), 2)
+
+    def test_native_priority_uses_configured_range_during_selection(self):
+        for extreme in (False, True):
+            for configured_range, monk_x, expected in ((5, 48, 2), (12, 48, 3),
+                                                      (90, 120, 3)):
+                with self.subTest(extreme=extreme, range=configured_range):
+                    h = projectile_tests.NativeTests().prepare({'Catapult': {
+                        'interval': 100, 'sync_to_animation': False,
+                        'targets': ['units'], 'range': configured_range,
+                        'threat_priority': {'Monk': 100}}}, extreme)
+                    shooter = h.unit(1, 39)
+                    h.unit(2, 33, owner=2, x=43)
+                    h.unit(3, 37, owner=2, x=monk_x)
+                    h.put(shooter+0x362, 100, 2)
+                    self.native_candidates(h, 2, 3)
+                    self.assertEqual(h.call(h.v['PICKTARGET'], [1, 39]), 1)
+                    self.assertEqual(h.get(shooter+0x344, 2), expected)
+                    self.assertEqual(h.get(h.v['FORCEACQUIRE']), 0)
+
+    def test_native_acquisition_priority_without_module_interval(self):
+        for extreme in (False, True):
+            for bonus, expected in ((None, 2), (20, 3)):
+                settings = {'auto_targeting': True}
+                if bonus is not None:
+                    settings['threat_priority'] = {'Monk': bonus}
+                h = projectile_tests.NativeTests().prepare({'European archer': settings}, extreme)
+                shooter = h.unit(1, 22)
+                h.unit(2, 33, owner=2, x=42)
+                h.unit(3, 37, owner=2, x=44)
+                self.native_candidates(h, 2, 3)
+                h.put(h.v['PENDINGT']+4, 7)
+                h.put(h.v['PROFILESTATET']+4, 0xffffffff)
+                self.assertEqual(h.call(h.v['ACQUIRE'], [1],
+                                        {r.UC_X86_REG_ECX: h.v['UNITSTATE']}), 1)
+                self.assertEqual(h.get(shooter+0x344, 2), expected)
+                self.assertEqual(h.get(h.v['FORCEACQUIRE']), 0)
+                self.assertEqual(h.get(h.v['PENDINGT']+4), 7)
+                self.assertEqual(h.get(h.v['PROFILESTATET']+4), 0xffffffff)
+
+    def test_strict_range_rejects_one_native_candidate_and_keeps_searching(self):
+        for extreme in (False, True):
+            for strict, expected in ((True, 2), (False, 3)):
+                h = projectile_tests.NativeTests().prepare({'Catapult': {
+                    'interval': 100, 'sync_to_animation': False, 'range': 5,
+                    'strict_range': strict, 'threat_priority': {'Monk': 100}}}, extreme)
+                shooter = h.unit(1, 39)
+                h.unit(2, 33, owner=2, x=43)
+                monk = h.unit(3, 37, owner=2, x=43, y=44)
+                h.put(monk+0xB6, 43*8+2, 2)
+                h.put(monk+0xB8, 44*8+2, 2)
+                h.put(shooter+0x362, 100, 2)
+                self.native_candidates(h, 2, 3)
+                self.assertEqual(h.call(h.v['PICKTARGET'], [1, 39]), 1)
+                self.assertEqual(h.get(shooter+0x344, 2), expected)
+
+    def test_decoration_only_priority_uses_effective_profile(self):
+        from test_decorations import DecorationTests
+        for extreme in (False, True):
+            h = DecorationTests().prepare_module({'decorations': {'frost': {}},
+                'units': {'Catapult': {'interval': 100, 'sync_to_animation': False,
+                    'near_decorations': [{'decoration': 'frost',
+                                          'threat_priority': {'Monk': 20}}]}}}, extreme)
+            shooter = h.unit(1, 39)
+            h.put(shooter+0x362, 100, 2)
+            h.unit(2, 33, owner=2, x=42)
+            h.unit(3, 37, owner=2, x=44)
+            self.native_candidates(h, 2, 3)
+            entity = h.v['ENTITYARRAY']+232
+            for off, value in ((0x28,2),(0x2a,14),(0x44,40),(0x46,40)):
+                h.put(entity+off, value, 2)
+            h.put(entity+0x30,77)
+            h.put(h.v['DECORVARIANT']+4,1)
+            h.put(h.v['DECORUID']+4,77)
+            h.call(h.blobs['rebuildDecorations'][0])
+            self.assertEqual(h.call(h.v['PROFILEINDEX'], [1]), 160)
+            self.assertEqual(h.call(h.v['PICKTARGET'], [1, 160]), 1)
+            self.assertEqual(h.get(shooter+0x344, 2), 3)
+
     def test_monk_and_priest_are_unit_targets_without_a_type_filter(self):
         for extreme in (False, True):
             for kind in (33, 37):  # Priest, Monk in the game's unit table
