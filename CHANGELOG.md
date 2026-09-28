@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.8.12 (provisional test candidate)
+
+- Rename the preset-facing automatic unit score setting to
+  `target_bias_tiles`. The name describes its effect: each point removes one
+  tile-equivalent from the native distance-and-attention score. It does not
+  extend range or guarantee target selection. The old `threat_priority` key
+  remains accepted, including wall and decoration overrides; both names
+  normalize to the same runtime/save configuration.
+- Use the clearer name in the VS Code schema, full vanilla reference, examples
+  and all nine launcher locales. Reject both aliases in the same unit/profile.
+
 ## 1.8.11 (provisional test candidate)
 
 - Replace the superseded 1.8.10 flat-rank prototype with a distance-equivalent

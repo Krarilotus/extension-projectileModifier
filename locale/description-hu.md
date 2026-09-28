@@ -1,8 +1,8 @@
-# Custom Projectiles 1.8.11
+# Custom Projectiles 1.8.12
 
 Mind a 77 egységtípus YAML-ban állítható. A normál lövedékek és a tehenek külön kezelhetők. Az időközök igazodnak a támogatott tüzelési animációkhoz; az inaccuracy játékbeli egységei: 1 = 1/8 mező, 8 = 1 mező, 0 = pontos célzás.
 
-A csoportméret-korlát csak az MI célzására vonatkozik; a játékos támadási parancsait nem tiltja. Automatikus egységcélzásnál a threat_priority: {Monk: 3} a szerzeteseket legfeljebb három mezővel közelebbinek értékeli a natív pontszámban; a hatótáv és a többi szabály továbbra is érvényes.
+A csoportméret-korlát csak az MI célzására vonatkozik; a játékos támadási parancsait nem tiltja. Automatikus egységcélzásnál a target_bias_tiles: {Monk: 3} a szerzeteseket legfeljebb három mezővel közelebbinek értékeli a natív pontszámban; a hatótáv és a többi szabály továbbra is érvényes.
 
 Másold ki a teljes vanilla-projectiles.yml fájlt a ZIP-ből, szerkeszd, majd válaszd ki a másolatot. A native megőrzi a játék szabályait; az üres útvonal nem változtat semmin. Az auto_targeting: false csak kézi támadási parancsokat enged. A strict_range: false visszaállítja a kerekített hatótáv-ellenőrzést; a turn_before_shot: false kikapcsolja a fordulás javítását. A kötelező/javasolt jelölés a teljes fájl kiválasztására vonatkozik. Módosítás után indítsd újra a játékot.
 

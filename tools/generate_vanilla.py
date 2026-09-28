@@ -33,7 +33,7 @@ HEADER='''# yaml-language-server: $schema=./projectile-config.schema.json
 #   interval_moving: 200          # 0..60000; 0 holds fire while moving.
 #   interval_standing: 100        # 0..60000; while stopped, not specifically docked.
 #   targets: [units, buildings]   # 1..4 distinct kinds, in priority order.
-#   threat_priority:              # Optional native automatic target-score bias.
+#   target_bias_tiles:             # Optional native automatic target-score bias.
 #     Monk: 3                     # Treat Monk as up to 3 tiles closer in the native score.
 #                                # Eligibility, range, LOS and other native rules still apply.
 #   range: 20                    # 1..100 tiles; automatic targeting only.
@@ -119,7 +119,7 @@ HEADER='''# yaml-language-server: $schema=./projectile-config.schema.json
 '''
 
 def generate():
-    fields=set(cfg.numbers.keys())|set(cfg.booleans.keys())|{'projectile','cow_projectile','targets','threat_priority'}
+    fields=set(cfg.numbers.keys())|set(cfg.booleans.keys())|{'projectile','cow_projectile','targets','target_bias_tiles'}
     assert all(f'#   {name}:' in HEADER for name in fields)
     text=HEADER+'# Projectile names: '+', '.join(sorted(constants.projectile_names.keys()))+'\n'
     text+='# Target kinds: '+', '.join(sorted(constants.target_kinds.keys()))+'\n\n'
@@ -131,7 +131,7 @@ def generate():
     text+='projectiles: {}\ndecorations: {}\nunits:\n'
     canonical=[key for key in cfg.numbers.keys() if not key.endswith('_tiles')]
     # Use reference order, not Lua table iteration order.
-    canonical=sorted(set(canonical)|set(cfg.booleans.keys())|{'projectile','cow_projectile','targets','threat_priority'},
+    canonical=sorted(set(canonical)|set(cfg.booleans.keys())|{'projectile','cow_projectile','targets','target_bias_tiles'},
                      key=lambda key: HEADER.index('#   '+key+':'))
     names={value:key for key,value in constants.projectile_names.items()}
     for _, name in sorted(constants.unit_names.items()):

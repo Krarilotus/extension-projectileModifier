@@ -1,8 +1,8 @@
-# Custom Projectiles 1.8.11
+# Custom Projectiles 1.8.12
 
 Configurez les 77 types d’unités en YAML. Munitions normales et vaches sont indépendantes. Les intervalles respectent les animations de tir prises en charge ; inaccuracy utilise les unités natives : 1 = 1/8 de case, 8 = 1 case, 0 = visée exacte.
 
-Le seuil de regroupement ne concerne que l’IA ; les joueurs peuvent toujours donner leurs ordres d’attaque. Pour les cibles automatiques, threat_priority: {Monk: 3} rapproche virtuellement les moines de trois cases au plus dans le score natif ; portée et autres règles restent actives.
+Le seuil de regroupement ne concerne que l’IA ; les joueurs peuvent toujours donner leurs ordres d’attaque. Pour les cibles automatiques, target_bias_tiles: {Monk: 3} rapproche virtuellement les moines de trois cases au plus dans le score natif ; portée et autres règles restent actives.
 
 Copiez le fichier complet vanilla-projectiles.yml depuis le ZIP, modifiez-le et sélectionnez la copie. native conserve les règles du jeu ; un chemin vide ne change rien. auto_targeting: false impose des ordres d’attaque manuels. strict_range: false rétablit les contrôles de portée arrondis ; turn_before_shot: false désactive la correction de rotation. Obligatoire/suggéré concerne la sélection du fichier entier. Redémarrez après modification.
 

@@ -28,7 +28,7 @@ class TargetPolicyTests(unittest.TestCase):
                 with self.subTest(extreme=extreme, ranks=ranks):
                     settings = {'interval': 100, 'sync_to_animation': False,
                                 'targets': ['units'], 'range': 20}
-                    if ranks is not None: settings['threat_priority'] = ranks
+                    if ranks is not None: settings['target_bias_tiles'] = ranks
                     h = projectile_tests.NativeTests().prepare({'Catapult': settings}, extreme)
                     shooter = h.unit(1, 39)
                     h.unit(2, 33, owner=2, x=42)  # Priest has the lower unit ID
