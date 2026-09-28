@@ -1,10 +1,9 @@
 # Native integration audit, 12 September 2026
 
-This is an audit of the implemented 1.8.6 candidate, not a release acceptance
-statement. Original source branch `main` and the store PR branch are preserved.
-Corrections are being prepared in `fix/native-binding-audit`. Store PR #31
-remains provisional. User scope also includes aiming before a retargeted shot,
-optional threat priorities and investigation of reported monk targeting.
+This audit began with the 1.8.6 candidate and tracks provisional 1.8.8 source;
+it is not release acceptance. Original source `main` and Store PR #31 remain
+preserved. User scope also includes combined live retargeting, optional threat
+priorities and investigation of reported monk targeting.
 
 ## Confirmed findings
 
@@ -13,10 +12,10 @@ optional threat priorities and investigation of reported monk targeting.
 | Fixed normal/Extreme unit-array roots | `addresses.lua` selected VAs. Decode the two native dispatcher operands and verified update-loop capacity. | Removed in this branch; issue #2. |
 | Discovery bypassed the framework cache | `init.lua:resolve` called bounded `scanForAOB` twice. Use `core.AOBScan` for discovery and check ambiguity on both sides of a cached match. | Corrected; real framework cache exercised in tests, including a new earlier match. |
 | Unconditional accuracy hooks | Both native scatter stages were patched even with accuracy omitted everywhere. | Corrected; only effective profiles with explicit accuracy require these bindings and three assembly routines. |
-| Retargeting can fire before turning | 1.8.5 live trace records a trebuchet shooting at new coordinates before its next aiming phase. Initial-state comparisons did not cover this transition. | Open; reproduce loaded/reload/release transitions before correction. |
+| Retargeting can fire before turning | 1.8.5 live trace records a trebuchet shooting at new coordinates before its next aiming phase. | Provisional accepted-aim correction in PR #8; emulated normal/Extreme Halt, death and slot-reuse regressions pass; combined live direct-click test remains open. |
 | Full-world automatic target scans | `templates.lua:scanUnit` visits every unit slot per search; building/wall scans and the 256-candidate cluster loop also need review. Multiple shooters multiply the cost. | Open; investigate native spatial/target owners before extending priorities. |
 | Full entity scans every update | `spriteUpdate` invokes `spriteAll` twice, each visiting 2999 slots. Decorations additionally rebuild a 10000-cell grid and scan the entity pool. | Open; owner-side render/lifecycle integration is required before claiming this efficient. |
-| Private GM slot allocator/loader interception | `sprite_resources.clone/install` duplicate GM header/offset discovery and intercept the native loader inside gmResourceModifier's own loading lifecycle. | Open; extend the resource owner to reserve additional sheets before its replacers are initialized; remove the consumer's clone and loader hook. |
+| Private GM slot allocator/loader interception | `sprite_resources.clone/install` duplicated GM header/offset discovery and intercepted the native loader inside gmResourceModifier's own loading lifecycle. | Removed in PR #8. GM owner PR #7 now also implements complete-sheet validation and content identity; 1.8.8 removes the consumer parser, file read and hash. Live acceptance remains open. |
 | English-only validation and conflict errors | `configuration.lua`, `state.lua`, resource validation and native resolver diagnostics are English-only. Nine GUI preview catalogs do not cover these errors. | Open; inspect native-language and launcher diagnostic owners. |
 | No separate OFF controls for simple corrections | One file picker exists; previous automatic bug corrections were not exposed separately. | Open; preserve the user's compact, file-based interface and explicit existing choices. |
 | Redundant legacy settings | `suppress_default`, `sync_to_animation`, `sync_max_wait`, `preload` and unit/tile aliases require a semantic/caller audit before removal. | Open; do not break existing presets or silently reinterpret omitted fields. |
@@ -36,6 +35,11 @@ cluster thresholds and current commands need examination in the failing match.
 | Capability | Implementation inspected and decision |
 |---|---|
 | AOB discovery/cache | Framework `content/ucp/code/core.lua:core.AOBScan` and `data/cache.lua:AOB.retrieve`, revision `02a7a6bc8ab956a91fc752e8c8ed215c149855e7`. The cache validates hits through the native scanner; reuse directly, with no module-private cache. |
+| Ambiguous AOB rejection | That framework returns one cached match but exposes no match-count result. `init.lua:resolve().locate` calls its `scanForAOB` only around the framework result to reject second matches, then decodes operands from verified context. This is an initialization-only guard, not a competing discovery cache or fixed-address fallback. |
+| Complete GM1 loading/identity | gmResourceModifier PR #7 `Gm1ResourceManager::CreateGm1Resource` owns file loading and native resource lifetime. Its new `LoadCompleteGm1Resource` validates an exact inherited layout and returns a SHA-256 digest of the same loaded bytes. `sprite_resources.prepare` calls that owner once and passes its ID to `ReserveGm`; its Lua parser, file read and framework hash call were deleted. |
+| Digest service | The framework's Lua `sha.sha256` accepts a Lua byte string, but the GM owner already holds the file in native buffers before renderer preparation. Passing or rereading it through Lua would duplicate loading. The owner uses Windows CryptoAPI on those buffers; it does not implement another SHA algorithm or cache. |
+| Entity/render lifecycle | Framework `content/ucp/code` at `02a7a6b` exposes no entity spawn/removal/render callback. The module currently wraps native spawn and whole-entity update; see issue #9 for the unresolved owner integration and per-update scan removal. No new lifecycle helper is claimed by 1.8.8. |
+| Decoration map receiver | `decorations.lua` derives the native map receiver as the AOB-decoded `TILEFLAGS` data layer minus its `0x165160` structure offset. This number is a map-layout field offset, not an executable VA/RVA. The native validation, height, ownership and construction tests exercise the receiver on normal/Extreme; broader live variant acceptance remains open. |
 | Native allocation/assembly/patches | The same framework's `core.allocateAssembly`, `core.insertCode` and memory APIs. Existing module assembly wrappers filter unused constants for the framework assembler budget; no alternate assembler or allocator is introduced by this correction. Remaining manual trampoline ownership needs audit. |
 | Working unit/projectile balance extension | `rebalancer/init.lua`, `templates.lua`, `constants.lua`, revision `8d5b47e1d61cab8c0f4b1f301669d2541788facd`. It exposes native table/operand balance changes; it does not provide a runtime projectile-target query service. Preserve its source and resolve actual overlap before changing target ownership. |
 | Effective configuration profiles | `configuration.validate` already merges sparse base/wall/decoration fields before installation. `cadence.enabled` privately repeated profile traversal. The small `configuration.any_profile` helper now owns traversal for cadence and conditional accuracy; no independent cache, resolver or per-tick traversal. |
@@ -216,3 +220,119 @@ the existing behavior until explicitly configured. Any verified eligibility or
 retargeting correction needs an ON default and OFF baseline without another
 overwhelming Customizations panel. Existing file schemas and saved RNG order must
 remain compatible unless an explicit user option changes behavior.
+
+
+## Human siege retargeting correction
+
+The existing cooldown hook could preserve a loaded pose while a human changed
+its attack order, then release at the new position without rotating. The
+correction stays in `cadence.configuredAnimationHold`; no siege handler,
+projectile dispatcher, command handler or additional animation site is patched.
+
+Reuse review (base `506358a`; framework `02a7a6bc`, native reference images as
+recorded in the test harness):
+
+| Responsibility | Existing owner and decision |
+| --- | --- |
+| Human/native order precedence | `templates.manualOrder`, already used by cadence and dispatch. Reused without changing automatic selection or its RNG. |
+| Point-facing direction and camera adjustment | Native `UnitsState::setUnitFacingDirectionForTargetXandY`, already bound for hunters. Its binding is renamed `FACEPOINT` and shared; UCP AOB context now includes argument reads, tile/facing offsets, direction call and `ret 12`. |
+| Facing a moving unit | Native `UnitsState::setUnitFacingDirectionTowardsTarget`, thiscall `(unit ID, target ID)`, `ret 8`. UCP AOB resolves its ID check and both verified stride operands. The existing order's ID/UID is checked before calling it. |
+| Building aim position | Native siege state 8 uses the building centre. The generic native building-facing routine instead uses its corner, so it is not equivalent. A bounded read of the existing building ID/UID, tile and width supplies the same centre to the point-facing owner. No building search or target eligibility implementation is introduced. |
+| Turn timing and reload progress | Existing native animation clock, phase and cycle. Retain phase/cycle and delay its clock for the native six-tick direction step; no private turn timer, target cache or new save block. |
+| Configuration | Existing validated effective profiles, including fortification/decorations, own `turn_before_shot`. The native writer defaults omitted values ON and preserves explicit false. One immutable profile table is added, not per-unit persistent state. |
+| UI and translations | The user's explicit file-only configuration direction takes precedence over adding a separate checkbox. Keep the existing file picker under Legacy's Balance Changes category, with the OFF instruction in all nine locale help/preview catalogs. No Legacy edits. |
+
+The correction is limited to human attack orders during native reload/firing
+phases. Initial state-8 aiming, movement, native cow phases, pending accepted
+volleys and automatic target selection keep their existing owners. Turning does
+not call `ACQUIRE` or consume RNG. It uses the selected unit's current tile, and
+wall/ground commands use the native stored target tiles.
+
+New regression coverage includes changing a ground target from east to west,
+unit/ground/building/wall retargets during the loaded cooldown, save/load during
+the direction steps, absence of target queries while turning, unchanged module
+RNG and an explicit OFF baseline. Normal and Extreme pass the focused checks.
+The changed-target test and framework-cache binding test also pass against the
+official PL and EFIGS executables for both families. All four official images
+have identical mapped section contents to their corresponding reference family;
+their whole-file identities differ. This is native instruction execution in the
+harness, not live language-asset or multiplayer acceptance.
+
+All 23 GUI component/archive tests pass, including the installed Legacy category
+resolver and all nine locale catalogs. They caught help/preview drift and a
+PowerShell stdin encoding conversion in the first generated translation pass;
+both are corrected and the ZIP was regenerated with intact UTF-8. This does not
+replace actual installed-GUI checks. The current internal archive is 47 files,
+103598 bytes, SHA256
+`873654d30a79bf6e494de74afd610a6c7d7d084be6262c0a8dede0b9b8d8d473`.
+It is not a published replacement for the existing 1.8.6 tester download.
+
+The full suite passes: 121 tests in 964.040 seconds. The expanded changed-ground
+case covers all five siege engines on both families, and loaded-turn checks
+assert six ticks between direction steps (two expanded tests pass in 100.863
+seconds). Live normal Crusader loads and retains three successive wall volleys.
+The attempted GUI target changes did not change the recorded native order, so
+live retargeting acceptance is still pending; see
+[the bounded live trace](tests/evidence/native-retarget-attempt.json).
+The UI attempts omitted `screenshotId`, so clicks on the scaled game capture
+landed at different coordinates. Supplying it closed the game normally at
+20:12:34 CEST; the desktop was released immediately and the original test ZIP
+restored with its hash verified. The target-selection attempts must be repeated
+with correctly scaled input. They are not evidence of a game-command defect.
+No existing save was overwritten. Resource/render lifecycle ownership, automatic threat targeting,
+required replay enrollment, complete runtime diagnostic localization and the
+remaining multiplayer/performance/GUI acceptance still prevent completion.
+
+## Inherited-sheet owner correction in progress
+
+The consumer now calls `gmResourceModifier:ReserveGm` and consumes
+`GetReservedGm` through the framework's existing `afterInit` callback (the same
+lifecycle used by aiSwapper). Its private `sprite_resources.clone`, memory-copy
+helper, rescans of GM arrays and nested native loader hook are removed. The
+`locate` argument to `sprites.install` is removed with its only use. The owner
+dependency becomes `^0.3.1`; there is no fallback to the old private loader.
+
+The owner change is isolated at `ucp-gm-inherited-sheets`, based on 019039a and
+coordinated in gmResourceModifier issue 6. It admits a complete reservation batch
+before constructing the existing Replacers, uses their existing original/reset
+state and SetGm reference counts, and preserves queued texture replacement order.
+The native loader remains called exactly once. No capacities are expanded.
+
+Consumer failure resolves the entire batch before exposing variant IDs. A missing
+required sheet uses the existing framework fatal logger: `luaLog` reaches
+`VLOG_F`, whose pinned loguru 4adaa185 implementation aborts at FATAL; ordinary
+afterInit assertions are caught. Actual fatal-path acceptance remains outstanding.
+
+Six consumer sprite tests pass, including native inherited projectile kinds,
+normal/Extreme flight, saved continuation and no partially exposed layout on
+owner admission failure. Six owner host scenarios and its real-framework binding
+tests on the two reference families plus official PL/EFIGS files also pass. These
+do not replace real rendering, multiplayer, save/replay and GUI acceptance.
+The 1.8.8 consumer removes the GM1 validation/hash read through the owner API.
+Full entity render scans remain unfinished; this is not release acceptance.
+
+## 27 September 2026: accepted aim and owner review
+
+The new `acceptedTargetValid` runs only for a configured siege engine waiting in
+native loaded state 2 with an automatic accepted unit target. It checks the
+native unit slot's live state, health and matching UID, then returns control to
+the original idle/aiming transition if that particular target vanished. The
+native `ACQUIRE` routine was reused at initial acquisition. Calling it again
+while a loaded shot is waiting changes the accepted order and coordinates, so
+it is not a read-only liveness API for this boundary. This O(1) check adds no
+hook, scan, RNG draw, persistent table or alternate damage/shot allocator.
+Native `FIREPROJ` continues to own release, ammunition and projectile creation.
+The correction still needs a combined live direct-click test with Fixed
+Engineers PR #4 and paired multiplayer/replay acceptance.
+
+Explicit `random_targets` still uses the existing `PICKTARGET` candidate list;
+only that opted-in native-release path refreshes it, then restores the native
+accepted order. A random volley temporarily sets each victim's native target
+ID/UID for damage attribution and restores the accepted ID/UID afterward.
+Normal native release performs no target search. A normal and Extreme harness
+test confirms candidate coordinates and order/identity restoration.
+The GM owner API is now proposed in
+[gmResourceModifier PR #7](https://github.com/UnofficialCrusaderPatch/ucp_gmResourceModifier/pull/7),
+with two passing CI checks at that revision. Later 0.3.1 owner work adds
+content validation/identity and removes the private consumer GM1 parser.
+Actual rendering and render/decorations full-world scans remain open.

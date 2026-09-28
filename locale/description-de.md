@@ -1,10 +1,10 @@
-# Custom Projectiles 1.8.6
+# Custom Projectiles 1.8.7
 
 Alle 77 Einheitentypen per YAML einstellen. Normale Munition und Kühe sind unabhängig. Intervalle beachten unterstützte Schussanimationen; inaccuracy nutzt native Einheiten: 1 = 1/8 Feld, 8 = 1 Feld, 0 = genaues Zielen.
 
 Die Mindestgröße von Zielgruppen gilt nur für die KI; menschliche Angriffsbefehle bleiben möglich.
 
-vanilla-projectiles.yml aus dem Modul-ZIP nach ucp/resources/custom-projectiles/ kopieren, dort bearbeiten und hier auswählen. Ausgelassene Einstellungen bleiben unverändert; ein leerer Pfad bewirkt keine Änderungen. Die UCP-Regeln für erforderliche und vorgeschlagene Werte gelten für die gesamte Dateiauswahl. Nach Änderungen das Spiel neu starten.
+Die vollständige vanilla-projectiles.yml aus der ZIP kopieren, bearbeiten und auswählen. native erhält die Spielregeln; ein leerer Pfad ändert nichts. auto_targeting: false erlaubt nur manuelle Angriffsbefehle. strict_range: false stellt gerundete Reichweitenprüfungen wieder her; turn_before_shot: false deaktiviert die Drehkorrektur. Erforderlich/empfohlen gilt für die gesamte Dateiauswahl. Nach Änderungen neu starten.
 
 Eigene Grafik: unter projectiles einen Namen mit inherits und sprites anlegen (vollständige passende GM1-Datei). Dekorationen unter decorations und Einheitenregeln unter near_decorations definieren; über die Feuerkorb-Schaltfläche bauen. Formate: README.md und examples/custom-sprites-and-decorations.yml. Auf geeigneten Mauern oder Türmen bauen; Herrenhäuser unterstützen keine Feuerkörbe.
 

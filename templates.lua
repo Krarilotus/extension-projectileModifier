@@ -639,6 +639,48 @@ h_pass:
     jmp RESUME
 ]],
 
+-- Restrict the existing native acquisition owner, before wind-up/ammunition.
+-- Installed only for an explicit manual-only profile. Pass-through replays
+-- the complete six-byte prologue; thiscall failure returns without a shot.
+acquire_hook_code = [[
+acquirePolicy:
+    pushfd
+    pushad
+    mov ebx, [esp+40]
+    push ebx
+    call PROFILE
+    add esp, 4
+    cmp eax, MAXPROFILES
+    jae ap_pass
+    cmp dword [AUTOTARGETT+eax*4], 0
+    jne ap_pass
+    cmp dword [AIONLYT+eax*4], 0
+    je ap_order
+    push ebx
+    call ISAIOWNED
+    add esp, 4
+    test eax, eax
+    jz ap_pass
+ap_order:
+    push ebx
+    call MANUALORDER
+    add esp, 4
+    test eax, eax
+    jnz ap_pass
+    popad
+    popfd
+    xor eax, eax
+    ret 4
+ap_pass:
+    popad
+    popfd
+    sub esp, 0x40
+    push ebx
+    push esi
+    push edi
+    jmp RESUME
+]],
+
 -- A human's explicit native attack takes precedence over automatic search.
 manual_order_code = [[
 manualOrder:
@@ -715,6 +757,12 @@ pk_teamok:
     mov eax, ecx
     imul eax, ecx
     mov [S_R2], eax
+    mov dword [S_RANGE8SQ], 0
+    cmp dword [STRICTRANGET+edx*4], 0
+    je pk_range_ready
+    shl eax, 6                  ; exact native coordinates: eight per tile
+    mov [S_RANGE8SQ], eax
+pk_range_ready:
     mov ecx, [WALLMINT+edx*4]
     mov eax, ecx
     imul eax, ecx
@@ -752,6 +800,8 @@ pk_nativeorder:
     mov eax, 2                 ; keep the chosen target; no random-target scan
     jmp pk_out
 pk_policy:
+    cmp dword [AUTOTARGETT+edx*4], 0
+    je pk_fail                  ; no search without an explicit human order
     mov ebx, edx
     shl ebx, 2
     add ebx, ORDERT
@@ -912,7 +962,14 @@ scanUnit:
     push esi
     push edi
     push ebp
+    mov eax, [S_RANGE8SQ]
+    test eax, eax
+    jz su_oldlimit
+    inc eax                     ; include a target exactly at the limit
+    jmp su_limit
+su_oldlimit:
     mov eax, [S_R2]
+su_limit:
     mov [S_BESTD], eax
     mov dword [S_BEST], 0
     mov ebp, [S_TEAM]
@@ -943,6 +1000,22 @@ su_stateok:
     mov ecx, [TEAMTBL+ecx*4]
     cmp ecx, ebp
     je su_next                    ; same team, leave it alone
+    cmp dword [S_RANGE8SQ], 0
+    je su_tiledistance
+    mov ecx, [S_UNITPTR]
+    movsx eax, word [esi+0xB6]
+    movsx edx, word [ecx+0xB6]
+    sub eax, edx
+    imul eax, eax
+    movsx edx, word [ecx+0xB8]
+    movsx ecx, word [esi+0xB8]
+    sub ecx, edx
+    imul ecx, ecx
+    add eax, ecx
+    cmp eax, [S_RANGE8SQ]
+    ja su_next
+    jmp su_candidate
+su_tiledistance:
     movsx eax, word [esi+0xC4]
     sub eax, [S_TX]
     imul eax, eax
@@ -952,6 +1025,7 @@ su_stateok:
     add eax, ecx
     cmp eax, [S_R2]
     jge su_next
+su_candidate:
     ; in range: remember it as a candidate for random-target volleys
     mov ecx, [S_NCAND]
     cmp ecx, MAXCAND
@@ -1265,7 +1339,14 @@ scanBld:
     push esi
     push edi
     push ebp
+    mov eax, [S_RANGE8SQ]
+    test eax, eax
+    jz sb_oldlimit
+    inc eax
+    jmp sb_limit
+sb_oldlimit:
     mov eax, [S_R2]
+sb_limit:
     mov [S_BESTD], eax
     mov dword [S_BEST], 0
     mov edi, 1
@@ -1289,6 +1370,29 @@ sb_loop:
     movzx ecx, byte [ecx+BLDCLASST]
     cmp ecx, [S_CLASS]
     jne sb_next
+    cmp dword [S_RANGE8SQ], 0
+    je sb_tiledistance
+    ; Native acquisition aims at the building centre, not its nearer corner.
+    mov edx, [esi+0xF8]
+    sar edx, 1
+    movsx eax, word [esi+0xEE]
+    add eax, edx
+    shl eax, 3
+    movsx ecx, word [esi+0xF0]
+    add ecx, edx
+    shl ecx, 3
+    mov edx, [S_UNITPTR]
+    movsx ebx, word [edx+0xB6]
+    sub eax, ebx
+    movsx ebx, word [edx+0xB8]
+    sub ecx, ebx
+    imul eax, eax
+    imul ecx, ecx
+    add eax, ecx
+    cmp eax, [S_RANGE8SQ]
+    ja sb_next
+    jmp sb_compare
+sb_tiledistance:
     movzx eax, word [esi+0xEE]
     sub eax, [S_TX]
     imul eax, eax
@@ -1296,6 +1400,7 @@ sb_loop:
     sub ecx, [S_TY]
     imul ecx, ecx
     add eax, ecx
+sb_compare:
     cmp eax, [S_BESTD]
     jge sb_next
     mov [S_BESTD], eax
@@ -1319,7 +1424,14 @@ scanWall:
     push esi
     push edi
     push ebp
+    mov eax, [S_RANGE8SQ]
+    test eax, eax
+    jz sw_oldlimit
+    inc eax
+    jmp sw_limit
+sw_oldlimit:
     mov eax, [S_R2]
+sw_limit:
     mov [S_BESTD], eax
     mov dword [S_BEST], 0
     mov esi, [S_TY]
@@ -1347,6 +1459,30 @@ sw_xloop:
     jl sw_xnext
     cmp edi, 0x18F
     jg sw_ynext
+    cmp dword [S_RANGE8SQ], 0
+    je sw_tiledistance
+    mov edx, [S_UNITPTR]
+    mov eax, edi
+    shl eax, 3
+    movsx ecx, word [edx+0xB6]
+    sub eax, ecx
+    imul eax, eax
+    mov ecx, esi
+    shl ecx, 3
+    movsx edx, word [edx+0xB8]
+    sub ecx, edx
+    imul ecx, ecx
+    add eax, ecx
+    cmp eax, [S_RANGE8SQ]
+    ja sw_xnext
+    cmp eax, [S_BESTD]
+    jge sw_xnext
+    mov ecx, [S_WMIN2]
+    shl ecx, 6
+    cmp eax, ecx
+    jl sw_xnext
+    jmp sw_tile
+sw_tiledistance:
     mov eax, edi
     sub eax, [S_TX]
     imul eax, eax
@@ -1358,6 +1494,7 @@ sw_xloop:
     jge sw_xnext
     cmp eax, [S_WMIN2]
     jl sw_xnext
+sw_tile:
     mov ecx, ebp
     add ecx, edi
     test dword [ecx*4+TILEFLAGS], 0x100
@@ -1474,12 +1611,30 @@ t_notboarded:
     jz t_failed
     jmp t_shoot
 t_nativeaim:
+    ; Random-target volleys explicitly fan out to fresh candidates. Refresh
+    ; that bounded list at release, then restore the accepted native aim/order.
+    ; Ordinary volleys never rescan here or change their facing.
+    mov edx, [S_PROFILE]
+    cmp dword [MULTIT+edx*4], 0
+    je t_nativeaim_ready
+    push edx
+    push dword [S_ID]
+    call PICKTARGET
+    add esp, 8
+    call RESTORETARGET
+t_nativeaim_ready:
     mov esi, [ebp+36]
     mov eax, [esi]
     imul eax, eax, 0x490
     add eax, UNITARRAY
     mov [S_UNITPTR], eax
     mov dword [S_MODE], 3       ; keep the native shot's exact coordinates
+    movzx ecx, word [eax+0x344]
+    cmp ecx, 1
+    jl t_shoot
+    cmp ecx, MAXUNITS
+    jae t_shoot
+    mov dword [S_MODE], 1       ; admitted unit aim retains AI cow choice
 t_shoot:
     mov dword [S_EXPLICIT], 1
     mov eax, [S_ID]
@@ -1562,7 +1717,12 @@ t_pendingfired:
     add esp, 8
 t_afterqueue:
     cmp dword [ebp+36], 0
-    jne t_reset                 ; native aim/order was never replaced
+    je t_restoreorder
+    cmp dword [S_MULTI], 0
+    je t_reset                 ; ordinary native aim/order was never replaced
+    call RESTORETARGET          ; random damage attribution changed target ID/UID
+    jmp t_reset
+t_restoreorder:
     call RESTORETARGET
     jmp t_reset
 t_failed:
@@ -1744,9 +1904,10 @@ t_try:
     je t_search
     cmp dword [NATIVECYCLET+edx*4], 0
     je t_search
+    push edx
     push eax
-    call MANUALORDER
-    add esp, 4
+    call NATIVECONTEXT
+    add esp, 8
     test eax, eax
     jz t_search
     ; Finish the accepted native volley, even if its stone was the last one.

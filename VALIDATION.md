@@ -1,5 +1,44 @@
 # Validation — unreleased work
 
+## 1.8.8 owner loading refactor, 27 September
+
+The GM owner now validates complete inherited sheets and hashes the exact bytes
+it loaded before native preparation. The consumer uses that owner API once and
+no longer opens, parses or hashes GM1 files. Owner host tests cover six admission
+scenarios, malformed headers/offsets/tokens, the exact SHA-256 fixture digest
+and all six original projectile/decorative sheets from a local Extreme install.
+The Win32 DLL builds with MSVC v143. Owner AOB bindings pass on local, Polish
+and EFIGS normal/Extreme fixture pairs; module component GUI/archive checks
+pass (23). The module's framework-cache binding and decoration-signature checks
+also pass on the Polish and EFIGS normal/Extreme pairs. These checks do not establish rendered
+gameplay or multiplayer/save/replay acceptance; 1.8.8 remains provisional.
+
+The complete module Python/Lua/x86 regression suite passed **137 tests** in
+915.831 seconds on the local normal/Extreme reference executables. It includes
+the new owner rejection/cleanup test and existing firing, targeting, range,
+turning, decoration, native save continuation and configuration cases.
+
+## 1.8.7 provisional source and archive, 27 September
+
+The normal/Extreme reference-EXE harness completed 135 tests without failures
+after the accepted-aim and dead/recycled-target correction. A subsequent
+single-path edit refreshes the existing target list for explicitly random
+native volleys; 41 final turning, range, cluster and cadence tests passed, plus
+focused normal/Extreme random-volley and manual-order reruns after restoring
+the accepted target ID/UID.
+All 23 GUI component/archive checks passed, and the module ZIP built with 47
+files and nine locale catalogs. These checks do not constitute an actual game
+GUI or rendered-game pass.
+
+The isolated live test game was prepared with projectile 1.8.7, GM owner 0.3.0
+and Fixed Engineers 0.2.0, then restored to its previous configuration. The
+connected Windows computer-use host returned `Native app bindings are
+unavailable for windows` before launch; no in-game 1.8.7 result is claimed.
+The desktop queue slot was released. Direct enemy-click movement plus aim,
+custom sprites, build-menu placement, multiplayer and replay still need
+actual-game acceptance. GM owner PR #7, entity-lifecycle issue #9 and threat
+priority issue #10 remain open.
+
 ## Catapult lowered pause, 1.8.6
 
 All **106 Python/Lua/x86 tests passed** (750.162 seconds), together with all

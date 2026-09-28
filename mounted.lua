@@ -11,14 +11,35 @@ mountedBow:
     jl mb_native
     cmp ebx, MAXUNITS
     jae mb_native
-    cmp dword [NATIVEINTT+ebx*4], -1
-    je mb_native
+    if HASMANUALONLY = 0
+        cmp dword [NATIVEINTT+ebx*4], -1
+        je mb_native
+    end if
     push ebx
     call PROFILE
     add esp, 4
     cmp eax, MAXPROFILES
     jae mb_native
     mov edi, eax
+    cmp dword [AUTOTARGETT+edi*4], 0
+    jne mb_scheduled
+    cmp dword [AIONLYT+edi*4], 0
+    je mb_manual
+    push ebx
+    call ISAIOWNED
+    add esp, 4
+    test eax, eax
+    jz mb_native
+mb_manual:
+    push ebx
+    call MANUALORDER
+    add esp, 4
+    test eax, eax
+    jnz mb_scheduled
+    jmp mb_done
+mb_scheduled:
+    cmp dword [NATIVEINTT+ebx*4], -1
+    je mb_native
     cmp dword [NATIVECYCLET+edi*4], 0
     je mb_native
     mov esi, ebx

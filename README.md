@@ -1,16 +1,16 @@
-# Custom Projectiles 1.8.6 (test candidate)
+# Custom Projectiles 1.8.8 (test candidate)
 
 Configure projectile types, volley sizes and automatic firing for all 77 unit
 types using one readable YAML file. Based on Monsterfish's supplied 1.2.0 module.
 Requires UCP 3.0.7+, Crusader/Extreme 1.41 and the declared map-extensions,
-gmResourceModifier, protocol and ui dependencies (the launcher resolves them).
+gmResourceModifier, protocol and ui dependencies. The 0.3.1 GM owner build is
+currently a draft dependency; the public Store does not resolve it yet.
 The ui dependency requires version 1.0.1 or later and launcher 1.0.12 or later.
 UI 1.0.0 has a native menu-array overrun that can crash startup.
-UI 1.0.1 is available in the 3.0.7 store. The tester bundle's companion uses
-the same source commit `d3a807cfee70308f707ea81ddb92ac8b1d375bd9`.
+UI 1.0.1 is available in the 3.0.7 store.
 
-The [native integration audit](https://github.com/Krarilotus/extension-projectileModifier/blob/1d1b291/NATIVE-AUDIT.md) records the remaining work;
-this branch does not replace the published 1.8.6 tester archive.
+The [native integration audit](NATIVE-AUDIT.md) records the remaining work.
+This is a provisional test build; it does not replace an accepted store release.
 
 ## Quick configuration guide
 
@@ -27,7 +27,7 @@ field table below explains every supported setting; the schema also catches
 misspelled names and invalid types. Additional cross-field checks run at startup.
 
 **Automatic attack is per unit type**, under `units`, not a separate GUI category.
-The only GUI control is the file picker in **Customizations ? Balance Changes**.
+The only GUI control is the file picker in **Customizations > Balance Changes**.
 A setting under `Catapult` applies to all catapults (or AI-owned catapults only
 with `ai_only: true`), not one individually selected catapult.
 
@@ -40,6 +40,7 @@ with `ai_only: true`), not one individually selected catapult.
 | Fire only while standing | `interval_standing: 700`, `interval_moving: 0` |
 | A fallback rate for other stances | `interval`; moving/standing/docked overrides take precedence; zero on an override holds fire |
 | Automatically search for buildings | `targets: [buildings, units]`; first kind that finds a target wins; boulders alone do not enable building searches |
+| Allow automatic attacks | `auto_targeting: true` or `false` per unit type; `false` keeps human manual attack orders |
 | Search distance | `range` in tiles for the module's automatic search; this is not the native manual-order range override |
 | Exact aim | `inaccuracy: 0` and `spread: 0`; moving targets can still move before impact |
 | An eighth-tile aim-error radius | `inaccuracy: 1`; **8 native coordinate units = 1 tile**; use whole numbers |
@@ -70,13 +71,10 @@ cannot skip native aiming/reload/firing frames; turning or missing crew may dela
 release. A human's explicit native attack order takes priority over automatic
 search priorities. `cluster` adds a density threshold for AI owners.
 
-**Build distinction:** the existing 1.8.6 tester uses omission or `{}` to leave
-settings alone. The follow-up development branch adds `native` for dynamic rules,
-`auto_targeting: false` to disable autonomous attacks per unit type while retaining
-human manual orders, and `strict_range`. Those fields require that follow-up
-build and its schema; they are not supported by the old downloadable 1.8.6 ZIP.
-Neither source merging nor committing the pending movement/aiming fixes publishes
-a tested release. See [VALIDATION.md](VALIDATION.md) for acceptance limits.
+**Build distinction:** `native` for dynamic rules, `auto_targeting: false` for
+manual-only attack, and `strict_range` require 1.8.7 and its matching schema.
+The old 1.8.6 tester does not understand these fields. See [VALIDATION.md](VALIDATION.md)
+for acceptance limits.
 
 Only `units`, `projectiles` and `decorations` belong at the top of a projectile
 file. Do not paste GitHub workflow keys (`name`, `on`) or UCP `config-sparse`
@@ -84,8 +82,12 @@ wrappers into it. Use spaces for indentation and restart the game after edits.
 
 ## Installation and use
 
-Import `custom-projectiles-1.8.6.zip` into the launcher and enable the module and its dependencies. This unsigned local test candidate requires development module
-loading. It is not a signed store release; see VALIDATION.md for test limits.
+Import `custom-projectiles-1.8.8.zip` and the matching
+`gmResourceModifier-0.3.1.zip` draft dependency into a developer launcher, then
+enable them with map-extensions, protocol and ui. For the direct enemy-click
+catapult check, also enable the separate Fixed Engineers 0.2.0 tester. This
+unsigned test candidate requires development module loading. It is not a
+signed store release; see VALIDATION.md for test limits.
 
 Native reload timing covers catapults, trebuchets, mangonels, both ballistas,
 European/Arabian foot archers, crossbowmen, slingers, firethrowers, horse archers
@@ -103,9 +105,9 @@ Legacy's displayed category name, including its English fallback.
    directory, creating it if needed. Keep your editable file outside the module
    archive so replacing the module does not overwrite your settings.
 2. Edit the copy, then select it with the file picker. The vanilla file lists all
-   77 units with empty `{}` mappings and documents the settings in comments.
-   It makes no changes until you add settings. To edit a unit, replace its `{}`
-   with indented fields.
+   77 units with every canonical setting written explicitly. `native` delegates
+   that field to the game instead of replacing its dynamic rules. The unchanged
+   file installs no hooks or timers. Replace individual `native` values to edit.
 3. Restart the game after changing the selected file or its contents. No live
    reconfiguration is supported. An empty file path means this module makes no
    changes, unless another UCP preset supplies a path through normal resolution.
@@ -125,8 +127,13 @@ is an active advanced example. The vanilla template is the no-change starting
 point; it preserves other modules rather than reverting their balance changes.
 
 Missing units and missing fields are allowed. Empty unit mappings are ignored.
-Omission preserves native behavior, except that explicitly enabling an automatic
-interval activates the documented automatic-fire defaults. Do not use null,
+`native` explicitly leaves a field unmodified, like omission. In a conditional
+override it clears that field's configured base override. Enabling an automatic
+interval still activates the documented module defaults: for example,
+`range: native` with an interval uses the existing 20-tile automatic-search
+default, not a fixed snapshot of the troop's vanilla range. The complete vanilla
+file leaves the interval native as well, so the original range, height bonuses,
+reloads, ammunition and autonomy remain owned by the game. Do not use null,
 `undefined`, required-value or suggested-value inside projectile settings.
 Wrong names, types, bounds and contradictory settings fail before native hooks.
 Negative scatter radii are invalid. Explicit zero accuracy removes random aim
@@ -258,7 +265,9 @@ completion and validation; Lua also checks cross-field comparisons.
 | `interval` | 1–60000 ticks; optional fallback automatic-fire interval |
 | `interval_moving`, `interval_standing` | 0–60000; independently enable firing; inherit fallback or hold fire if omitted |
 | `targets` | One to four distinct target kinds in priority order; default `units` |
-| `range` | 1–100 tiles, default 20; automatic targeting only |
+| `range` | 1–100 tiles, default 20; automatic targeting only  Projectile choice does not change this limit. |
+| `strict_range` | Default true; exact automatic range checks using unit positions, building centres and wall aim points. False restores rounded tile checks. |
+| `auto_targeting` | False requires human attack orders, including without an interval. True permits native acquisition and configured automatic searches. Native preserves the game when no interval is set. |
 | `spread`, `inaccuracy` | 0–800 whole native coordinate units: **1 = ⅛ tile, 8 = 1 tile** |
 | `spread_tiles`, `inaccuracy_tiles` | Compatibility aliases, 0–100 whole tiles; use only one unit system per effect |
 | `wall_min_distance` | 0–100 tiles; default 3 |
@@ -275,6 +284,7 @@ completion and validation; Lua also checks cross-field comparisons.
 | `ai_cow_vs_units` | Boolean; automatic unit-targeted shots use cows if the owner's AIC enables them; default false; does not enforce the AIC cow interval |
 | `preload` | Boolean; more frequent target searches after reload; default false |
 | `preload_poll` | 1–60000 ticks, default 5; ordinary retries take at most 20 ticks |
+| `turn_before_shot` | Defaults true for human siege engines using native reload timing. Turns toward the current attack order while reloading, before firing. False preserves the previous module behavior. Native cow shots and automatic targeting keep their existing paths. |
 | `sync_to_animation` | Boolean; native reload timing defaults on for the twelve shooters listed above. False selects the independent timer. Other units default false; true uses their legacy bounded animation wait. |
 | `sync_max_wait` | 1–60000 ticks, default 40; only the legacy animation wait, never a bypass of a native firing frame |
 | `suppress_default` | Boolean; defaults true with any interval, false otherwise; unchanged native cow orders remain available |
@@ -318,6 +328,29 @@ Scattered aim coordinates are clamped to map limits and use destination ground
 height. Unscattered shots retain their original target height.
 
 Targets: `units`, `cluster`, `buildings`, `fortifications`, `siege_towers`, `walls`.
+
+For a catapult that fires firethrower pots only when commanded, while retaining
+its original reload schedule:
+
+```yaml
+units:
+  Catapult:
+    projectile: firethrower_pot
+    auto_targeting: false
+```
+
+Add `interval: 700` to slow repeated shots under native animation timing.
+`auto_targeting: true` permits configured automatic search; an interval enables
+that search for units which do not already have it. False also disables AI-owned
+acquisition; `ai_only: true` can restrict the entire profile to AI owners.
+Units without native attack commands cannot gain a manual attack button from
+this switch. The unchanged vanilla file preserves each unit's own autonomy:
+archers can defend themselves, while catapults retain their original orders.
+
+Automatic range is measured to the unit position, building centre or wall aim
+point before scattering. A projectile may land outside the radius because of
+spread/inaccuracy, or continue flying after a target moves out of range; the
+range check does not truncate native flight.
 
 `cluster` applies its density threshold only to AI-controlled units. For a human
 native shooter, its existing unit, building, ground or wall

@@ -12,14 +12,38 @@ hunterBow:
     jl hb_native
     cmp ebx, MAXUNITS
     jae hb_native
-    cmp dword [NATIVEINTT+ebx*4], -1
-    je hb_native
+    if HASMANUALONLY = 0
+        cmp dword [NATIVEINTT+ebx*4], -1
+        je hb_native
+    end if
     push ebx
     call PROFILE
     add esp, 4
     cmp eax, MAXPROFILES
     jae hb_native
     mov edi, eax
+    cmp dword [AUTOTARGETT+edi*4], 0
+    jne hb_scheduled
+    cmp dword [AIONLYT+edi*4], 0
+    je hb_manual
+    push ebx
+    call ISAIOWNED
+    add esp, 4
+    test eax, eax
+    jz hb_native
+hb_manual:
+    push ebx
+    call MANUALORDER
+    add esp, 4
+    test eax, eax
+    jnz hb_scheduled
+    imul eax, ebx, 0x490
+    cmp word [eax+UNITARRAY+0x2C0], 10
+    jne hb_native              ; retain movement, carrying and other work
+    jmp hb_done
+hb_scheduled:
+    cmp dword [NATIVEINTT+ebx*4], -1
+    je hb_native
     cmp dword [NATIVECYCLET+edi*4], 0
     je hb_native
     imul esi, ebx, 0x490

@@ -120,6 +120,22 @@ class NativeBindingTests(unittest.TestCase):
             self.assertEqual(h.get(h.v['INACCSETT'] + 160*4), 1)
             self.assertEqual(h.get(h.v['INACCSETT'] + 161*4), 1)
 
+    def test_facing_binding_is_conditional_and_rejects_occupied_native_owners(self):
+        for extreme in (False, True):
+            for enabled in (False, True):
+                h = Harness(extreme)
+                point = h.scan(b'8B 44 24 04 8B 54 24 08 69 C0 90 04 00 00 53 0F BF 9C 08 C8 08 00 00')
+                h.put(point, 0xe9, 1)
+                cfg = {'interval': 700, 'turn_before_shot': enabled}
+                if enabled:
+                    with self.assertRaisesRegex(Exception, 'unsupported executable'):
+                        h.enable({'Catapult': cfg})
+                    self.assertEqual(h.allocations, [])
+                    self.assertEqual(h.writes, [])
+                else:
+                    h.enable({'Catapult': cfg})
+                    self.assertEqual(h.get(point, 1), 0xe9)
+
 
 if __name__ == '__main__':
     unittest.main()

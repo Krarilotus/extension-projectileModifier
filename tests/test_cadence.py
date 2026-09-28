@@ -259,7 +259,7 @@ class CadenceTests(unittest.TestCase):
         h.put(a+0x3b0,0,2);h.put(a+0x40,3)
         self.assertEqual(hold(),0)
 
-    def integrated(self, name, kind, handler, config, extreme=False):
+    def integrated(self, name, kind, handler, config, extreme=False, native=False):
         observer=projectile_tests.NativeTests()
         h=observer.prepare({name:config},extreme)
         a=h.unit(1,kind)
@@ -267,7 +267,9 @@ class CadenceTests(unittest.TestCase):
         for off,value,size in [(0x3b4,3 if kind==40 else 2,2),(0x362,1000,2),(0xbe,352,2),
                               (0xc0,320,2),(0x39c,3,2),(0x344,0xffff,2)]:
             h.put(a+off,value,size)
-        animation=h.blobs['configuredAnimationHold'][2]['RESUME']-18
+        animation=(h.blobs['configuredAnimationHold'][2]['RESUME']-18
+            if 'configuredAnimationHold' in h.blobs else
+            h.scan(b'A1 ? ? ? ? 69 C0 90 04 00 00 01 9C 30 54 06 00 00'))
         handler+=h.v['FIREPROJ']-0x532700
         sound=0x449dc0+(0x2e0 if extreme else 0)
         def no_sound(h):
@@ -281,7 +283,7 @@ class CadenceTests(unittest.TestCase):
                        r.UC_X86_REG_EBX:1,r.UC_X86_REG_EBP:0},stop=animation+0xa1)
             shots=[]
             h.call(handler,callbacks={h.spawner:observer.spawn_callback(shots),sound:no_sound})
-            if shots:
+            if shots and not native:
                 self.assertEqual(h.get(a+0x2b0),h.get(h.v['NATIVECYCLET']+kind*4))
                 self.assertEqual(h.get(a+0x50),1)
             return queued,shots
