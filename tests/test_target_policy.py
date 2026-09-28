@@ -150,6 +150,19 @@ class TargetPolicyTests(unittest.TestCase):
             self.assertEqual(h.call(h.v['PICKTARGET'], [1, 160]), 1)
             self.assertEqual(h.get(shooter+0x344, 2), 3)
 
+    def test_opt_in_search_consumes_only_native_scheduled_candidates(self):
+        for extreme in (False, True):
+            h = projectile_tests.NativeTests().prepare({'Catapult': {
+                'interval': 100, 'sync_to_animation': False,
+                'threat_priority': {'Monk': 20}}}, extreme)
+            shooter = h.unit(1, 39)
+            h.put(shooter+0x362, 100, 2)
+            h.unit(2, 33, owner=2, x=44)
+            h.unit(3, 37, owner=2, x=42)
+            self.native_candidates(h, 2)
+            self.assertEqual(h.call(h.v['PICKTARGET'], [1, 39]), 1)
+            self.assertEqual(h.get(shooter+0x344, 2), 2)
+
     def test_monk_and_priest_are_unit_targets_without_a_type_filter(self):
         for extreme in (False, True):
             for kind in (33, 37):  # Priest, Monk in the game's unit table
