@@ -178,6 +178,26 @@ class TargetPolicyTests(unittest.TestCase):
                     self.assertEqual(h.call(h.v['PICKTARGET'], [1, kind]), 1)
                     self.assertEqual(h.get(shooter+0x344, 2), 2)
 
+    def test_native_priority_scheduled_shot_keeps_target_and_restores_order(self):
+        for extreme in (False, True):
+            observer = projectile_tests.NativeTests()
+            h = observer.prepare({'Catapult': {'interval': 1,
+                'sync_to_animation': False, 'projectile': 'firethrower_pot',
+                'threat_priority': {'Monk': 3}}}, extreme)
+            shooter = h.unit(1, 39)
+            h.put(shooter+0x362, 100, 2)
+            h.unit(2, 33, owner=2, x=42)
+            h.unit(3, 37, owner=2, x=44)
+            self.native_candidates(h, 2, 3)
+            order_fields = ((0xA0,4),(0xBE,2),(0xC0,2),(0xC2,2),
+                            (0x344,2),(0x39C,2),(0x39E,2),(0x3A0,4))
+            before = tuple(h.get(shooter+offset, size) for offset, size in order_fields)
+            shots = observer.tick(h, 1)
+            self.assertEqual(len(shots), 1)
+            self.assertEqual(shots[0][9:11], (34, 3))
+            self.assertEqual(tuple(h.get(shooter+offset, size)
+                                   for offset, size in order_fields), before)
+
     def test_monk_and_priest_are_unit_targets_without_a_type_filter(self):
         for extreme in (False, True):
             for kind in (33, 37):  # Priest, Monk in the game's unit table
