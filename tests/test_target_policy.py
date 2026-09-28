@@ -163,6 +163,21 @@ class TargetPolicyTests(unittest.TestCase):
             self.assertEqual(h.call(h.v['PICKTARGET'], [1, 39]), 1)
             self.assertEqual(h.get(shooter+0x344, 2), 2)
 
+    def test_opt_in_native_selection_also_handles_units_without_native_projectiles(self):
+        for extreme in (False, True):
+            for name, kind in (('Siege tower', 58), ('European spearman', 24),
+                               ('Engineer', 30)):
+                with self.subTest(extreme=extreme, name=name):
+                    h = projectile_tests.NativeTests().prepare({name: {
+                        'interval': 100, 'sync_to_animation': False,
+                        'projectile': 'arrow', 'threat_priority': {'Monk': 3}}}, extreme)
+                    shooter = h.unit(1, kind)
+                    h.put(shooter+0x362, 100, 2)
+                    h.unit(2, 37, owner=2, x=44)
+                    self.native_candidates(h, 2)
+                    self.assertEqual(h.call(h.v['PICKTARGET'], [1, kind]), 1)
+                    self.assertEqual(h.get(shooter+0x344, 2), 2)
+
     def test_monk_and_priest_are_unit_targets_without_a_type_filter(self):
         for extreme in (False, True):
             for kind in (33, 37):  # Priest, Monk in the game's unit table
