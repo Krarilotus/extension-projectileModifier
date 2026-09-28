@@ -21,11 +21,6 @@ def build_schema():
     fields['targets'] = dict(oneOf=[target, dict(type='array', items=target,
                                                minItems=1, maxItems=4, uniqueItems=True)])
     fields['targets']['description'] = 'Automatic search priorities. Cluster density applies only to AI owners. Human native shooters retain their current unit/building/ground/wall attack order within range; humans without an order treat cluster as units.'
-    priority = dict(type='object', additionalProperties=False,
-        properties={name: dict(type='integer', minimum=0, maximum=255)
-                    for _, name in sorted(constants.unit_names.items())})
-    fields['threat_priority'] = dict(**{'$ref': '#/$defs/threatPriority'},
-        description='Optional target-unit ranks for configured automatic units search. Higher rank wins, then nearer target, then lower unit ID. Omitted types rank 0. Manual orders, cluster density and random volleys keep their own rules. A wall/decoration mapping replaces the inherited mapping.')
     fields['density_min']['description'] = 'Minimum enemy count for AI cluster targeting; human attack orders are not restricted by this threshold.'
     fields['density_radius']['description'] = 'Radius in tiles for counting nearby enemies in an AI cluster.'
     fields['stagger_min']['description'] = 'Requires stagger_max; must not exceed it when staggering is enabled. Checked by the game loader.'
@@ -74,8 +69,7 @@ def build_schema():
                                       'description':'GM1 path relative to the game folder. Use a complete matching base sheet; see README for counts and formats.'}}}}},
                           'units': {'type': 'object', 'additionalProperties': False,
                           'properties': {name: {'$ref': '#/$defs/unit'} for _, name in sorted(constants.unit_names.items())}}},
-            '$defs': {'unit': unit, 'override': override, 'decorationRule':rule,
-                      'threatPriority': priority}}
+            '$defs': {'unit': unit, 'override': override, 'decorationRule':rule}}
 
 if __name__ == '__main__':
     (ROOT/'projectile-config.schema.json').write_text(

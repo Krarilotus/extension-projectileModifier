@@ -1,8 +1,8 @@
-# Custom Projectiles 1.8.10
+# Custom Projectiles 1.8.7
 
 Configura los 77 tipos de unidades mediante YAML. La munición normal y las vacas se ajustan por separado. Los intervalos respetan las animaciones de disparo compatibles; inaccuracy usa unidades nativas: 1 = 1/8 de casilla, 8 = 1 casilla, 0 = puntería exacta.
 
-El mínimo de enemigos agrupados solo se aplica a la IA; el jugador puede seguir dando órdenes de ataque. Para objetivos automáticos, threat_priority: {Monk: 10} da prioridad a los monjes frente a los tipos no listados.
+El mínimo de enemigos agrupados solo se aplica a la IA; el jugador puede seguir dando órdenes de ataque.
 
 Copia el archivo completo vanilla-projectiles.yml del ZIP, edítalo y selecciona la copia. native conserva las reglas del juego; una ruta vacía no cambia nada. auto_targeting: false exige órdenes de ataque manuales. strict_range: false restaura las comprobaciones de alcance redondeadas; turn_before_shot: false desactiva la corrección de giro. Obligatorio/sugerido se aplica a la selección del archivo completo. Reinicia después de editar.
 

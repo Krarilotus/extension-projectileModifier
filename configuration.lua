@@ -63,7 +63,7 @@ local function validate_flat(config, variants)
         for key, value in pairs(cfg) do
             local field = path .. '.' .. tostring(key)
             local bounds = M.numbers[key]
-            if value == 'native' and (bounds or M.booleans[key] or key == 'targets' or key == 'threat_priority'
+            if value == 'native' and (bounds or M.booleans[key] or key == 'targets'
                 or ((key == 'projectile' or key == 'cow_projectile') and not (variants and variants.native))) then
                 -- Explicit inheritance uses the same path as omission. Keep
                 -- native state-dependent behavior with its existing owner.
@@ -99,18 +99,6 @@ local function validate_flat(config, variants)
                     targets[#targets+1] = kind
                 end
                 out[key] = targets
-            elseif key == 'threat_priority' then
-                object(value, field)
-                local priorities = {}
-                for target, rank in pairs(value) do
-                    if not M.units[target] then fail(field .. '.' .. tostring(target), 'unknown target unit name') end
-                    if type(rank) ~= 'number' or rank ~= rank or rank % 1 ~= 0
-                        or rank < 0 or rank > 255 then
-                        fail(field .. '.' .. target, 'expected an integer from 0 to 255')
-                    end
-                    priorities[target] = rank
-                end
-                if next(priorities) ~= nil then out[key] = priorities end
             else
                 fail(field, 'unknown setting')
             end

@@ -1,14 +1,5 @@
 # Changelog
 
-## 1.8.10 (provisional test candidate)
-
-- Add opt-in `threat_priority` ranks to each unit's existing configured automatic
-  unit-target search. Eligible higher-ranked types win; equal ranks retain
-  distance and unit-ID ordering. Native/manual, cluster and random choices remain
-  unchanged, and presets without ranks compile the previous search path.
-- Accept the mapping in the VS Code schema and full vanilla reference. Wall and
-  decoration overrides may replace or clear inherited ranks with `native`.
-
 ## 1.8.9 (provisional test candidate)
 
 - Visit only active custom projectiles and decorations during entity updates.

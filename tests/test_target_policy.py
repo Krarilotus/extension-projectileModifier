@@ -9,54 +9,6 @@ import test_hunter_cadence as hunter_tests
 
 
 class TargetPolicyTests(unittest.TestCase):
-    def test_opt_in_threat_priority_preserves_range_order_and_rng(self):
-        for extreme in (False, True):
-            for ranks, expected, monk_x in ((None, 2, 44),
-                                            ({'Monk': 10, 'Priest': 8}, 3, 44),
-                                            ({'Monk': 8, 'Priest': 8}, 2, 44),
-                                            ({'Monk': 8, 'Priest': 8}, 2, 42)):
-                with self.subTest(extreme=extreme, ranks=ranks):
-                    settings = {'interval': 100, 'sync_to_animation': False,
-                                'targets': ['units'], 'range': 20}
-                    if ranks is not None: settings['threat_priority'] = ranks
-                    h = projectile_tests.NativeTests().prepare({'Catapult': settings}, extreme)
-                    shooter = h.unit(1, 39)
-                    h.unit(2, 33, owner=2, x=42)  # Priest has the lower unit ID
-                    distant = h.unit(3, 37, owner=2, x=monk_x)
-                    seed = h.get(h.v['SEED'])
-                    self.assertEqual(h.call(h.v['PICKTARGET'], [1, 39]), 1)
-                    self.assertEqual(h.get(shooter+0x344, 2), expected)
-                    self.assertEqual(h.get(h.v['SEED']), seed)
-                    h.call(h.v['RESTORETARGET'])
-                    h.put(distant+0xB6, 600, 2)
-                    h.put(distant+0xC4, 75, 2)
-                    self.assertEqual(h.call(h.v['PICKTARGET'], [1, 39]), 1)
-                    self.assertEqual(h.get(shooter+0x344, 2), 2)
-                    h.call(h.v['RESTORETARGET'])
-                    h.put(distant+0xB6, 352, 2)
-                    h.put(distant+0xC4, 44, 2)
-                    h.put(shooter+0x362, 100, 2)
-                    h.put(shooter+0x39c, 4, 2)  # explicit human attack order
-                    h.put(shooter+0x39e, 2, 2)
-                    h.put(shooter+0x3a0, 2)
-                    self.assertEqual(h.call(h.v['PICKTARGET'], [1, 39]), 2)
-                    self.assertEqual(h.get(h.v['SEED']), seed)
-
-    def test_native_wall_override_clears_inherited_threat_priority(self):
-        for extreme in (False, True):
-            h = projectile_tests.NativeTests().prepare({'Catapult': {
-                'interval': 100, 'sync_to_animation': False, 'targets': ['units'],
-                'threat_priority': {'Monk': 10},
-                'on_fortification': {'threat_priority': 'native'}}}, extreme)
-            shooter = h.unit(1, 39)
-            h.unit(2, 33, owner=2, x=42)
-            h.unit(3, 37, owner=2, x=44)
-            self.assertEqual(h.call(h.v['PICKTARGET'], [1, 39]), 1)
-            self.assertEqual(h.get(shooter+0x344, 2), 3)
-            h.call(h.v['RESTORETARGET'])
-            self.assertEqual(h.call(h.v['PICKTARGET'], [1, 39+80]), 1)
-            self.assertEqual(h.get(shooter+0x344, 2), 2)
-
     def test_monk_and_priest_are_unit_targets_without_a_type_filter(self):
         for extreme in (False, True):
             for kind in (33, 37):  # Priest, Monk in the game's unit table

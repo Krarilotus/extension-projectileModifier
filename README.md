@@ -1,4 +1,4 @@
-# Custom Projectiles 1.8.10 (test candidate)
+# Custom Projectiles 1.8.9 (test candidate)
 
 Configure projectile types, volley sizes and automatic firing for all 77 unit
 types using one readable YAML file. Based on Monsterfish's supplied 1.2.0 module.
@@ -41,7 +41,6 @@ with `ai_only: true`), not one individually selected catapult.
 | A fallback rate for other stances | `interval`; moving/standing/docked overrides take precedence; zero on an override holds fire |
 | Automatically search for buildings | `targets: [buildings, units]`; first kind that finds a target wins; boulders alone do not enable building searches |
 | Allow automatic attacks | `auto_targeting: true` or `false` per unit type; `false` keeps human manual attack orders |
-| Prefer specific enemy units | `threat_priority: {Monk: 10, Priest: 8}` on the shooting unit; higher rank wins among eligible automatic unit targets |
 | Search distance | `range` in tiles for the module's automatic search; this is not the native manual-order range override |
 | Exact aim | `inaccuracy: 0` and `spread: 0`; moving targets can still move before impact |
 | An eighth-tile aim-error radius | `inaccuracy: 1`; **8 native coordinate units = 1 tile**; use whole numbers |
@@ -83,7 +82,7 @@ wrappers into it. Use spaces for indentation and restart the game after edits.
 
 ## Installation and use
 
-Import `custom-projectiles-1.8.10.zip` and the matching
+Import `custom-projectiles-1.8.9.zip` and the matching
 `gmResourceModifier-0.3.1.zip` draft dependency into a developer launcher, then
 enable them with map-extensions, protocol and ui. For the direct enemy-click
 catapult check, also enable the separate Fixed Engineers 0.2.0 tester. This
@@ -269,7 +268,6 @@ completion and validation; Lua also checks cross-field comparisons.
 | `range` | 1–100 tiles, default 20; automatic targeting only  Projectile choice does not change this limit. |
 | `strict_range` | Default true; exact automatic range checks using unit positions, building centres and wall aim points. False restores rounded tile checks. |
 | `auto_targeting` | False requires human attack orders, including without an interval. True permits native acquisition and configured automatic searches. Native preserves the game when no interval is set. |
-| `threat_priority` | Optional mapping from target unit names to ranks 0–255 for configured automatic `units` search. Higher rank wins, then nearest distance, then lower unit ID. Unlisted types rank 0. `native` or omission keeps nearest-target selection. A wall or decoration mapping replaces the inherited mapping; `native` clears it. Does not change manual orders, native acquisition, AI cluster density, or random-target volleys. |
 | `spread`, `inaccuracy` | 0–800 whole native coordinate units: **1 = ⅛ tile, 8 = 1 tile** |
 | `spread_tiles`, `inaccuracy_tiles` | Compatibility aliases, 0–100 whole tiles; use only one unit system per effect |
 | `wall_min_distance` | 0–100 tiles; default 3 |

@@ -172,8 +172,8 @@ return {locate=locate, fire=fire_projectile_addr, acquire=acquire_target_addr, t
 end
 
 -- Private tables, non-overlapping scratch and persistent per-unit firing state.
-local TABLE_BYTES, OFF_REENTRY, OFF_SEED, OFF_SCATY, OFF_REMAP, OFF_COUNT, OFF_SPREAD, OFF_INTERVAL, OFF_SUPPRESS, OFF_FORCED, OFF_COOLDOWN, OFF_ORDER, OFF_RANGE, OFF_WALLMIN, OFF_MULTI, OFF_HEIGHT, OFF_MANNED, OFF_BLDCLASS, OFF_SCRATCH, OFF_CANDS, OFF_IMOVE, OFF_ISTAND, OFF_LASTPOS, OFF_MOVECD, OFF_STAGMIN, OFF_STAGMAX, OFF_PENDING, OFF_PENDCD, OFF_DMIN, OFF_DRAD, OFF_ATTINT, OFF_ATTCREW, OFF_ATTBOARD, OFF_ATTBR2, OFF_AICOW, OFF_COWREMAP, OFF_COWCOUNT, OFF_PRELOAD, OFF_PRELPOLL, OFF_SYNC, OFF_SYNCMAX, OFF_SYNCWAIT, OFF_INACC, OFF_INACCSET, OFF_AIONLY, OFF_UID, OFF_IDENTITY, OFF_NATIVESEEN, OFF_FORTIFIED, OFF_PROFILESTATE, OFF_NATIVECYCLE, OFF_NATIVEINT, OFF_NATIVEBLOCK, OFF_NATIVEATTACK, OFF_NATIVESTART, OFF_WEAPONSEEN, OFF_WEAPONCYCLE, OFF_WEAPONTICK, OFF_WEAPONPHASE, OFF_SPRITE, OFF_COWSPRITE, OFF_CURRENTVARIANT, OFF_VARIANTGM, OFF_VARIANTBASEGM, OFF_VARIANTCOUNT, OFF_ENTITYVARIANT, OFF_ENTITYUID, OFF_ENTITYTYPE, OFF_DECORVARIANT, OFF_DECORUID, OFF_DECORGM, OFF_DECORGRID, OFF_DECORNEXT, OFF_DECORRULEMAP, OFF_DECORRULEST, OFF_TURNBEFORE, OFF_STRICTRANGE, OFF_AUTOTARGET, OFF_RELEASECYCLE, OFF_PRIORITYPTR, OFF_ACTIVECOUNT, OFF_ACTIVEIDS, OFF_ACTIVEINDEX, OFF_DECORACTIVECOUNT, OFF_DECORACTIVEIDS, OFF_DECORCELLSCOUNT, OFF_DECORCELLS, OFF_DECORWRITE, DATA_SIZE
-local function layout(profile_count, has_visuals, has_decorations, has_priorities)
+local TABLE_BYTES, OFF_REENTRY, OFF_SEED, OFF_SCATY, OFF_REMAP, OFF_COUNT, OFF_SPREAD, OFF_INTERVAL, OFF_SUPPRESS, OFF_FORCED, OFF_COOLDOWN, OFF_ORDER, OFF_RANGE, OFF_WALLMIN, OFF_MULTI, OFF_HEIGHT, OFF_MANNED, OFF_BLDCLASS, OFF_SCRATCH, OFF_CANDS, OFF_IMOVE, OFF_ISTAND, OFF_LASTPOS, OFF_MOVECD, OFF_STAGMIN, OFF_STAGMAX, OFF_PENDING, OFF_PENDCD, OFF_DMIN, OFF_DRAD, OFF_ATTINT, OFF_ATTCREW, OFF_ATTBOARD, OFF_ATTBR2, OFF_AICOW, OFF_COWREMAP, OFF_COWCOUNT, OFF_PRELOAD, OFF_PRELPOLL, OFF_SYNC, OFF_SYNCMAX, OFF_SYNCWAIT, OFF_INACC, OFF_INACCSET, OFF_AIONLY, OFF_UID, OFF_IDENTITY, OFF_NATIVESEEN, OFF_FORTIFIED, OFF_PROFILESTATE, OFF_NATIVECYCLE, OFF_NATIVEINT, OFF_NATIVEBLOCK, OFF_NATIVEATTACK, OFF_NATIVESTART, OFF_WEAPONSEEN, OFF_WEAPONCYCLE, OFF_WEAPONTICK, OFF_WEAPONPHASE, OFF_SPRITE, OFF_COWSPRITE, OFF_CURRENTVARIANT, OFF_VARIANTGM, OFF_VARIANTBASEGM, OFF_VARIANTCOUNT, OFF_ENTITYVARIANT, OFF_ENTITYUID, OFF_ENTITYTYPE, OFF_DECORVARIANT, OFF_DECORUID, OFF_DECORGM, OFF_DECORGRID, OFF_DECORNEXT, OFF_DECORRULEMAP, OFF_DECORRULEST, OFF_TURNBEFORE, OFF_STRICTRANGE, OFF_AUTOTARGET, OFF_RELEASECYCLE, OFF_ACTIVECOUNT, OFF_ACTIVEIDS, OFF_ACTIVEINDEX, OFF_DECORACTIVECOUNT, OFF_DECORACTIVEIDS, OFF_DECORCELLSCOUNT, OFF_DECORCELLS, OFF_DECORWRITE, DATA_SIZE
+local function layout(profile_count, has_visuals, has_decorations)
     MAX_PROFILES = profile_count
     TABLE_BYTES = MAX_PROFILES * 4
     OFF_REENTRY   = 0x00
@@ -194,7 +194,7 @@ local function layout(profile_count, has_visuals, has_decorations, has_prioritie
     OFF_MANNED    = OFF_HEIGHT   + TABLE_BYTES     -- crew members required
     OFF_BLDCLASS  = OFF_MANNED   + TABLE_BYTES     -- byte per building type
     OFF_SCRATCH   = OFF_BLDCLASS + constants.MAX_BUILDING_TYPES
-    OFF_CANDS     = OFF_SCRATCH  + 0x100           -- scratch includes fields through 0xD4
+    OFF_CANDS     = OFF_SCRATCH  + 0x100           -- scratch includes fields through 0xB0
     OFF_IMOVE     = OFF_CANDS    + constants.MAX_CANDIDATES * 4
     OFF_ISTAND    = OFF_IMOVE    + TABLE_BYTES
     OFF_LASTPOS   = OFF_ISTAND   + TABLE_BYTES     -- packed position, per unit
@@ -254,8 +254,7 @@ local function layout(profile_count, has_visuals, has_decorations, has_prioritie
     OFF_STRICTRANGE = OFF_TURNBEFORE + TABLE_BYTES
     OFF_AUTOTARGET = OFF_STRICTRANGE + TABLE_BYTES
     OFF_RELEASECYCLE = OFF_AUTOTARGET + TABLE_BYTES
-    OFF_PRIORITYPTR = OFF_RELEASECYCLE + MAX_TYPES * 4
-    OFF_ACTIVECOUNT = OFF_PRIORITYPTR + (has_priorities and TABLE_BYTES or 0)
+    OFF_ACTIVECOUNT = OFF_RELEASECYCLE + MAX_TYPES * 4
     OFF_ACTIVEIDS = OFF_ACTIVECOUNT + 4
     OFF_ACTIVEINDEX = OFF_ACTIVEIDS + 3000 * 4
     OFF_DECORACTIVECOUNT = OFF_ACTIVEINDEX + 3000 * 4
@@ -325,21 +324,14 @@ local function install(config)
     local profile_count = MAX_TYPES * 2
     for _, cfg in pairs(config.units) do profile_count = profile_count + 2 * #(cfg.near_decorations or {}) end
     local manual_only = false
-    local has_priorities = false
     for _, cfg in pairs(config.units) do
-        if configuration.any_profile(cfg, function(profile)
-            return profile.threat_priority ~= nil and profile.interval ~= nil
-                and profile.auto_targeting ~= false
-        end) then
-            has_priorities = true
-        end
         if configuration.any_profile(cfg, function(profile) return profile.auto_targeting == false end) then
-            manual_only = true
+            manual_only = true; break
         end
     end
     local native = resolve(cadence.required(config), config)
     MAX_UNITS = native.capacity
-    layout(profile_count, next(config.projectiles or {})~=nil or has_decorations, has_decorations, has_priorities)
+    layout(profile_count, next(config.projectiles or {})~=nil or has_decorations, has_decorations)
     local native_decorations = has_decorations and decorations.resolve(native.locate)
     if native_decorations then
         assert(native_decorations.entityState == native.entityArray - 20,
@@ -431,8 +423,6 @@ local function install(config)
         TURNBEFORET   = data_addr + OFF_TURNBEFORE,
         STRICTRANGET  = data_addr + OFF_STRICTRANGE,
         AUTOTARGETT   = data_addr + OFF_AUTOTARGET,
-        HASPRIORITY   = has_priorities and 1 or 0,
-        PRIORITYPTRT  = data_addr + OFF_PRIORITYPTR,
         RELEASECYCLET = data_addr + OFF_RELEASECYCLE,
         SPRITET       = data_addr + OFF_SPRITE,
         COWSPRITET    = data_addr + OFF_COWSPRITE,
@@ -505,8 +495,6 @@ local function install(config)
         S_PROFILE     = data_addr + OFF_SCRATCH + 0xC0,
         S_FIRED       = data_addr + OFF_SCRATCH + 0xC8,
         S_RANGE8SQ    = data_addr + OFF_SCRATCH + 0xCC,
-        S_PRIORITYPTR = data_addr + OFF_SCRATCH + 0xD0,
-        S_BESTPRIORITY = data_addr + OFF_SCRATCH + 0xD4,
         S_SELF        = data_addr + OFF_SCRATCH + 0x50,
         S_ID          = data_addr + OFF_SCRATCH + 0x54,
         S_INTV        = data_addr + OFF_SCRATCH + 0x58,
@@ -795,14 +783,6 @@ end
 -- Only configuration.validate's normalized effective profiles reach this writer.
 apply_unit = function(name, cfg, profile)
     local id = profile or configuration.units[name]
-    if cfg.threat_priority and cfg.interval and cfg.auto_targeting ~= false then
-        -- Immutable configuration for the existing automatic unit-search owner.
-        local ranks = core.allocate(MAX_TYPES, true)
-        for target, rank in pairs(cfg.threat_priority) do
-            core.writeByte(ranks + configuration.units[target], rank)
-        end
-        set_entry(OFF_PRIORITYPTR, id, ranks)
-    end
     set_entry(OFF_TURNBEFORE, id, cfg.turn_before_shot == false and 0 or 1)
     set_entry(OFF_STRICTRANGE, id, cfg.strict_range == false and 0 or 1)
     set_entry(OFF_AUTOTARGET, id, cfg.auto_targeting == false and 0 or 1)

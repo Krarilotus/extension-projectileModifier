@@ -1,26 +1,5 @@
 # Validation — unreleased work
 
-## 1.8.10 opt-in threat priorities, 28 September
-
-The complete Python/Lua/x86 suite passed **144 tests in 944.889 seconds** on the
-normal Crusader and Extreme 1.41 reference executables. New tests verify
-Monk/Priest ranks against nearer targets, exact range rejection, deterministic
-distance/ID fallback, manual-order precedence, unchanged RNG, wall `native`
-clearing, schema bounds and all 77 vanilla unit entries. The existing cluster,
-random-volley, native acquisition, save-continuation and sprite tests also pass.
-The 23 GUI component/archive tests pass, including all nine locale catalogs and
-the standard file selector under Legacy Balance Changes. The matching
-Reconquista YAML validates against the generated schema.
-
-Without a rank map, the generated `scanUnit` machine code is byte-for-byte
-identical to the 1.8.9 branch (351 bytes; SHA-256
-`df0f70dae7b8baa1d8ada92eec9a94e90972d727e8b805a03c0199b8fd8bb731`).
-The rank map adds no hook, scan, target cache, RNG call, per-frame allocation
-or saved block. Native manual acquisition, projectile allocation, physics,
-damage and cleanup retain their owners. This is a provisional test candidate:
-actual mixed Monk/Priest gameplay, installed GUI checks, crowded-match timing,
-paired multiplayer/replay and wider executable variants remain unverified.
-
 ## 1.8.9 active visual indices, 28 September
 
 The existing projectile spawn and entity-update hooks now visit only active
