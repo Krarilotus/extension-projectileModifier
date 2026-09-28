@@ -33,6 +33,10 @@ HEADER='''# yaml-language-server: $schema=./projectile-config.schema.json
 #   interval_moving: 200          # 0..60000; 0 holds fire while moving.
 #   interval_standing: 100        # 0..60000; while stopped, not specifically docked.
 #   targets: [units, buildings]   # 1..4 distinct kinds, in priority order.
+#   threat_priority:              # Optional unit-type ranks for automatic units search.
+#     Monk: 10                    # Higher rank first; omitted types rank 0.
+#     Priest: 8                   # Equal ranks choose nearer, then lower unit ID.
+#                                # Manual orders, cluster and random shots keep their rules.
 #   range: 20                    # 1..100 tiles; automatic targeting only.
 #   require_manned: 1            # 0..4 engineers aboard; true=1, false=0.
 #   random_targets: false        # Pick per projectile; targets can repeat.
@@ -116,7 +120,7 @@ HEADER='''# yaml-language-server: $schema=./projectile-config.schema.json
 '''
 
 def generate():
-    fields=set(cfg.numbers.keys())|set(cfg.booleans.keys())|{'projectile','cow_projectile','targets'}
+    fields=set(cfg.numbers.keys())|set(cfg.booleans.keys())|{'projectile','cow_projectile','targets','threat_priority'}
     assert all(f'#   {name}:' in HEADER for name in fields)
     text=HEADER+'# Projectile names: '+', '.join(sorted(constants.projectile_names.keys()))+'\n'
     text+='# Target kinds: '+', '.join(sorted(constants.target_kinds.keys()))+'\n\n'
@@ -128,7 +132,7 @@ def generate():
     text+='projectiles: {}\ndecorations: {}\nunits:\n'
     canonical=[key for key in cfg.numbers.keys() if not key.endswith('_tiles')]
     # Use reference order, not Lua table iteration order.
-    canonical=sorted(set(canonical)|set(cfg.booleans.keys())|{'projectile','cow_projectile','targets'},
+    canonical=sorted(set(canonical)|set(cfg.booleans.keys())|{'projectile','cow_projectile','targets','threat_priority'},
                      key=lambda key: HEADER.index('#   '+key+':'))
     names={value:key for key,value in constants.projectile_names.items()}
     for _, name in sorted(constants.unit_names.items()):

@@ -763,6 +763,11 @@ pk_teamok:
     shl eax, 6                  ; exact native coordinates: eight per tile
     mov [S_RANGE8SQ], eax
 pk_range_ready:
+    if HASPRIORITY = 1
+        mov edx, [ebp+0x0C]
+        mov eax, [PRIORITYPTRT+edx*4]
+        mov [S_PRIORITYPTR], eax
+    end if
     mov ecx, [WALLMINT+edx*4]
     mov eax, ecx
     imul eax, ecx
@@ -972,6 +977,9 @@ su_oldlimit:
 su_limit:
     mov [S_BESTD], eax
     mov dword [S_BEST], 0
+    if HASPRIORITY = 1
+        mov dword [S_BESTPRIORITY], 0
+    end if
     mov ebp, [S_TEAM]
     mov edi, 1
 su_loop:
@@ -1034,8 +1042,29 @@ su_candidate:
     inc ecx
     mov [S_NCAND], ecx
 su_nocand:
+    if HASPRIORITY = 1
+        xor ecx, ecx
+        mov edx, [S_PRIORITYPTR]
+        test edx, edx
+        jz su_rankready
+        movzx ecx, word [esi+0x8E] ; native unit type
+        cmp ecx, MAXTYPES
+        jae su_rankzero
+        movzx ecx, byte [edx+ecx]
+        jmp su_rankready
+su_rankzero:
+        xor ecx, ecx
+su_rankready:
+        cmp ecx, [S_BESTPRIORITY]
+        jl su_next
+        jg su_better
+    end if
     cmp eax, [S_BESTD]
     jge su_next
+su_better:
+    if HASPRIORITY = 1
+        mov [S_BESTPRIORITY], ecx
+    end if
     mov [S_BESTD], eax
     mov [S_BEST], edi
 su_next:

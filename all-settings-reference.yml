@@ -35,4 +35,6 @@ units:
     sync_max_wait: 40
   Catapult:
     interval: 700
+    targets: units
+    threat_priority: {Monk: 10, Priest: 8} # Automatic unit search only.
     turn_before_shot: true
