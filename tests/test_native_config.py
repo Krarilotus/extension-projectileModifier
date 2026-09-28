@@ -17,7 +17,7 @@ class NativeConfigTests(unittest.TestCase):
             c=h.lua.execute(b"return (require('configuration'))")
             canonical={key.decode() for key in c.numbers.keys() if not key.endswith(b'_tiles')}
             canonical|={key.decode() for key in c.booleans.keys()}
-            canonical|={'projectile','cow_projectile','targets','on_fortification','near_decorations'}
+            canonical|={'projectile','cow_projectile','targets','target_bias_tiles','on_fortification','near_decorations'}
             self.assertEqual(len(source['units']),77)
             self.assertTrue(all(set(fields)==canonical for fields in source['units'].values()))
             projectile_tests.ConfigTests().load_file(h,ROOT/'vanilla-projectiles.yml')
@@ -55,6 +55,67 @@ class NativeConfigTests(unittest.TestCase):
                 'units':{'Catapult':{'projectile':'native'}}}
         result=c.validate(h.config(source))
         self.assertEqual(result[b'units'][b'Catapult'][b'projectile'],result[b'projectiles'][b'native'][b'id'])
+
+    def test_threat_priority_validates_and_can_be_cleared_by_native(self):
+        h=Harness();c=h.lua.execute(b"return (require('configuration'))")
+        validator=Draft202012Validator(json.loads((ROOT/'projectile-config.schema.json').read_text()))
+        source={'units':{'Catapult':{'interval':700,'threat_priority':{'Monk':10},
+            'on_fortification':{'threat_priority':'native'}}}}
+        validator.validate(source)
+        result=c.validate(h.config(source))[b'units'][b'Catapult']
+        self.assertEqual(result[b'threat_priority'][b'Monk'],10)
+        self.assertIsNone(result[b'on_fortification'][b'threat_priority'])
+        source['units']['Catapult']['threat_priority']={'Monk':0}
+        validator.validate(source)
+        self.assertIsNone(c.validate(h.config(source))[b'units'][b'Catapult'][b'threat_priority'])
+        for invalid in ({'Unknown':1},{'Monk':256},{'Monk':-1},{'Monk':1.5}):
+            source['units']['Catapult']['threat_priority']=invalid
+            self.assertFalse(validator.is_valid(source))
+            with self.assertRaisesRegex(Exception,'threat_priority'):
+                c.validate(h.config(source))
+
+    def test_target_bias_aliases_preserve_normalized_config_and_override_order(self):
+        h=Harness();c=h.lua.execute(b"return (require('configuration'))")
+        validator=Draft202012Validator(json.loads((ROOT/'projectile-config.schema.json').read_text()))
+        old={'units':{'Catapult':{'threat_priority':{'Monk':3}}}}
+        new={'units':{'Catapult':{'target_bias_tiles':{'Monk':3}}}}
+        for source in (old,new): validator.validate(source)
+        def normalized(source):
+            unit=c.validate(h.config(source))[b'units'][b'Catapult']
+            return {key:dict(value.items()) if hasattr(value,'items') else value
+                    for key,value in unit.items()}
+        self.assertEqual(normalized(old),normalized(new))
+        source={'units':{'Catapult':{
+            'target_bias_tiles':{'Monk':3},
+            'on_fortification':{'threat_priority':'native'}}}}
+        validator.validate(source)
+        result=c.validate(h.config(source))[b'units'][b'Catapult']
+        self.assertEqual(result[b'threat_priority'][b'Monk'],3)
+        self.assertIsNone(result[b'on_fortification'][b'threat_priority'])
+        source['units']['Catapult']['on_fortification']={'threat_priority':{'Monk':2}}
+        validator.validate(source)
+        self.assertEqual(c.validate(h.config(source))[b'units'][b'Catapult'][b'on_fortification'][b'threat_priority'][b'Monk'],2)
+        source['units']['Catapult']['target_bias_tiles']='native'
+        source['units']['Catapult']['on_fortification']={'threat_priority':{'Monk':2}}
+        validator.validate(source)
+        self.assertIsNone(c.validate(h.config(source))[b'units'][b'Catapult'][b'threat_priority'])
+        for location in ('base','wall'):
+            conflict={'target_bias_tiles':{'Monk':3},'threat_priority':{'Monk':2}}
+            source={'units':{'Catapult':conflict if location=='base' else
+                {'on_fortification':conflict}}}
+            self.assertFalse(validator.is_valid(source))
+            with self.assertRaisesRegex(Exception,'use only one of target_bias_tiles and threat_priority'):
+                c.validate(h.config(source))
+        source={'decorations':{'training':{}},'units':{'Catapult':{
+            'threat_priority':{'Monk':3},
+            'near_decorations':[{'decoration':'training',
+                'target_bias_tiles':{'Monk':2}}]}}}
+        validator.validate(source)
+        self.assertEqual(c.validate(h.config(source))[b'units'][b'Catapult'][b'near_decorations'][1][b'ground'][b'threat_priority'][b'Monk'],2)
+        source['units']['Catapult']['near_decorations'][0]['threat_priority']={'Monk':1}
+        self.assertFalse(validator.is_valid(source))
+        with self.assertRaisesRegex(Exception,'use only one of target_bias_tiles and threat_priority'):
+            c.validate(h.config(source))
 
 
 if __name__ == '__main__':

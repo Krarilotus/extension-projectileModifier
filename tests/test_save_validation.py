@@ -59,6 +59,22 @@ class SaveValidationTests(unittest.TestCase):
             state.validate(state, empty)
         self.assertEqual(self.blocks(h, state), before)
 
+    def test_target_bonus_is_part_of_saved_configuration_identity(self):
+        for extreme in (False, True):
+            original = self.prepare({'Catapult': {'interval': 100,
+                'threat_priority': {'Monk': 3}}}, extreme)
+            state = original.sections[b'projectileModifier']
+            handle = self.state_handle(original)
+            state.serialize(state, handle)
+            changed = self.prepare({'Catapult': {'interval': 100,
+                'threat_priority': {'Monk': 2}}}, extreme)
+            other_state = changed.sections[b'projectileModifier']
+            other_handle = self.state_handle(changed)
+            other_handle[b'files'][b'format'] = handle[b'files'][b'format']
+            other_handle[b'files'][b'config'] = handle[b'files'][b'config']
+            with self.assertRaisesRegex(Exception, 'saved projectile settings differ'):
+                other_state.validate(other_state, other_handle)
+
     def test_owner_rejects_bad_projectile_state_before_any_extension_restore(self):
         h, state, handle = self.state()
         g = h.lua.globals()

@@ -911,6 +911,31 @@
           ],
           "description": "Automatic search priorities. Cluster density applies only to AI owners. Human native shooters retain their current unit/building/ground/wall attack order within range; humans without an order treat cluster as units. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
+        "target_bias_tiles": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/targetBiasTiles",
+              "description": "Optional unit-type bias for native automatic acquisition and configured non-random units search. One point subtracts one tile-equivalent (8 native units) from the native distance-and-attention score, floored at zero; it does not extend range or guarantee selection. Native eligibility, range, line of sight and later type/engagement rules still apply. Omitted types get zero; manual, cluster and random shots keep their policies. Wall/decoration maps replace the inherited map."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Optional unit-type bias for native automatic acquisition and configured non-random units search. One point subtracts one tile-equivalent (8 native units) from the native distance-and-attention score, floored at zero; it does not extend range or guarantee selection. Native eligibility, range, line of sight and later type/engagement rules still apply. Omitted types get zero; manual, cluster and random shots keep their policies. Wall/decoration maps replace the inherited map. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "threat_priority": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/targetBiasTiles",
+              "deprecated": true,
+              "description": "Legacy name for target_bias_tiles. Optional unit-type bias for native automatic acquisition and configured non-random units search. One point subtracts one tile-equivalent (8 native units) from the native distance-and-attention score, floored at zero; it does not extend range or guarantee selection. Native eligibility, range, line of sight and later type/engagement rules still apply. Omitted types get zero; manual, cluster and random shots keep their policies. Wall/decoration maps replace the inherited map."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Legacy name for target_bias_tiles. Optional unit-type bias for native automatic acquisition and configured non-random units search. One point subtracts one tile-equivalent (8 native units) from the native distance-and-attention score, floored at zero; it does not extend range or guarantee selection. Native eligibility, range, line of sight and later type/engagement rules still apply. Omitted types get zero; manual, cluster and random shots keep their policies. Wall/decoration maps replace the inherited map. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
         "on_fortification": {
           "$ref": "#/$defs/override"
         },
@@ -987,6 +1012,14 @@
                 }
               }
             }
+          }
+        },
+        {
+          "not": {
+            "required": [
+              "target_bias_tiles",
+              "threat_priority"
+            ]
           }
         }
       ],
@@ -1571,6 +1604,31 @@
             }
           ],
           "description": "Automatic search priorities. Cluster density applies only to AI owners. Human native shooters retain their current unit/building/ground/wall attack order within range; humans without an order treat cluster as units. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "target_bias_tiles": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/targetBiasTiles",
+              "description": "Optional unit-type bias for native automatic acquisition and configured non-random units search. One point subtracts one tile-equivalent (8 native units) from the native distance-and-attention score, floored at zero; it does not extend range or guarantee selection. Native eligibility, range, line of sight and later type/engagement rules still apply. Omitted types get zero; manual, cluster and random shots keep their policies. Wall/decoration maps replace the inherited map."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Optional unit-type bias for native automatic acquisition and configured non-random units search. One point subtracts one tile-equivalent (8 native units) from the native distance-and-attention score, floored at zero; it does not extend range or guarantee selection. Native eligibility, range, line of sight and later type/engagement rules still apply. Omitted types get zero; manual, cluster and random shots keep their policies. Wall/decoration maps replace the inherited map. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "threat_priority": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/targetBiasTiles",
+              "deprecated": true,
+              "description": "Legacy name for target_bias_tiles. Optional unit-type bias for native automatic acquisition and configured non-random units search. One point subtracts one tile-equivalent (8 native units) from the native distance-and-attention score, floored at zero; it does not extend range or guarantee selection. Native eligibility, range, line of sight and later type/engagement rules still apply. Omitted types get zero; manual, cluster and random shots keep their policies. Wall/decoration maps replace the inherited map."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Legacy name for target_bias_tiles. Optional unit-type bias for native automatic acquisition and configured non-random units search. One point subtracts one tile-equivalent (8 native units) from the native distance-and-attention score, floored at zero; it does not extend range or guarantee selection. Native eligibility, range, line of sight and later type/engagement rules still apply. Omitted types get zero; manual, cluster and random shots keep their policies. Wall/decoration maps replace the inherited map. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         }
       },
       "description": "Sparse overrides while on a wall or fortification. Missing fields inherit the ground settings. Runtime validates the merged settings.",
@@ -1613,6 +1671,14 @@
                 }
               }
             }
+          }
+        },
+        {
+          "not": {
+            "required": [
+              "target_bias_tiles",
+              "threat_priority"
+            ]
           }
         }
       ]
@@ -2197,6 +2263,31 @@
           ],
           "description": "Automatic search priorities. Cluster density applies only to AI owners. Human native shooters retain their current unit/building/ground/wall attack order within range; humans without an order treat cluster as units. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
+        "target_bias_tiles": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/targetBiasTiles",
+              "description": "Optional unit-type bias for native automatic acquisition and configured non-random units search. One point subtracts one tile-equivalent (8 native units) from the native distance-and-attention score, floored at zero; it does not extend range or guarantee selection. Native eligibility, range, line of sight and later type/engagement rules still apply. Omitted types get zero; manual, cluster and random shots keep their policies. Wall/decoration maps replace the inherited map."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Optional unit-type bias for native automatic acquisition and configured non-random units search. One point subtracts one tile-equivalent (8 native units) from the native distance-and-attention score, floored at zero; it does not extend range or guarantee selection. Native eligibility, range, line of sight and later type/engagement rules still apply. Omitted types get zero; manual, cluster and random shots keep their policies. Wall/decoration maps replace the inherited map. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
+        "threat_priority": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/targetBiasTiles",
+              "deprecated": true,
+              "description": "Legacy name for target_bias_tiles. Optional unit-type bias for native automatic acquisition and configured non-random units search. One point subtracts one tile-equivalent (8 native units) from the native distance-and-attention score, floored at zero; it does not extend range or guarantee selection. Native eligibility, range, line of sight and later type/engagement rules still apply. Omitted types get zero; manual, cluster and random shots keep their policies. Wall/decoration maps replace the inherited map."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Legacy name for target_bias_tiles. Optional unit-type bias for native automatic acquisition and configured non-random units search. One point subtracts one tile-equivalent (8 native units) from the native distance-and-attention score, floored at zero; it does not extend range or guarantee selection. Native eligibility, range, line of sight and later type/engagement rules still apply. Omitted types get zero; manual, cluster and random shots keep their policies. Wall/decoration maps replace the inherited map. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
         "decoration": {
           "type": "string",
           "pattern": "^[a-z][a-z0-9_-]{0,47}$"
@@ -2242,9 +2333,408 @@
               }
             }
           }
+        },
+        {
+          "not": {
+            "required": [
+              "target_bias_tiles",
+              "threat_priority"
+            ]
+          }
         }
       ],
       "description": "First matching rule wins within the native brazier 3-tile square and height difference below 45. Sparse fields apply after fortification overrides. Names must exist in decorations."
+    },
+    "targetBiasTiles": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Peasant": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Burning man": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Woodcutter": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Fletcher": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Tunneler": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Hunter": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Quarry mason": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Quarry grunt": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Quarry ox": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Pitch worker": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Wheat farmer": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Hops farmer": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Apple farmer": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Dairy farmer": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Miller": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Baker": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Brewer": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Poleturner": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Blacksmith": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Armourer": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Tanner": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "European archer": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "European crossbowman": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "European spearman": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "European pikeman": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "European maceman": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "European swordsman": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "European knight": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Ladderman": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Engineer": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Iron miner1": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Iron miner2": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Priest": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Healer": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Drunkard": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Innkeeper": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Monk": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "unknown1": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Catapult": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Trebuchet": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Mangonel": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Trader": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Trader horse": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Deer": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Lion": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Rabbit": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Camel": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Crow": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Seagull": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Siege tent": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Cow": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Hunter dog": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Fireman": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Ghost": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Lord": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Lady": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Jester": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Siege tower": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Battering ram": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Portable shield": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Tower ballista": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Chicken": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Mother": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Child": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Juggler": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Fireeater": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Dog": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "unknown2": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "unknown3": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Arabian archer": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Arabian slave": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Arabian slinger": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Arabian assassin": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Arabian horse archer": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Arabian swordsman": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Arabian firethrower": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "Fire ballista": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        }
+      }
     }
   }
 }

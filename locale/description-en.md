@@ -1,8 +1,8 @@
-# Custom Projectiles 1.8.7
+# Custom Projectiles 1.8.12
 
 Configure all 77 unit types in YAML. Regular and cow ammunition are independent. Intervals respect supported firing animations; inaccuracy uses native units: 1 = 1/8 tile, 8 = 1 tile, 0 = exact aim.
 
-Cluster thresholds apply only to AI; human attack orders remain available.
+Cluster thresholds apply only to AI; human attack orders remain available. For automatic unit targets, target_bias_tiles: {Monk: 3} treats monks as up to three tiles closer in the native score; range and other game rules still apply.
 
 Copy the complete vanilla-projectiles.yml from the ZIP, edit it and select the copy. native preserves the game’s rules; an empty path changes nothing. auto_targeting: false requires manual attack orders. strict_range: false restores rounded range checks; turn_before_shot: false disables the turning correction. Required/suggested applies to the whole file selection. Restart after editing.
 

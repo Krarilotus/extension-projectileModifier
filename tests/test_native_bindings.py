@@ -30,10 +30,12 @@ class NativeBindingTests(unittest.TestCase):
     def test_framework_cache_resolves_both_native_layouts(self):
         for extreme in (False, True):
             h = Harness(extreme); self.use_framework_cache(h)
-            h.enable({'Catapult': {'interval': 700}})
+            h.enable({'Catapult': {'interval': 700, 'threat_priority': {'Monk': 3}}})
             values = h.blobs['tickHook'][2]
             self.assertEqual(values['UNITARRAY'], h.base)
             self.assertEqual(values['MAXUNITS'], 10000 if extreme else 2500)
+            self.assertIn('nativeTargetScore', h.blobs)
+            self.assertIn('nativeCandidateRange', h.blobs)
 
     def test_operands_and_loop_context_reject_conflicts_before_allocation(self):
         for extreme in (False, True):
@@ -106,6 +108,45 @@ class NativeBindingTests(unittest.TestCase):
                     self.assertNotIn('accuracySet', h.blobs)
                     self.assertNotIn('groundAimHook', h.blobs)
                     self.assertNotIn('aimErrorHook', h.blobs)
+
+    def test_priority_bindings_are_conditional_and_fail_closed(self):
+        patterns = (
+            b'8B 44 24 08 55 56 33 ED 83 F8 FF 57 75 32 8B 44 24 10 8B D0 69 D2 90 04 00 00',
+            b'8B 44 24 10 83 F8 02 0F 84 ? ? ? ? 83 F8 03 0F 84 ? ? ? ? 8B 4C 24 30 8B C1',
+            b'0F BF 94 33 F0 09 00 00 8B 44 24 10 6B D2 32 03 EA 83 F8 04 75 ? 0F BF 84 33 A2 06 00 00',
+            b'89 44 24 0C 8B 04 85 ? ? ? ? 0F AF C0 66 83 BC 37 B0 09 00 00 04',
+            b'0F AF D0 8B C1 0F AF C1 03 D0 3B 54 24 34 0F 8F ? ? ? ? 0F BF 8C 33 CA 06 00 00')
+        for extreme in (False, True):
+            for pattern in patterns:
+                for requested in (False, True):
+                    with self.subTest(extreme=extreme, pattern=pattern, requested=requested):
+                        h = Harness(extreme)
+                        site = h.scan(pattern)
+                        h.put(site, 0xe9, 1)
+                        h.scans.clear()
+                        cfg = {'interval': 700}
+                        if requested: cfg['threat_priority'] = {'Monk': 3}
+                        if requested:
+                            with self.assertRaisesRegex(Exception, 'unsupported executable'):
+                                h.enable({'Catapult': cfg})
+                            self.assertEqual(h.writes, [])
+                            self.assertEqual(h.allocations, [])
+                        else:
+                            h.enable({'Catapult': cfg})
+                            self.assertNotIn(pattern, h.scans)
+                            self.assertEqual(h.get(site, 1), 0xe9)
+
+    def test_priority_range_table_is_decoded_from_native_operand(self):
+        pattern = b'89 44 24 0C 8B 04 85 ? ? ? ? 0F AF C0 66 83 BC 37 B0 09 00 00 04'
+        for extreme in (False, True):
+            h = Harness(extreme)
+            site = h.scan(pattern)+4
+            original = h.get(site+3)
+            moved = 0x6e0000
+            h.uc.mem_write(moved, bytes(h.uc.mem_read(original, 160)))
+            h.put(site+3, moved)
+            h.enable({'Catapult': {'interval': 700, 'threat_priority': {'Monk': 3}}})
+            self.assertEqual(h.blobs['nativeTargetRange'][2]['NATIVERANGET'], moved)
 
     def test_accuracy_and_cadence_include_effective_decoration_profiles(self):
         from test_decorations import DecorationTests

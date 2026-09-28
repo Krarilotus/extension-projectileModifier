@@ -41,7 +41,7 @@ local projectile_names = {
 }
 
 -- What a forced shooter is allowed to aim at, in the order the config lists them.
---   units          bounded nearest-enemy search using native team membership
+--   units          nearest-enemy search, or native acquisition with an opt-in score bonus
 --   walls          wall tiles near the shooter (tile layer, see the description for the caveat)
 --   fortifications enemy gatehouses, towers, wooden gates, drawbridges, keep doors
 --   buildings      every other enemy building

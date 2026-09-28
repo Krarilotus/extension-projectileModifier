@@ -59,11 +59,15 @@ local function validate_flat(config, variants)
         local path = 'units.' .. tostring(name)
         if not M.units[name] then fail(path, 'unknown unit name') end
         object(cfg, path)
+        if cfg.target_bias_tiles ~= nil and cfg.threat_priority ~= nil then
+            fail(path, 'use only one of target_bias_tiles and threat_priority')
+        end
         local out = {}
         for key, value in pairs(cfg) do
             local field = path .. '.' .. tostring(key)
             local bounds = M.numbers[key]
             if value == 'native' and (bounds or M.booleans[key] or key == 'targets'
+                or key == 'threat_priority' or key == 'target_bias_tiles'
                 or ((key == 'projectile' or key == 'cow_projectile') and not (variants and variants.native))) then
                 -- Explicit inheritance uses the same path as omission. Keep
                 -- native state-dependent behavior with its existing owner.
@@ -99,6 +103,21 @@ local function validate_flat(config, variants)
                     targets[#targets+1] = kind
                 end
                 out[key] = targets
+            elseif key == 'threat_priority' or key == 'target_bias_tiles' then
+                object(value, field)
+                local priorities = {}
+                local any_bonus = false
+                for target, bonus in pairs(value) do
+                    if not M.units[target] then fail(field .. '.' .. tostring(target), 'unknown target unit name') end
+                    if type(bonus) ~= 'number' or bonus ~= bonus or bonus % 1 ~= 0
+                        or bonus < 0 or bonus > 255 then
+                        fail(field .. '.' .. target, 'expected an integer from 0 to 255')
+                    end
+                    priorities[target] = bonus
+                    if bonus > 0 then any_bonus = true end
+                end
+                -- Preserve the normalized key for runtime and saved-config identity.
+                if any_bonus then out.threat_priority = priorities end
             else
                 fail(field, 'unknown setting')
             end
@@ -142,10 +161,15 @@ end
 -- One merge owner for fortification and decoration profiles. An explicit
 -- native clears a configured parent value, while a concrete compatibility
 -- alias in the same override wins independent of Lua table iteration order.
-local function merge_fields(parent, fields)
+local function merge_fields(parent, fields, path)
+    if fields.target_bias_tiles ~= nil and fields.threat_priority ~= nil then
+        fail(path, 'use only one of target_bias_tiles and threat_priority')
+    end
     local merged = {}
     for key, value in pairs(parent) do merged[key] = value end
     for key, value in pairs(fields) do merged[key] = value end
+    if fields.target_bias_tiles ~= nil then merged.threat_priority = nil end
+    if fields.threat_priority ~= nil then merged.target_bias_tiles = nil end
     for _, key in ipairs({'spread', 'inaccuracy'}) do
         local alias = key .. '_tiles'
         if fields[key] ~= nil and (fields[alias] == nil or fields[alias] == 'native') then
@@ -185,7 +209,8 @@ function M.validate(config)
             if settings.on_fortification.on_fortification ~= nil then
                 fail('units.' .. name, 'nested fortification overrides are not supported')
             end
-            local merged = merge_fields(base, settings.on_fortification)
+            local merged = merge_fields(base, settings.on_fortification,
+                'units.' .. name .. '.on_fortification')
             if next(settings.on_fortification) ~= nil then fortified[name] = merged end
         end
     end
@@ -204,7 +229,8 @@ function M.validate(config)
         local rules = decorations.rules(settings.near_decorations, definitions, name)
         if #rules > 0 then
             local function effective(parent, fields)
-                local merged = merge_fields(parent, fields)
+                local merged = merge_fields(parent, fields,
+                    'units.' .. name .. '.near_decorations')
                 return validate_flat({units={[name]=merged}}, variants).units[name] or {}
             end
             for _, rule in ipairs(rules) do

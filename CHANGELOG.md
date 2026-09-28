@@ -1,5 +1,35 @@
 # Changelog
 
+## 1.8.12 (provisional test candidate)
+
+- Rename the preset-facing automatic unit score setting to
+  `target_bias_tiles`. The name describes its effect: each point removes one
+  tile-equivalent from the native distance-and-attention score. It does not
+  extend range or guarantee target selection. The old `threat_priority` key
+  remains accepted, including wall and decoration overrides; both names
+  normalize to the same runtime/save configuration.
+- Use the clearer name in the VS Code schema, full vanilla reference, examples
+  and all nine launcher locales. Reject both aliases in the same unit/profile.
+
+## 1.8.11 (provisional test candidate)
+
+- Replace the superseded 1.8.10 flat-rank prototype with a distance-equivalent
+  bonus inside the game's native automatic target scorer. Configured non-random
+  unit shots use the native candidate list and target preparation; explicit
+  configured range is applied inside native candidate selection. Manual orders,
+  cluster and random targeting keep their existing paths.
+- Preserve the original native range load and Catapult/Trebuchet acquisition gate
+  outside the module's scheduled opt-in call. No extra world scan is introduced.
+
+## 1.8.10 (superseded provisional test candidate)
+
+- Added opt-in `threat_priority` ranks to each unit's existing configured automatic
+  unit-target search. Eligible higher-ranked types win; equal ranks retain
+  distance and unit-ID ordering. Native/manual, cluster and random choices remain
+  unchanged, and presets without ranks compile the previous search path.
+- Accept the mapping in the VS Code schema and full vanilla reference. Wall and
+  decoration overrides may replace or clear inherited ranks with `native`.
+
 ## 1.8.9 (provisional test candidate)
 
 - Visit only active custom projectiles and decorations during entity updates.

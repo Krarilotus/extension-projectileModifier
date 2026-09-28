@@ -49,9 +49,12 @@ the new accepted-aim correction still needs a combined live direct-click test.
   The 1.8.9 source removes per-update full-world scans using its existing hooks;
   unsaved indices rebuild on new world/load and placement. Its entity-state
   binding now decodes and checks the native spawner call through UCP AOB.
-- [ ] Add opt-in threat priorities through native target eligibility/spatial
-  ownership; confirm monk/priest selection in a real mixed-unit scenario
+- [ ] Accept opt-in threat priorities in a real mixed Monk/Priest game
   ([issue #10](https://github.com/Krarilotus/extension-projectileModifier/issues/10)).
+  The flat-rank 1.8.10 candidate was withdrawn. The correction biases the game's
+  native distance-aware acquisition and uses its candidate list for configured
+  non-random unit shots. Normal/Extreme x86 binding and selection checks pass;
+  live aiming, crowded-match cost, multiplayer and replay acceptance remain open.
 - [ ] Verify the new default-ON `turn_before_shot` correction for changed human
   orders during cooldown, including an explicit OFF baseline.
 - [ ] Finish required save/recorder enrollment and owner-supplied content identity.

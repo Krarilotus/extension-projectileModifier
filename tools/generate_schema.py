@@ -21,6 +21,14 @@ def build_schema():
     fields['targets'] = dict(oneOf=[target, dict(type='array', items=target,
                                                minItems=1, maxItems=4, uniqueItems=True)])
     fields['targets']['description'] = 'Automatic search priorities. Cluster density applies only to AI owners. Human native shooters retain their current unit/building/ground/wall attack order within range; humans without an order treat cluster as units.'
+    priority = dict(type='object', additionalProperties=False,
+        properties={name: dict(type='integer', minimum=0, maximum=255)
+                    for _, name in sorted(constants.unit_names.items())})
+    bias_description = 'Optional unit-type bias for native automatic acquisition and configured non-random units search. One point subtracts one tile-equivalent (8 native units) from the native distance-and-attention score, floored at zero; it does not extend range or guarantee selection. Native eligibility, range, line of sight and later type/engagement rules still apply. Omitted types get zero; manual, cluster and random shots keep their policies. Wall/decoration maps replace the inherited map.'
+    fields['target_bias_tiles'] = dict(**{'$ref': '#/$defs/targetBiasTiles'},
+        description=bias_description)
+    fields['threat_priority'] = dict(**{'$ref': '#/$defs/targetBiasTiles'},
+        deprecated=True, description='Legacy name for target_bias_tiles. ' + bias_description)
     fields['density_min']['description'] = 'Minimum enemy count for AI cluster targeting; human attack orders are not restricted by this threshold.'
     fields['density_radius']['description'] = 'Radius in tiles for counting nearby enemies in an AI cluster.'
     fields['stagger_min']['description'] = 'Requires stagger_max; must not exceed it when staggering is enabled. Checked by the game loader.'
@@ -38,14 +46,15 @@ def build_schema():
     for name, field in list(fields.items()):
         fields[name] = dict(anyOf=[field, {'const':'native'}], description=field.get('description','') + ' Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults.')
         if 'default' in field: fields[name]['default']=field['default']
+    alias_conflict = {'not': {'required': ['target_bias_tiles', 'threat_priority']}}
     unit = dict(type='object', additionalProperties=False, properties=fields,
                 dependentSchemas={'stagger_max': {'anyOf': [{'required': [name]} for name in
                                   ['interval', 'interval_moving', 'interval_standing', 'attached_interval']]}},
-                allOf=[{'not': dict(required=[name, name+'_tiles'], properties={key:{'not':{'const':'native'}} for key in [name,name+'_tiles']})} for name in ['spread', 'inaccuracy']])
+                allOf=[{'not': dict(required=[name, name+'_tiles'], properties={key:{'not':{'const':'native'}} for key in [name,name+'_tiles']})} for name in ['spread', 'inaccuracy']] + [alias_conflict])
     unit['dependentRequired'] = {'stagger_min': ['stagger_max']}
     override = dict(type='object', additionalProperties=False, properties=dict(fields),
                     description='Sparse overrides while on a wall or fortification. Missing fields inherit the ground settings. Runtime validates the merged settings.',
-                    allOf=[{'not': dict(required=[name, name+'_tiles'], properties={key:{'not':{'const':'native'}} for key in [name,name+'_tiles']})} for name in ['spread', 'inaccuracy']])
+                    allOf=[{'not': dict(required=[name, name+'_tiles'], properties={key:{'not':{'const':'native'}} for key in [name,name+'_tiles']})} for name in ['spread', 'inaccuracy']] + [alias_conflict])
     rule = dict(type='object',additionalProperties=False,required=['decoration'],minProperties=2,
                 properties=dict(override['properties'],decoration={'type':'string','pattern':'^[a-z][a-z0-9_-]{0,47}$'}),
                 allOf=override['allOf'],
@@ -69,7 +78,8 @@ def build_schema():
                                       'description':'GM1 path relative to the game folder. Use a complete matching base sheet; see README for counts and formats.'}}}}},
                           'units': {'type': 'object', 'additionalProperties': False,
                           'properties': {name: {'$ref': '#/$defs/unit'} for _, name in sorted(constants.unit_names.items())}}},
-            '$defs': {'unit': unit, 'override': override, 'decorationRule':rule}}
+            '$defs': {'unit': unit, 'override': override, 'decorationRule':rule,
+                      'targetBiasTiles': priority}}
 
 if __name__ == '__main__':
     (ROOT/'projectile-config.schema.json').write_text(

@@ -94,8 +94,8 @@ ae_pass:
 -- profile(unitID) -> table index. Preserve other registers. Positive structure
 -- height AND the native wall/fortification tile flags distinguish standing on
 -- the structure from terrain elevation or standing on the ground beside it.
-profile_code = [[
-profile:
+profile_index_code = [[
+profileIndex:
     push ebx
     push ecx
     push edx
@@ -140,19 +140,37 @@ pf_done:
         call DECORPROFILE
         add esp, 8
     end if
-    mov ecx, [esp+16]
+pf_return:
+    pop edx
+    pop ecx
+    pop ebx
+    ret
+]],
+
+-- The established tick boundary owns profile-change firing-state transitions.
+-- Native target scoring calls profileIndex directly and cannot trigger them.
+profile_code = [[
+profile:
+    push ecx
+    push edx
+    mov ecx, [esp+12]
+    push ecx
+    call PROFILEINDEX
+    add esp, 4
+    cmp eax, MAXPROFILES
+    jae p_return
+    mov ecx, [esp+12]
     cmp dword [PROFILESTATET+ecx*4], eax
-    je pf_return
+    je p_return
     mov [PROFILESTATET+ecx*4], eax
     ; Do not release an old conditional volley after stepping off its trigger.
     ; Keep the main cooldown so changing ground/wall state cannot bypass reload.
     mov dword [PENDINGT+ecx*4], 0
     mov dword [PENDCDT+ecx*4], 0
     mov dword [SYNCWAITT+ecx*4], 0
-pf_return:
+p_return:
     pop edx
     pop ecx
-    pop ebx
     ret
 ]],
 
@@ -681,6 +699,127 @@ ap_pass:
     jmp RESUME
 ]],
 
+-- The game's Catapult/Trebuchet modes return before its automatic unit-list
+-- loop. Only our synchronous scheduled ACQUIRE call opts past that gate.
+priority_gate_hook_code = [[
+nativeAutoGate:
+    cmp dword [FORCEACQUIRE], 0
+    je nag_native
+    cmp dword [FORCEACQUIRE], edi
+    je nag_continue
+nag_native:
+    mov eax, [esp+0x10]
+    cmp eax, 2
+    je nag_reject
+    cmp eax, 3
+    je nag_reject
+nag_continue:
+    jmp NATIVEGATECONT
+nag_reject:
+    jmp NATIVEREJECT
+]],
+
+-- This is the native acquisition owner's weapon-range load. Only the
+-- module's synchronous opt-in acquisition substitutes its profile range;
+-- ordinary game acquisition replays the original table load unchanged.
+priority_range_hook_code = [[
+nativeTargetRange:
+    cmp dword [FORCEACQUIRE], 0
+    je ntr_native
+    cmp dword [FORCEACQUIRE], edi
+    jne ntr_native
+    pushad
+    mov eax, edi
+    xor edx, edx
+    mov ecx, 0x490
+    div ecx
+    push eax
+    call PROFILEINDEX
+    add esp, 4
+    cmp eax, MAXPROFILES
+    jae ntr_fallback
+    mov eax, [RANGET+eax*4]
+    mov [esp+28], eax       ; saved EAX; imul in native code squares it
+    popad
+    jmp NATIVERANGECONT
+ntr_fallback:
+    popad
+ntr_native:
+    mov eax, [NATIVERANGET+eax*4]
+    jmp NATIVERANGECONT
+]],
+
+-- The game's rounded-tile distance check remains untouched for ordinary
+-- acquisition. During an opt-in scheduled shot, strict_range checks each
+-- candidate's exact native coordinates before the owner scores it.
+priority_candidate_hook_code = [[
+nativeCandidateRange:
+    cmp dword [FORCEACQUIRE], 0
+    je ncr_native
+    cmp dword [FORCEACQUIRE], edi
+    jne ncr_native
+    cmp dword [S_RANGE8SQ], 0
+    je ncr_native
+    pushad
+    movsx eax, word [ebx+esi+0x6CA]
+    sub eax, [esp+32+0x18]
+    imul eax, eax
+    movsx ecx, word [ebx+esi+0x6CC]
+    sub ecx, [esp+32+0x14]
+    imul ecx, ecx
+    add eax, ecx
+    cmp eax, [S_RANGE8SQ]
+    popad
+    ja ncr_reject
+    jmp NATIVECANDCONT
+ncr_native:
+    cmp edx, [esp+0x34]
+    jg ncr_reject
+    jmp NATIVECANDCONT
+ncr_reject:
+    jmp NATIVECANDREJECT
+]],
+
+-- The native owner already computed Chebyshev distance plus its attention
+-- term. Adjust only that score; let its shooter/target-type, LOS and engaged
+-- candidate policy run unchanged. One bonus point equals one tile (8 micro).
+priority_score_hook_code = [[
+nativeTargetScore:
+    pushad
+    movzx eax, word [esi+edi+0x6A2]
+    cmp eax, MAXTYPES
+    jae nts_done
+    cmp byte [PRIORITYTYPET+eax], 0
+    je nts_done             ; ordinary shooters avoid profile/decor work
+    mov eax, edi            ; native acquisition keeps unitID * 0x490 in EDI
+    xor edx, edx
+    mov ecx, 0x490
+    div ecx
+    push eax
+    call PROFILEINDEX       ; read-only, no firing-state transition
+    add esp, 4
+    cmp eax, MAXPROFILES
+    jae nts_done
+    mov edx, [PRIORITYPTRT+eax*4]
+    test edx, edx
+    jz nts_done
+    movzx ecx, word [ebx+esi+0x6A2] ; candidate native unit type
+    cmp ecx, MAXTYPES
+    jae nts_done
+    movzx ecx, byte [edx+ecx]
+    shl ecx, 3
+    sub dword [esp+8], ecx  ; saved EBP is the native base score
+    jns nts_done
+    mov dword [esp+8], 0
+nts_done:
+    popad
+    cmp eax, 4             ; replay the displaced native branch
+    jne nts_else
+    jmp NATIVESCORECONT
+nts_else:
+    jmp NATIVESCOREELSE
+]],
+
 -- A human's explicit native attack takes precedence over automatic search.
 manual_order_code = [[
 manualOrder:
@@ -781,22 +920,9 @@ pk_nativeorder:
     call pk_saveorder           ; keep native cleanup of stale/reused orders
     test eax, eax
     jz pk_fail                  ; native acquisition must accept the order
-    ; Native building/ground acquisition assumes its caller checked range.
-    ; Our scheduled path must still obey the configured range for those orders.
-    mov esi, [S_UNITPTR]
-    movsx eax, word [esi+0xBE]
-    movsx ecx, word [esi+0xB6]
-    sub eax, ecx
-    imul eax, eax
-    movsx ecx, word [esi+0xC0]
-    movsx edx, word [esi+0xB8]
-    sub ecx, edx
-    imul ecx, ecx
-    add eax, ecx
-    mov ecx, [S_R2]
-    shl ecx, 6                 ; squared tiles -> squared native eighth-tiles
-    cmp eax, ecx
-    ja pk_fail
+    call pk_inrange           ; respect the configured range on scheduled shots
+    test eax, eax
+    jz pk_fail
     mov eax, 2                 ; keep the chosen target; no random-target scan
     jmp pk_out
 pk_policy:
@@ -853,6 +979,58 @@ pk_cluster:
     jmp pk_aim
 
 pk_units:
+    if HASPRIORITY = 1
+    mov edx, [ebp+0x0C]
+    cmp dword [MULTIT+edx*4], 0
+    jne pk_scanunits         ; random volleys need the module candidate array
+    cmp dword [PRIORITYPTRT+edx*4], 0
+    je pk_scanunits
+    mov eax, [ebp+0x08]
+    imul eax, eax, 0x490
+    mov [FORCEACQUIRE], eax
+    push dword [ebp+0x08]
+    mov ecx, UNITSTATE
+    call ACQUIRE             ; use native candidate list and full native policy
+    mov dword [FORCEACQUIRE], 0
+    test eax, eax
+    jz pk_next
+    mov esi, [S_UNITPTR]
+    movzx edx, word [esi+0x344]
+    cmp edx, 0xFFFE          ; Mangonel-style native coordinate result
+    je pk_nativecoords
+    cmp edx, 1
+    jl pk_next
+    cmp edx, MAXUNITS
+    jae pk_next
+    mov esi, [S_UNITPTR]
+    movzx edx, word [esi+0x344]
+    movzx ecx, word [esi+0x8E]
+    xor eax, eax
+    cmp ecx, 39             ; native catapult/trebuchet preparation uses 200
+    je pk_siegelead
+    cmp ecx, 40
+    jne pk_leadready
+pk_siegelead:
+    mov eax, 200
+pk_leadready:
+    push eax
+    push edx
+    push dword [ebp+0x08]
+    mov ecx, UNITSTATE
+    call PREPTARGET         ; native aim/height; never synthesize coordinates
+    mov eax, 1              ; native unit aim is already in the unit fields
+    jmp pk_out
+pk_nativecoords:
+    cmp dword [S_RANGE8SQ], 0
+    je pk_nativecoords_ok
+    call pk_inrange
+    test eax, eax
+    jz pk_next
+pk_nativecoords_ok:
+    mov eax, 1              ; native unit aim is already in the unit fields
+    jmp pk_out
+    end if
+pk_scanunits:
     call SCANUNIT
     test eax, eax
     jz pk_next
@@ -895,6 +1073,26 @@ pk_out:
     pop esi
     pop ebx
     pop ebp
+    ret
+
+pk_inrange:
+    mov esi, [S_UNITPTR]
+    movsx eax, word [esi+0xBE]
+    movsx ecx, word [esi+0xC0]
+    movsx edx, word [esi+0xB6]
+    sub eax, edx
+    imul eax, eax
+    movsx edx, word [esi+0xB8]
+    sub ecx, edx
+    imul ecx, ecx
+    add eax, ecx
+    mov ecx, [S_R2]
+    shl ecx, 6
+    cmp eax, ecx
+    mov eax, 0
+    ja pk_rangeout
+    inc eax
+pk_rangeout:
     ret
 
 pk_saveorder:

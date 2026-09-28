@@ -35,4 +35,6 @@ units:
     sync_max_wait: 40
   Catapult:
     interval: 700
+    targets: units
+    target_bias_tiles: {Monk: 3} # Native automatic score bonus: up to 3 tiles closer.
     turn_before_shot: true
