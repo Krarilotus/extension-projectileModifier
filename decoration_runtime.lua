@@ -1,6 +1,99 @@
 local M = {}
+M.update = [[
+updateDecorations:
+    ; Clear only grid buckets touched on the previous update.
+    pushfd
+    pushad
+    xor edi, edi
+du_clear:
+    cmp edi, [DECORCELLSCOUNT]
+    jae du_cleared
+    mov eax, [DECORCELLS+edi*4]
+    mov dword [DECORGRID+eax*4], 0
+    inc edi
+    jmp du_clear
+du_cleared:
+    mov dword [DECORCELLSCOUNT], 0
+    mov dword [DECORWRITE], 0
+    xor ebp, ebp
+du_loop:
+    cmp ebp, [DECORACTIVECOUNT]
+    jae du_done
+    mov ebx, [DECORACTIVEIDS+ebp*4]
+    cmp ebx, 1
+    jl du_drop
+    cmp ebx, 3000
+    jae du_drop
+    mov dword [DECORNEXT+ebx*4], 0
+    mov edi, [DECORVARIANT+ebx*4]
+    cmp edi, 1
+    jl du_drop
+    cmp edi, 33
+    ja du_drop
+    imul esi, ebx, 232
+    add esi, ENTITYARRAY
+    mov eax, [DECORUID+ebx*4]
+    cmp [esi+0x30], eax
+    jne du_drop
+    cmp word [esi+0x28], 1
+    je du_next                  ; newborn; native braziers activate next update
+    cmp word [esi+0x28], 2
+    jne du_drop
+    cmp word [esi+0x2A], 14
+    jne du_drop
+    movsx eax, word [esi+0x44]
+    cmp eax, 399
+    ja du_next
+    movsx edx, word [esi+0x46]
+    cmp edx, 399
+    ja du_next
+    shr eax, 2
+    shr edx, 2
+    imul edx, edx, 100
+    add edx, eax
+    mov eax, [DECORGRID+edx*4]
+    test eax, eax
+    jnz du_link
+    mov eax, [DECORCELLSCOUNT]
+    mov [DECORCELLS+eax*4], edx
+    inc eax
+    mov [DECORCELLSCOUNT], eax
+    xor eax, eax
+du_link:
+    mov [DECORNEXT+ebx*4], eax
+    mov [DECORGRID+edx*4], ebx
+    mov eax, [DECORGM+edi*4]
+    test eax, eax
+    jz du_next
+    mov word [esi+0x06], ax
+    jmp du_next
+du_drop:
+    cmp ebx, 1
+    jl du_remove
+    cmp ebx, 3000
+    jae du_remove
+    mov dword [DECORVARIANT+ebx*4], 0
+du_remove:
+    inc ebp
+    jmp du_loop
+du_next:
+    ; Stable one-pass compaction preserves native equal-priority tie order.
+    mov ecx, [DECORWRITE]
+    mov [DECORACTIVEIDS+ecx*4], ebx
+    inc ecx
+    mov [DECORWRITE], ecx
+    inc ebp
+    jmp du_loop
+du_done:
+    mov eax, [DECORWRITE]
+    mov [DECORACTIVECOUNT], eax
+    popad
+    popfd
+    ret
+]]
 M.rebuild = [[
 rebuildDecorations:
+    ; One full scan on placement/new world/load. Per-frame work uses active IDs.
     pushfd
     pushad
     cld
@@ -8,49 +101,27 @@ rebuildDecorations:
     xor eax, eax
     mov ecx, 10000
     rep stosd
+    mov dword [DECORACTIVECOUNT], 0
+    mov dword [DECORCELLSCOUNT], 0
     mov ebx, 1
 dr_loop:
-    mov dword [DECORNEXT+ebx*4], 0
-    mov edi, [DECORVARIANT+ebx*4]
-    test edi, edi
-    jz dr_next
-    cmp edi, 33
-    ja dr_clear
-    imul esi, ebx, 232
-    add esi, ENTITYARRAY
-    mov eax, [DECORUID+ebx*4]
-    cmp [esi+0x30], eax
-    jne dr_clear
-    cmp word [esi+0x28], 1
-    je dr_next                  ; newborn; native braziers activate next update
-    cmp word [esi+0x28], 2
-    jne dr_clear
-    cmp word [esi+0x2A], 14
-    jne dr_clear
-    movsx eax, word [esi+0x44]
-    cmp eax, 399
-    ja dr_next
-    movsx edx, word [esi+0x46]
-    cmp edx, 399
-    ja dr_next
-    shr eax, 2
-    shr edx, 2
-    imul edx, edx, 100
-    add edx, eax
-    mov eax, [DECORGRID+edx*4]
-    mov [DECORNEXT+ebx*4], eax
-    mov [DECORGRID+edx*4], ebx
-    mov eax, [DECORGM+edi*4]
-    test eax, eax
-    jz dr_next
-    mov word [esi+0x06], ax
+    mov eax, [DECORVARIANT+ebx*4]
+    cmp eax, 1
+    jl dr_next
+    cmp eax, 33
+    ja dr_invalid
+    mov ecx, [DECORACTIVECOUNT]
+    mov [DECORACTIVEIDS+ecx*4], ebx
+    inc ecx
+    mov [DECORACTIVECOUNT], ecx
     jmp dr_next
-dr_clear:
+dr_invalid:
     mov dword [DECORVARIANT+ebx*4], 0
 dr_next:
     inc ebx
     cmp ebx, 3000
     jl dr_loop
+    call UPDATEDECOR
     popad
     popfd
     ret

@@ -1,6 +1,6 @@
 # Native integration audit, 12 September 2026
 
-This audit began with the 1.8.6 candidate and tracks provisional 1.8.8 source;
+This audit began with the 1.8.6 candidate and tracks provisional 1.8.9 source;
 it is not release acceptance. Original source `main` and Store PR #31 remain
 preserved. User scope also includes combined live retargeting, optional threat
 priorities and investigation of reported monk targeting.
@@ -14,7 +14,7 @@ priorities and investigation of reported monk targeting.
 | Unconditional accuracy hooks | Both native scatter stages were patched even with accuracy omitted everywhere. | Corrected; only effective profiles with explicit accuracy require these bindings and three assembly routines. |
 | Retargeting can fire before turning | 1.8.5 live trace records a trebuchet shooting at new coordinates before its next aiming phase. | Provisional accepted-aim correction in PR #8; emulated normal/Extreme Halt, death and slot-reuse regressions pass; combined live direct-click test remains open. |
 | Full-world automatic target scans | `templates.lua:scanUnit` visits every unit slot per search; building/wall scans and the 256-candidate cluster loop also need review. Multiple shooters multiply the cost. | Open; investigate native spatial/target owners before extending priorities. |
-| Full entity scans every update | `spriteUpdate` invokes `spriteAll` twice, each visiting 2999 slots. Decorations additionally rebuild a 10000-cell grid and scan the entity pool. | Open; owner-side render/lifecycle integration is required before claiming this efficient. |
+| Full entity scans every update | 1.8.8 `spriteUpdate` invoked `spriteAll` twice across 2999 slots, while decorations cleared 10000 cells and scanned 2999 entities each update. | 1.8.9 replaces these per-update sweeps with active IDs and touched grid cells within the existing spawn/update hooks. One bounded census remains at new-world/load and decoration placement. Live rendered performance acceptance remains open. |
 | Private GM slot allocator/loader interception | `sprite_resources.clone/install` duplicated GM header/offset discovery and intercepted the native loader inside gmResourceModifier's own loading lifecycle. | Removed in PR #8. GM owner PR #7 now also implements complete-sheet validation and content identity; 1.8.8 removes the consumer parser, file read and hash. Live acceptance remains open. |
 | English-only validation and conflict errors | `configuration.lua`, `state.lua`, resource validation and native resolver diagnostics are English-only. Nine GUI preview catalogs do not cover these errors. | Open; inspect native-language and launcher diagnostic owners. |
 | No separate OFF controls for simple corrections | One file picker exists; previous automatic bug corrections were not exposed separately. | Open; preserve the user's compact, file-based interface and explicit existing choices. |
@@ -38,7 +38,8 @@ cluster thresholds and current commands need examination in the failing match.
 | Ambiguous AOB rejection | That framework returns one cached match but exposes no match-count result. `init.lua:resolve().locate` calls its `scanForAOB` only around the framework result to reject second matches, then decodes operands from verified context. This is an initialization-only guard, not a competing discovery cache or fixed-address fallback. |
 | Complete GM1 loading/identity | gmResourceModifier PR #7 `Gm1ResourceManager::CreateGm1Resource` owns file loading and native resource lifetime. Its new `LoadCompleteGm1Resource` validates an exact inherited layout and returns a SHA-256 digest of the same loaded bytes. `sprite_resources.prepare` calls that owner once and passes its ID to `ReserveGm`; its Lua parser, file read and framework hash call were deleted. |
 | Digest service | The framework's Lua `sha.sha256` accepts a Lua byte string, but the GM owner already holds the file in native buffers before renderer preparation. Passing or rereading it through Lua would duplicate loading. The owner uses Windows CryptoAPI on those buffers; it does not implement another SHA algorithm or cache. |
-| Entity/render lifecycle | Framework `content/ucp/code` at `02a7a6b` exposes no entity spawn/removal/render callback. The module currently wraps native spawn and whole-entity update; see issue #9 for the unresolved owner integration and per-update scan removal. No new lifecycle helper is claimed by 1.8.8. |
+| Entity/render lifecycle | Framework `content/ucp/code` at `02a7a6b` exposes no entity spawn/removal/render callback. The module's existing native spawn and whole-entity update hooks already own its visual GM swap. 1.8.9 indexes only entities admitted by those hooks, validates UID/type on update, and reconstructs unsaved scratch indices via the existing Map Extensions callback. No new hook, allocator, cache or competing dispatcher was added. Issue #9 still requires live/MP/performance acceptance. |
+| Entity-state binding | The 1.8.8 visual path read `fire+0x416` twice without checking the operand or its call. 1.8.9 resolves the `mov ecx, EntityState; call spawnProjectileEntity` instruction through the same cached UCP AOB API, decodes both operands, verifies the relative call reaches the independently resolved native spawner, and compares the pointer with the decoration command receiver when configured. This resolves once before GM admission/allocation; both previous offset reads are gone. A changed call, invalid pointer or duplicate signature fails before patching. |
 | Decoration map receiver | `decorations.lua` derives the native map receiver as the AOB-decoded `TILEFLAGS` data layer minus its `0x165160` structure offset. This number is a map-layout field offset, not an executable VA/RVA. The native validation, height, ownership and construction tests exercise the receiver on normal/Extreme; broader live variant acceptance remains open. |
 | Native allocation/assembly/patches | The same framework's `core.allocateAssembly`, `core.insertCode` and memory APIs. Existing module assembly wrappers filter unused constants for the framework assembler budget; no alternate assembler or allocator is introduced by this correction. Remaining manual trampoline ownership needs audit. |
 | Working unit/projectile balance extension | `rebalancer/init.lua`, `templates.lua`, `constants.lua`, revision `8d5b47e1d61cab8c0f4b1f301669d2541788facd`. It exposes native table/operand balance changes; it does not provide a runtime projectile-target query service. Preserve its source and resolve actual overlap before changing target ownership. |
@@ -309,7 +310,7 @@ owner admission failure. Six owner host scenarios and its real-framework binding
 tests on the two reference families plus official PL/EFIGS files also pass. These
 do not replace real rendering, multiplayer, save/replay and GUI acceptance.
 The 1.8.8 consumer removes the GM1 validation/hash read through the owner API.
-Full entity render scans remain unfinished; this is not release acceptance.
+Full entity render scans remained at that revision; 1.8.9 corrects them below.
 
 ## 27 September 2026: accepted aim and owner review
 
@@ -335,4 +336,25 @@ The GM owner API is now proposed in
 [gmResourceModifier PR #7](https://github.com/UnofficialCrusaderPatch/ucp_gmResourceModifier/pull/7),
 with two passing CI checks at that revision. Later 0.3.1 owner work adds
 content validation/identity and removes the private consumer GM1 parser.
-Actual rendering and render/decorations full-world scans remain open.
+Actual rendering remained open at that revision; 1.8.9 removes the scans below.
+
+## 28 September 2026: active visual indices
+
+The existing `spriteSpawn` hook registers a custom projectile ID once. The
+existing `spriteUpdate` hook now restores/applies GMs only for registered IDs,
+using the same UID/type guard and removing stale entries. The decoration update
+relinks only active custom braziers and clears only cells touched on the previous
+update. Stable compaction retains ascending entity-ID order, so equal-priority
+proximity ties still query the highest ID first. One full scan reconstructs
+scratch indices after Map Extensions new-world/load and after custom placement;
+none of these lists or grid cells are serialized. No new native hook, RNG draw,
+projectile allocator, targeting owner or fixed executable address was added.
+
+This uses the module's already-installed render and spawn lifecycle. Framework
+`core.lua` at `02a7a6b` has no generic entity callback; gmResourceModifier owns
+sheet loading/storage, not per-entity visual selection. Native sprite/damage
+ownership is unchanged. Focused x86 tests assert empty render passes call no
+per-entity routine, one active projectile calls it once, and two decorations
+update in under 1000 emulated instructions while preserving grid/tie behavior.
+Crowded live frame timing, both rendered games, multiplayer and replay still
+need acceptance under issue #9.

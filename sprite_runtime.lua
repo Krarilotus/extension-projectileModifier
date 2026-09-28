@@ -62,15 +62,74 @@ so_done:
 ]]
 M.all = [[
 spriteAll:
-    ; edx=mode; bounded entity array, no target scans or Lua per frame.
+    ; edx=mode; visit only custom entities admitted by spriteSpawn/rebuild.
     pushad
-    mov eax, 1
+    xor edi, edi
 sa_loop:
+    cmp edi, [ACTIVECOUNT]
+    jae sa_done
+    mov ebx, [ACTIVEIDS+edi*4]
+    cmp ebx, 1
+    jl sa_drop
+    cmp ebx, 3000
+    jae sa_drop
+    mov eax, ebx
     call SPRITEONE
-    inc eax
-    cmp eax, 3000
-    jl sa_loop
+    cmp dword [ENTITYVARIANT+ebx*4], 0
+    jne sa_next
+    mov dword [ACTIVEINDEX+ebx*4], 0
+sa_drop:
+    mov ecx, [ACTIVECOUNT]
+    dec ecx
+    mov [ACTIVECOUNT], ecx
+    cmp edi, ecx
+    jae sa_loop
+    mov eax, [ACTIVEIDS+ecx*4]
+    mov [ACTIVEIDS+edi*4], eax
+    lea esi, [edi+1]
+    mov [ACTIVEINDEX+eax*4], esi
+    jmp sa_loop
+sa_next:
+    inc edi
+    jmp sa_loop
+sa_done:
     popad
+    ret
+]]
+M.rebuild = [[
+spriteRebuild:
+    ; Map Extensions calls this once on new world/load, not each frame.
+    pushfd
+    pushad
+    cld
+    mov edi, ACTIVEINDEX
+    xor eax, eax
+    mov ecx, 3000
+    rep stosd
+    mov dword [ACTIVECOUNT], 0
+    mov ebx, 1
+sr_loop:
+    mov eax, [ENTITYVARIANT+ebx*4]
+    test eax, eax
+    jz sr_next
+    cmp eax, 1
+    jl sr_invalid
+    cmp eax, 33
+    ja sr_invalid
+    mov ecx, [ACTIVECOUNT]
+    mov [ACTIVEIDS+ecx*4], ebx
+    lea eax, [ecx+1]
+    mov [ACTIVEINDEX+ebx*4], eax
+    mov [ACTIVECOUNT], eax
+    jmp sr_next
+sr_invalid:
+    mov dword [ENTITYVARIANT+ebx*4], 0
+sr_next:
+    inc ebx
+    cmp ebx, 3000
+    jl sr_loop
+    popad
+    popfd
     ret
 ]]
 M.spawn_original = [[
@@ -121,6 +180,17 @@ spriteSpawn:
     mov [ENTITYTYPE+eax*4], edx
     mov edx, 1
     call SPRITEONE
+    cmp dword [ENTITYVARIANT+eax*4], 0
+    je ss_done
+    cmp dword [ACTIVEINDEX+eax*4], 0
+    jne ss_done
+    mov ecx, [ACTIVECOUNT]
+    cmp ecx, 2999
+    jae ss_done
+    mov [ACTIVEIDS+ecx*4], eax
+    inc ecx
+    mov [ACTIVECOUNT], ecx
+    mov [ACTIVEINDEX+eax*4], ecx
 ss_done:
     pop edi
     pop esi
@@ -151,7 +221,7 @@ spriteUpdate:
     mov edx, 1
     call SPRITEALL
     if HASDECOR = 1
-        call REBUILDDECOR
+        call UPDATEDECOR
     end if
     popad
     popfd

@@ -1,4 +1,5 @@
 import unittest
+from unicorn import UC_HOOK_CODE
 from harness import Harness,r
 from lupa.lua54 import LuaError
 import test_projectiles as projectile_tests
@@ -111,7 +112,7 @@ class DecorationTests(unittest.TestCase):
             e=h.v['ENTITYARRAY']+232
             for off,value in [(0x28,2),(0x2a,14),(0x44,40),(0x46,40)]:h.put(e+off,value,2)
             h.put(e+0x30,77);h.put(h.v['DECORVARIANT']+4,1);h.put(h.v['DECORUID']+4,77)
-            h.call(h.v['REBUILDDECOR'])
+            h.call(h.blobs['rebuildDecorations'][0])
             self.assertEqual(h.call(h.v['PROFILE'],[1]),160)
             shots=projectile_tests.NativeTests().fire(h,1)
             self.assertEqual(len(shots),2);self.assertTrue(all(s[9]==4 for s in shots))
@@ -122,11 +123,11 @@ class DecorationTests(unittest.TestCase):
             self.assertEqual(len(projectile_tests.NativeTests().fire(h,1)),3)
             state=h.sections[b'projectileModifier'];saved=projectile_tests.NativeTests().state_handle(h)
             state.serialize(state,saved)
-            h.put(h.v['DECORVARIANT']+4,0);h.call(h.v['REBUILDDECOR'])
+            h.put(h.v['DECORVARIANT']+4,0);h.call(h.blobs['rebuildDecorations'][0])
             self.assertEqual(h.call(h.v['PROFILE'],[1]),119)
             state.deserialize(state,saved)
             self.assertEqual(h.call(h.v['PROFILE'],[1]),161)
-            h.put(e+0x28,0,2);h.call(h.v['REBUILDDECOR'])
+            h.put(e+0x28,0,2);h.call(h.blobs['rebuildDecorations'][0])
             self.assertEqual(h.call(h.v['PROFILE'],[1]),119)
 
     def test_decorations_without_unit_rules_still_install_and_select_native_build_mode(self):
@@ -237,16 +238,74 @@ class DecorationTests(unittest.TestCase):
             remove=h.scan(b'57 8B 7C 24 08 66 F7 04 7D ? ? ? ? 00 10 74 63')
             h.call(remove,[tile],{r.UC_X86_REG_ECX:state})
             self.assertNotIn(h.get(entity+0x28,2),[1,2])
-            h.call(h.v['REBUILDDECOR'])
+            h.call(h.blobs['rebuildDecorations'][0])
             self.assertEqual(h.get(h.v['DECORVARIANT']+100),0)
+
+    def test_per_update_grid_visits_active_decorations_and_touched_cells(self):
+        for extreme in (False,True):
+            with self.subTest(extreme=extreme):
+                h=self.prepare_module({'decorations':{'frost':{}}},extreme)
+                v=h.v;update=h.blobs['updateDecorations'][0]
+                for entity_id in (1,2):
+                    entity=v['ENTITYARRAY']+entity_id*232
+                    for off,value in ((0x28,2),(0x2a,14),(0x44,40),(0x46,40)):
+                        h.put(entity+off,value,2)
+                    h.put(entity+0x30,700+entity_id)
+                    h.put(v['DECORVARIANT']+entity_id*4,1)
+                    h.put(v['DECORUID']+entity_id*4,700+entity_id)
+                h.call(h.blobs['rebuildDecorations'][0])
+                old=10*100+10
+                self.assertEqual(h.get(v['DECORACTIVECOUNT']),2)
+                self.assertEqual(h.get(v['DECORCELLSCOUNT']),1)
+                self.assertEqual(h.get(v['DECORGRID']+old*4),2)
+                second=v['ENTITYARRAY']+2*232
+                h.put(second+0x44,48,2)
+                instruction_count=[0]
+                token=h.uc.hook_add(UC_HOOK_CODE,lambda *_:instruction_count.__setitem__(0,instruction_count[0]+1))
+                try:h.call(update)
+                finally:h.uc.hook_del(token)
+                self.assertLess(instruction_count[0],1000)
+                self.assertEqual(h.get(v['DECORCELLSCOUNT']),2)
+                self.assertEqual(h.get(v['DECORGRID']+old*4),1)
+                self.assertEqual(h.get(v['DECORGRID']+(10*100+12)*4),2)
+                first=v['ENTITYARRAY']+232
+                h.put(first+0x28,0,2)
+                h.call(update)
+                self.assertEqual(h.get(v['DECORACTIVECOUNT']),1)
+                self.assertEqual(h.get(v['DECORCELLSCOUNT']),1)
+                self.assertEqual(h.get(v['DECORGRID']+old*4),0)
+
+    def test_equal_priority_grid_order_survives_middle_removal(self):
+        h=self.prepare_module({'decorations':{'frost':{}}})
+        v=h.v
+        for entity_id in (1,2,3):
+            entity=v['ENTITYARRAY']+entity_id*232
+            for off,value in ((0x28,2),(0x2a,14),(0x44,40),(0x46,40)):
+                h.put(entity+off,value,2)
+            h.put(entity+0x30,800+entity_id)
+            h.put(v['DECORVARIANT']+entity_id*4,1)
+            h.put(v['DECORUID']+entity_id*4,800+entity_id)
+        h.call(h.blobs['rebuildDecorations'][0])
+        cell=10*100+10
+        self.assertEqual(h.get(v['DECORGRID']+cell*4),3)
+        self.assertEqual(h.get(v['DECORNEXT']+3*4),2)
+        self.assertEqual(h.get(v['DECORNEXT']+2*4),1)
+        h.put(v['ENTITYARRAY']+2*232+0x28,0,2)
+        h.call(h.blobs['updateDecorations'][0])
+        self.assertEqual(h.get(v['DECORACTIVECOUNT']),2)
+        self.assertEqual([h.get(v['DECORACTIVEIDS']+i*4) for i in (0,1)],[1,3])
+        self.assertEqual(h.get(v['DECORGRID']+cell*4),3)
+        self.assertEqual(h.get(v['DECORNEXT']+3*4),1)
 
     def prepare_grid(self,extreme=False):
         h=Harness(extreme)
         runtime=h.lua.execute(b"return (require('decoration_runtime'))")
         values={'MAXTYPES':80,'UNITARRAY':h.base,'ENTITYARRAY':0x3000014}
         for name,size in [('DECORVARIANT',12000),('DECORUID',12000),('DECORNEXT',12000),
-                          ('DECORGM',136),('DECORGRID',40000),('DECORRULEMAP',80*408),('DECORRULEST',320)]:
+                          ('DECORGM',136),('DECORGRID',40000),('DECORRULEMAP',80*408),('DECORRULEST',320),
+                          ('DECORACTIVECOUNT',4),('DECORACTIVEIDS',12000),('DECORCELLSCOUNT',4),('DECORCELLS',12000),('DECORWRITE',4)]:
             values[name]=h.allocate(size)
+        values['UPDATEDECOR']=h.assemble(runtime.update,h.config(values))
         rebuild=h.assemble(runtime.rebuild,h.config(values));query=h.assemble(runtime.profile,h.config(values))
         unit=h.unit(1,22)
         h.put(values['DECORRULEST']+22*4,1)

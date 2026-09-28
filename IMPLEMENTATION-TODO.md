@@ -44,8 +44,11 @@ the new accepted-aim correction still needs a combined live direct-click test.
   Inherited reservation and complete-sheet validation/content identity now live
   in that owner; consumer duplication is removed. Live native acceptance,
   review, release and normal merge remain open.
-- [ ] Replace full entity/world scans and competing render/decorations lifecycle
-  work with the responsible native/framework owners ([issue #9](https://github.com/Krarilotus/extension-projectileModifier/issues/9)).
+- [ ] Accept the active-only entity/decorations update in live normal/Extreme,
+  multiplayer/replay and crowded-match performance tests ([issue #9](https://github.com/Krarilotus/extension-projectileModifier/issues/9)).
+  The 1.8.9 source removes per-update full-world scans using its existing hooks;
+  unsaved indices rebuild on new world/load and placement. Its entity-state
+  binding now decodes and checks the native spawner call through UCP AOB.
 - [ ] Add opt-in threat priorities through native target eligibility/spatial
   ownership; confirm monk/priest selection in a real mixed-unit scenario
   ([issue #10](https://github.com/Krarilotus/extension-projectileModifier/issues/10)).
