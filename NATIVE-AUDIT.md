@@ -5,6 +5,12 @@ it is not release acceptance. Original source `main` and Store PR #31 remain
 preserved. User scope also includes combined live retargeting, optional threat
 priorities and investigation of reported monk targeting.
 
+**28 September correction:** The game's `UnitsState::acquireShootTarget` does
+have a distance-, attention- and target-type-sensitive automatic selection
+policy. The 1.8.10 flat-rank prototype was not integrated with it and has been
+reverted. [NATIVE-TARGET-RESEARCH.md](NATIVE-TARGET-RESEARCH.md) records the
+native owner, separate AI pathfinding query and remaining integration boundary.
+
 ## Confirmed findings
 
 | Finding in 1.8.6 | Evidence and required correction | Status |
