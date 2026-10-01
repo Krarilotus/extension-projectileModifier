@@ -1,5 +1,7 @@
 # yaml-language-server: $schema=./projectile-config.schema.json
 # Valid advanced example; copy only the fields needed. See README.md for bounds.
+unit_groups:
+  siege: [Catapult, Trebuchet, Mangonel, Siege tower, Battering ram]
 units:
   Siege tower:
     projectile: crossbow_bolt
@@ -35,6 +37,9 @@ units:
     sync_max_wait: 40
   Catapult:
     interval: 700
+    ammo_by_target:
+      groups: {siege: regular}
+      units: {Monk: cow} # Exact target-type rules override groups.
     targets: units
     target_bias_tiles: {Monk: 3} # Native automatic score bonus: up to 3 tiles closer.
     turn_before_shot: true

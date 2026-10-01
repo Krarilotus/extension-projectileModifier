@@ -1,4 +1,6 @@
-# Custom Projectiles 1.8.12
+# Custom Projectiles 1.8.13
+
+Automatische Munition: Ziellisten unter unit_groups anlegen, beim Schützen ammo_by_target.groups: {siege: regular} oder ammo_by_target.units: {Monk: cow} setzen. Einzelne Typen haben Vorrang; andere Ziele bleiben unverändert. Intervall nötig; native entfernt Regeln. Reconquista-Beispiel enthalten.
 
 Alle 77 Einheitentypen per YAML einstellen. Normale Munition und Kühe sind unabhängig. Intervalle beachten unterstützte Schussanimationen; inaccuracy nutzt native Einheiten: 1 = 1/8 Feld, 8 = 1 Feld, 0 = genaues Zielen.
 

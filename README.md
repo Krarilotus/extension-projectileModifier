@@ -1,4 +1,4 @@
-# Custom Projectiles 1.8.12 (test candidate)
+# Custom Projectiles 1.8.13 (test candidate)
 
 Configure projectile types, volley sizes and automatic firing for all 77 unit
 types using one readable YAML file. Based on Monsterfish's supplied 1.2.0 module.
@@ -35,6 +35,7 @@ with `ai_only: true`), not one individually selected catapult.
 |---|---|
 | Change ordinary ammunition | `projectile`; omit `cow_projectile` to leave cows alone |
 | Change cow ammunition separately | `cow_projectile` and `cow_count` |
+| Choose automatic ammunition by victim | `ammo_by_target.units` for exact target types; `ammo_by_target.groups` for names defined in top-level `unit_groups` |
 | More shots in one volley | `count`; `spread` offsets additional simultaneous shots |
 | Longer time between volleys | `interval`, measured in simulation ticks, not milliseconds; game speed changes real elapsed time |
 | Fire only while standing | `interval_standing: 700`, `interval_moving: 0` |
@@ -77,13 +78,65 @@ manual-only attack, and `strict_range` require 1.8.7 and its matching schema.
 The old 1.8.6 tester does not understand these fields. See [VALIDATION.md](VALIDATION.md)
 for acceptance limits.
 
-Only `units`, `projectiles` and `decorations` belong at the top of a projectile
+Only `units`, `projectiles`, `decorations` and `unit_groups` belong at the top of a projectile
 file. Do not paste GitHub workflow keys (`name`, `on`) or UCP `config-sparse`
 wrappers into it. Use spaces for indentation and restart the game after edits.
 
+## Ammunition by target unit or group (1.8.13+)
+
+Define reusable **target** groups at the top of the file, then add optional rules
+to each **shooting** unit. This example keeps automatic AIC cow shots against
+troops, uses the catapult's configured regular ammunition against siege engines,
+and explicitly selects fire arrows against monks:
+
+```yaml
+unit_groups:
+  siege: [Catapult, Trebuchet, Mangonel, Siege tower, Battering ram]
+units:
+  Catapult:
+    interval: 700
+    projectile: mangonel_pebble
+    count: 3
+    ai_cow_vs_units: true
+    targets: [cluster, units]
+    ammo_by_target:
+      groups:
+        siege: regular
+      units:
+        Monk: fire_arrow
+```
+
+| Rule value | Effect |
+|---|---|
+| `regular` | This shooter's configured `projectile` and `count` |
+| `cow` | Its `cow_projectile` and `cow_count`, defaulting to native cows and one shot; an explicit rule does not require AIC cow permission |
+| A projectile name/ID or custom variant | That projectile, using the regular `count` and the variant's inherited native behavior |
+| Omitted map, empty map, or `ammo_by_target: native` | Existing ammunition behavior; `native` also clears an inherited wall/decoration map |
+
+Exact `units` rules override `groups`. Overlapping groups with different choices
+need an explicit unit rule for their shared members. Group names are lowercase
+identifiers; members use the exact unit names from the schema. Groups are flat
+lists, not new native classifications. Unmatched targets retain existing regular
+or AIC cow behavior. A wall/decoration map replaces the whole inherited map.
+
+Rules require a configured automatic-fire interval and work with every supported
+shooter type, including added ranged weapons. They apply to automatic unit shots;
+native human attack orders, native cow orders and building/ground shots retain
+their existing ammunition behavior. With `random_targets`, each shot uses its
+actual victim's rule, while the initial target admits the volley count. Changing
+victims does not resize an ongoing volley or change its reload timing.
+
+These rules do not add a targeting preference, infer plague immunity, extend
+range, or alter damage/impact behavior. `targets: [cluster, units]` searches a
+cluster first, then individual units; the fallback also allows isolated troops.
+The supplied [Reconquista example](examples/reconquista-projectiles.yml) opts
+into this fallback and regular ammunition against its named siege group for
+catapults and trebuchets. Catapult regular ammunition remains mangonel pebbles,
+as in the earlier preset; change `projectile` to `catapult_rock` if you want rocks.
+
 ## Installation and use
 
-Import `custom-projectiles-1.8.12.zip` and the matching
+Import `custom-projectiles-1.8.13.zip` and the matching
 `gmResourceModifier-0.3.1.zip` draft dependency into a developer launcher, then
 enable them with map-extensions, protocol and ui. For the direct enemy-click
 catapult check, also enable the separate Fixed Engineers 0.2.0 tester. This
@@ -259,6 +312,7 @@ completion and validation; Lua also checks cross-field comparisons.
 | Setting | Values and defaults |
 |---|---|
 | `projectile`, `cow_projectile` | Native names/IDs below, or a name defined in `projectiles`; cow ammunition is independent |
+| `ammo_by_target` | Optional `{units: {...}, groups: {...}}` map selecting ammunition by target type; requires an automatic-fire interval. See the ammunition table and example above. Omission/`native` preserves existing behavior. |
 | `count` | 1–64; unset preserves native volley size |
 | `cow_count` | 1–64; unset preserves one native cow |
 | `near_decorations` | Ordered list of sparse rules, each with a `decoration` name; first nearby match wins; cannot nest triggers |

@@ -295,6 +295,19 @@ v_fire:
     ; through the siege cow path for its launch height, muzzle and ground-target
     ; metadata. The generic path would give it arrow-style target/height data.
     mov eax, [ebp+0x0C]
+    if HASAMMORULES
+        cmp dword [S_TARGETAMMO], 0
+        je v_ammodone
+        mov eax, [S_DEFAULTPROJ]
+        mov [S_PROJ], eax
+        mov eax, [S_DEFAULTVARIANT]
+        mov [CURRENTVARIANT], eax
+        call TARGETAMMO
+        mov eax, [S_PROJ]
+        mov edx, [S_SHOOTER]
+        mov word [edx+0x3B0], 0
+    v_ammodone:
+    end if
     cmp eax, 23
     jne v_dispatch
     mov edx, [S_SHOOTER]
@@ -619,6 +632,9 @@ h_nocount:
 h_single:
     mov edx, 1
 h_fire:
+    if HASAMMORULES
+        mov dword [S_TARGETAMMO], 0
+    end if
     mov dword [S_EXPLICIT], 0
     cmp ecx, -1
     je h_originaltype
@@ -1445,6 +1461,9 @@ wc_no:
 ammo_code = [[
 chooseAmmo:
     pushad
+    if HASAMMORULES
+        mov dword [S_TARGETAMMO], 0
+    end if
     mov ecx, [SPRITET+edx*4]
     mov [CURRENTVARIANT], ecx
     mov ecx, [FORCEDT+edx*4]
@@ -1461,6 +1480,9 @@ chooseAmmo:
     mov ecx, 7                   ; native mangonel volley when count is omitted
 ca_regularcount:
     mov [S_VOLLEYCOUNT], ecx
+    if HASAMMORULES
+        mov ebx, ecx
+    end if
     cmp dword [AICOWT+edx*4], 0
     je ca_done
     cmp dword [S_MODE], 1
@@ -1483,10 +1505,81 @@ ca_cowtype:
     mov ecx, [COWCOUNTT+edx*4]
     mov [S_VOLLEYCOUNT], ecx
 ca_done:
+    if HASAMMORULES
+        mov ecx, [S_PROJ]
+        mov [S_DEFAULTPROJ], ecx
+        mov ecx, [CURRENTVARIANT]
+        mov [S_DEFAULTVARIANT], ecx
+        cmp dword [S_MODE], 1
+        jne ca_rule_done
+        cmp dword [AMMOPTRT+edx*4], 0
+        je ca_rule_done
+        push edx
+        push dword [S_ID]
+        call MANUALORDER
+        add esp, 4
+        pop edx
+        test eax, eax
+        jnz ca_rule_done
+        mov eax, [AMMOPTRT+edx*4]
+        mov [S_TARGETAMMO], eax
+        call TARGETAMMO
+        cmp eax, 1
+        jne ca_rule_cow
+        mov [S_VOLLEYCOUNT], ebx
+        jmp ca_rule_done
+    ca_rule_cow:
+        cmp eax, 2
+        jne ca_rule_done
+        mov ecx, [COWCOUNTT+edx*4]
+        mov [S_VOLLEYCOUNT], ecx
+    ca_rule_done:
+    end if
     cmp dword [S_VOLLEYCOUNT], 1
     jge ca_return
     mov dword [S_VOLLEYCOUNT], 1
 ca_return:
+    popad
+    ret
+]],
+
+-- Extend the ammunition selector using the accepted victim's native ID/UID.
+-- Returns slot 1 (regular), 2 (cow), or 0 (no rule). Does not resize a volley.
+target_ammo_code = [[
+targetAmmo:
+    pushad
+    xor eax, eax
+    mov [esp+28], eax
+    mov edx, [S_TARGETAMMO]
+    test edx, edx
+    jz ta_done
+    mov ecx, [S_UNITPTR]
+    movzx eax, word [ecx+0x344]
+    cmp eax, 1
+    jl ta_done
+    cmp eax, MAXUNITS
+    jge ta_done
+    imul eax, eax, 0x490
+    add eax, UNITARRAY
+    cmp word [eax+0x8C], 0
+    je ta_done
+    mov ebx, [eax+0x98]
+    cmp ebx, [ecx+0xA0]
+    jne ta_done
+    movzx eax, word [eax+0x8E]
+    cmp eax, MAXTYPES
+    jae ta_done
+    imul eax, eax, 12
+    add edx, eax
+    mov eax, [edx]
+    test eax, eax
+    jz ta_done
+    mov [S_PROJ], eax
+    mov eax, [edx+4]
+    mov [CURRENTVARIANT], eax
+    mov eax, [edx+8]
+    mov [esp+28], eax
+ta_done:
     popad
     ret
 ]],

@@ -1,5 +1,35 @@
 # Native integration audit, 12 September 2026
 
+## 1 October 2026: ammunition by victim type
+
+Based on source main `cf063d9` (merged 1.8.12), inspected before this change:
+
+| Capability | Existing owner reused / precise gap |
+|---|---|
+| Configuration and profile inheritance | `configuration.validate` / `merge_fields` / `any_profile`; add optional maps and expand flat named groups during existing validation. Extract the existing native/custom projectile field validation into `projectile` so both slot fields and target rules share it, rather than introducing a second resolver. Group names do not create new runtime unit classes. |
+| Ammunition choice | `templates.ammo_code:chooseAmmo`, called by `automatic_code:t_shoot`; already receives the effective shooter profile and accepted native victim. Missing per-victim choice is added here, with a small shared `targetAmmo` lookup used by this selector and the existing random volley. No parallel selector or targeting service. |
+| Identity/layout | OpenSHC `Map/Units/Unit.hpp` confirms 0x490 stride, short shootTargetedUnit at +0x344, victim UID at +0xA0, unit type +0x8E/UID +0x98. Existing `PICKTARGET` and native acquisition prepare these fields. Guard slot, live state and UID; never find a new victim here. |
+| Native projectile dispatch | Existing `volley_code:v_fire` and UCP-resolved `FIREPROJ` keep projectile allocation, launch metadata, attribution, damage and cleanup. Reuse existing regular/cow remaps and `CURRENTVARIANT` for GM-owner sprites. Reset the temporary cow flag per mixed shot and restore the original afterward. |
+| Manual orders | Existing `manual_order_code:manualOrder` keeps supported native human attack orders out of the new automatic rule path. `fire_hook_code:h_fire` clears rule scratch before existing native volleys. Native cow orders stay in their existing native path. |
+| Runtime discovery | Framework `content/ucp/code/core.lua` at `02a7a6b`: `core.AOBScan` delegates unbounded discovery to `data.cache.AOB.retrieve`; bounded uniqueness checks use `scanForAOB`. Existing module `resolve` decodes shoot/acquire/unit roots. No new binding, scan, hook, VA/RVA table or fallback. Assembly allocation remains `core.allocateAssembly`. |
+| Persistence/synchronization | Existing `state.new` / Map Extensions format 5 canonicalizes the expanded rule map. Unused groups do not affect identity; equivalent groups/direct maps do. Only immutable init tables and scratch are added, not persistent blocks or commands. Existing volley RNG order is retained. |
+
+Lookup is O(1) per projectile, with no search, RNG draw or allocation. One
+80-type x 12-byte table is allocated at initialization per ruled effective
+profile, plus the optional profile-pointer table. Omitted rules compile out
+the new firing instructions and allocate no ammunition maps/helper. The final
+diff extends these owners; it adds no loader, cache, hook or native dispatch copy.
+Rules are opt-in balance policy, not a default bug correction. Runtime startup
+diagnostics retain the existing configuration owner's English errors; this is
+an existing localization gap, not a new GUI error/translation resolver.
+
+The new native tests exercise both 1.41 reference images, direct/group precedence,
+mixed victims, cow remaps, custom sprites and deterministic saved continuation.
+Actual rendered firing/impact, paired multiplayer/replay and broader variants
+remain acceptance gaps. On 1 October the queued native probe again returned
+`Native app bindings are unavailable for windows`; its slot was released.
+
+
 This audit began with the 1.8.6 candidate and tracks provisional 1.8.10 source;
 it is not release acceptance. Original source `main` and Store PR #31 remain
 preserved. User scope also includes combined live retargeting, optional threat

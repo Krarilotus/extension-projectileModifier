@@ -1,4 +1,6 @@
-# Custom Projectiles 1.8.12
+# Custom Projectiles 1.8.13
+
+Automatic ammunition: define target lists in unit_groups, then ammo_by_target.groups: {siege: regular} per shooter, or ammo_by_target.units: {Monk: cow}. Exact units win; unmatched targets keep existing behavior. Requires an interval; native clears rules. Reconquista example included.
 
 Configure all 77 unit types in YAML. Regular and cow ammunition are independent. Intervals respect supported firing animations; inaccuracy uses native units: 1 = 1/8 tile, 8 = 1 tile, 0 = exact aim.
 

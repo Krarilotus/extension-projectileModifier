@@ -1,4 +1,6 @@
-# Custom Projectiles 1.8.12
+# Custom Projectiles 1.8.13
+
+Otomatik mühimmat: hedef listelerini unit_groups altında tanımlayın; ateş eden birimde ammo_by_target.groups: {siege: regular} veya ammo_by_target.units: {Monk: cow} kullanın. Tekil türler önceliklidir; diğer hedefler değişmez. Atış aralığı gerekir; native kuralları siler. Reconquista örneği dahildir.
 
 77 birim türünün tamamını YAML ile ayarlayın. Normal mühimmat ve inekler ayrı ayarlanır. Aralıklar desteklenen atış animasyonlarına uyar; inaccuracy yerel oyun birimlerini kullanır: 1 = 1/8 karo, 8 = 1 karo, 0 = tam isabetli nişan.
 

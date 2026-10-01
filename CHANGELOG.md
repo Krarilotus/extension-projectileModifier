@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.8.13 (provisional test candidate)
+
+- Add optional `ammo_by_target.units` and `ammo_by_target.groups`, with reusable
+  top-level `unit_groups`. Exact unit rules win; conflicting overlapping groups
+  require an exact rule. Compile once into the existing ammunition selector.
+- Keep existing ammunition behavior for unmatched targets and native manual/cow
+  orders. Regular/cow slots retain their own counts and custom sprites. Random
+  volleys choose ammunition per actual victim without resizing the volley.
+- Ship the Reconquista example: catapults/trebuchets use regular ammunition
+  against the named siege group and retain AIC cow behavior against troops.
+  Opt into individual-unit fallback after clusters, including isolated troops.
+- Extend the VS Code schema, full inert vanilla reference, guide and all nine
+  GUI preview languages. No new GUI control, hook, binding or targeting system.
+
 ## 1.8.12 (provisional test candidate)
 
 - Rename the preset-facing automatic unit score setting to

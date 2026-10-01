@@ -1,5 +1,36 @@
 # Validation — unreleased work
 
+## 1.8.13 target ammunition, 1 October
+
+The 13 focused target-ammunition tests pass, plus the additional native artillery
+release test (eight normal/Extreme, Catapult/Trebuchet, siege/troop cases).
+Production Lua/FASM runs against both 1.41 reference PE images. Cases cover
+groups/exact precedence, conflicts and startup rejection before patching,
+wall-map clearing/replacement, identity guards, AIC cow fallback, separate slot
+counts, mixed random victims and cow-flag restoration, custom GM-owner variants,
+previously non-shooting types and deterministic staggered save continuation.
+No lookup adds a scan, RNG call or allocation during firing.
+
+All 23 launcher component/archive tests pass for the generated package, including
+the one Legacy Balance Changes file picker and all nine locale catalogs/previews.
+The schema and full vanilla/Reconquista presets validate. The vanilla map is
+explicitly native for all 77 units; unused group definitions stay inert.
+
+A broader regression run is recorded with the PR. The earlier exhaustive
+77-unit/every-projectile native allocation matrix is unchanged and was not
+repeated for this ammunition-selection change; native release, dispatch,
+sprite, configuration, resolver, turning, saved state and targeting regressions
+are included in the broader run.
+
+Native desktop testing remains blocked: the 1 October queued probe returned
+`Native app bindings are unavailable for windows`; the slot was released. Live
+artillery impact/damage, paired multiplayer/replay, crowded-match performance
+and broader executable variants remain unverified. English startup diagnostics
+are the existing configuration owner's localization gap; no separate translation
+loader was added. Preview help is translated in all nine GUI languages, pending
+human translation review. This build does not claim to fix the separate reported
+trebuchet impact/aiming problem or constitute accepted Store completion.
+
 ## 1.8.11 native automatic target score, 28 September
 
 The 1.8.10 flat-rank test candidate is superseded. Normal Crusader and Extreme

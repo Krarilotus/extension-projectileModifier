@@ -90,6 +90,14 @@ HEADER='''# yaml-language-server: $schema=./projectile-config.schema.json
 #       count: 2
 #
 # Optional top-level definitions (alongside units, not inside a unit):
+# unit_groups:
+#   siege: [Catapult, Trebuchet, Mangonel, Siege tower, Battering ram]
+# Per shooting unit (requires an automatic-fire interval):
+#   ammo_by_target: {groups: {siege: regular}, units: {Monk: cow}}
+#                               # Exact unit rules win; unmatched victims keep native/configured ammo.
+#                               # regular/cow use their configured slots and counts.
+#                               # Projectile/variant names use the regular count.
+#                               # Native manual and cow orders remain unchanged.
 # projectiles:
 #   training_arrow:
 #     inherits: arrow           # Native damage/flight behavior; only sprites change.
@@ -119,7 +127,7 @@ HEADER='''# yaml-language-server: $schema=./projectile-config.schema.json
 '''
 
 def generate():
-    fields=set(cfg.numbers.keys())|set(cfg.booleans.keys())|{'projectile','cow_projectile','targets','target_bias_tiles'}
+    fields=set(cfg.numbers.keys())|set(cfg.booleans.keys())|{'projectile','cow_projectile','targets','target_bias_tiles','ammo_by_target'}
     assert all(f'#   {name}:' in HEADER for name in fields)
     text=HEADER+'# Projectile names: '+', '.join(sorted(constants.projectile_names.keys()))+'\n'
     text+='# Target kinds: '+', '.join(sorted(constants.target_kinds.keys()))+'\n\n'
@@ -128,10 +136,10 @@ def generate():
     text+='# to 20 tiles. Set range explicitly if you want a different limit.\n'
     text+='# auto_targeting: native preserves native autonomy; false requires manual orders.\n'
     text+='# The *_tiles compatibility aliases are documented above; canonical fields use eighth-tiles.\n\n'
-    text+='projectiles: {}\ndecorations: {}\nunits:\n'
+    text+='projectiles: {}\ndecorations: {}\nunit_groups: {}\nunits:\n'
     canonical=[key for key in cfg.numbers.keys() if not key.endswith('_tiles')]
     # Use reference order, not Lua table iteration order.
-    canonical=sorted(set(canonical)|set(cfg.booleans.keys())|{'projectile','cow_projectile','targets','target_bias_tiles'},
+    canonical=sorted(set(canonical)|set(cfg.booleans.keys())|{'projectile','cow_projectile','targets','target_bias_tiles','ammo_by_target'},
                      key=lambda key: HEADER.index('#   '+key+':'))
     names={value:key for key,value in constants.projectile_names.items()}
     for _, name in sorted(constants.unit_names.items()):

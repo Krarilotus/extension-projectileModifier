@@ -13,6 +13,13 @@ def build_schema():
         dict(type='string',pattern='^[a-z][a-z0-9_-]{0,47}$')],
         description='Native projectile or a name defined in projectiles. The game loader rejects undefined variant names.')
     fields['cow_projectile'] = dict(fields['projectile'], description='Separate replacement for native siege cow ammunition and automatic AI cow shots. Omission preserves cows.')
+    ammo = dict(anyOf=[dict(enum=['regular', 'cow']), fields['projectile']])
+    fields['ammo_by_target'] = dict(type='object', additionalProperties=False,
+        properties={'units': dict(type='object', additionalProperties=False,
+            properties={name: {'$ref': '#/$defs/ammunition'} for _, name in sorted(constants.unit_names.items())}),
+            'groups': dict(type='object', additionalProperties=False,
+                patternProperties={'^[a-z][a-z0-9_-]{0,47}$': {'$ref': '#/$defs/ammunition'}})},
+        description='Optional ammunition for configured automatic unit shots. Requires an automatic-fire interval. Units rules override named unit_groups; conflicting overlapping groups require an explicit units rule. regular/cow select the configured ammunition slots and counts; a projectile/variant uses regular count. Unmatched targets keep existing behavior. Manual native attack orders and native cow orders are unchanged. Maps replace inherited maps; native clears the map. Mixed volleys choose ammunition per actual victim, keeping the initially admitted volley count.')
     fields['inaccuracy']['description'] = 'Maximum random aim-error radius in whole native coordinate units: 1 = 1/8 tile, 8 = 1 tile. Explicit 0 removes native random error; omission preserves it. Separate spread still applies. Do not combine with inaccuracy_tiles.'
     fields['inaccuracy_tiles']['description'] = 'Compatibility alias in whole tiles, converted by multiplying by 8. Prefer inaccuracy for native 1/8-tile steps. Do not combine both fields.'
     fields['spread']['description'] = 'Additional simultaneous-shot spread per axis, in whole native coordinate units: 1 = 1/8 tile, 8 = 1 tile. Zero adds no spread. Independent of inaccuracy.'
@@ -64,7 +71,10 @@ def build_schema():
     return {'$schema': 'https://json-schema.org/draft/2020-12/schema',
             'title': 'Custom Projectiles preset', 'type': 'object', 'additionalProperties': False,
             'description': 'Projectile preset. All unit entries and settings are optional; omitted settings preserve native behavior or documented automatic-fire defaults. UCP required/suggested qualifiers apply to the file selector, not fields inside this file. See README.md.',
-            'properties': {'decorations': {'type':'object','maxProperties':33,'additionalProperties':False,
+            'properties': {'unit_groups': dict(type='object', maxProperties=77, additionalProperties=False,
+                          patternProperties={'^[a-z][a-z0-9_-]{0,47}$': dict(type='array', minItems=1,
+                              maxItems=77, uniqueItems=True, items=dict(enum=[name for _, name in sorted(constants.unit_names.items())]))}),
+                          'decorations': {'type':'object','maxProperties':33,'additionalProperties':False,
                           'patternProperties':{'^[a-z][a-z0-9_-]{0,47}$':{'type':'object','additionalProperties':False,
                               'properties':{'label':{'type':'string','minLength':1,'maxLength':96},
                                   'sprites':{'type':'string','minLength':5,'maxLength':240,'pattern':'\\.[gG][mM]1$',
@@ -79,7 +89,7 @@ def build_schema():
                           'units': {'type': 'object', 'additionalProperties': False,
                           'properties': {name: {'$ref': '#/$defs/unit'} for _, name in sorted(constants.unit_names.items())}}},
             '$defs': {'unit': unit, 'override': override, 'decorationRule':rule,
-                      'targetBiasTiles': priority}}
+                      'targetBiasTiles': priority, 'ammunition': ammo}}
 
 if __name__ == '__main__':
     (ROOT/'projectile-config.schema.json').write_text(

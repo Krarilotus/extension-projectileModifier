@@ -1,4 +1,6 @@
-# Custom Projectiles 1.8.12
+# Custom Projectiles 1.8.13
+
+Automatikus lőszer: célcsoportok a unit_groups alatt, lövőnként ammo_by_target.groups: {siege: regular} vagy ammo_by_target.units: {Monk: cow}. Az egyedi típus az elsődleges; más célok változatlanok. Lövési intervallum szükséges; native törli a szabályokat. Reconquista-példa mellékelve.
 
 Mind a 77 egységtípus YAML-ban állítható. A normál lövedékek és a tehenek külön kezelhetők. Az időközök igazodnak a támogatott tüzelési animációkhoz; az inaccuracy játékbeli egységei: 1 = 1/8 mező, 8 = 1 mező, 0 = pontos célzás.
 

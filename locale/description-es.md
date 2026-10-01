@@ -1,4 +1,6 @@
-# Custom Projectiles 1.8.12
+# Custom Projectiles 1.8.13
+
+Munición automática: defina listas de objetivos en unit_groups y use ammo_by_target.groups: {siege: regular} por tirador, o ammo_by_target.units: {Monk: cow}. Los tipos concretos tienen prioridad; los demás objetivos conservan su comportamiento. Requiere intervalo; native borra las reglas. Incluye ejemplo Reconquista.
 
 Configura los 77 tipos de unidades mediante YAML. La munición normal y las vacas se ajustan por separado. Los intervalos respetan las animaciones de disparo compatibles; inaccuracy usa unidades nativas: 1 = 1/8 de casilla, 8 = 1 casilla, 0 = puntería exacta.
 

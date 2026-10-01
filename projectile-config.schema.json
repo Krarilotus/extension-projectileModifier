@@ -5,6 +5,100 @@
   "additionalProperties": false,
   "description": "Projectile preset. All unit entries and settings are optional; omitted settings preserve native behavior or documented automatic-fire defaults. UCP required/suggested qualifiers apply to the file selector, not fields inside this file. See README.md.",
   "properties": {
+    "unit_groups": {
+      "type": "object",
+      "maxProperties": 77,
+      "additionalProperties": false,
+      "patternProperties": {
+        "^[a-z][a-z0-9_-]{0,47}$": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 77,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "Peasant",
+              "Burning man",
+              "Woodcutter",
+              "Fletcher",
+              "Tunneler",
+              "Hunter",
+              "Quarry mason",
+              "Quarry grunt",
+              "Quarry ox",
+              "Pitch worker",
+              "Wheat farmer",
+              "Hops farmer",
+              "Apple farmer",
+              "Dairy farmer",
+              "Miller",
+              "Baker",
+              "Brewer",
+              "Poleturner",
+              "Blacksmith",
+              "Armourer",
+              "Tanner",
+              "European archer",
+              "European crossbowman",
+              "European spearman",
+              "European pikeman",
+              "European maceman",
+              "European swordsman",
+              "European knight",
+              "Ladderman",
+              "Engineer",
+              "Iron miner1",
+              "Iron miner2",
+              "Priest",
+              "Healer",
+              "Drunkard",
+              "Innkeeper",
+              "Monk",
+              "unknown1",
+              "Catapult",
+              "Trebuchet",
+              "Mangonel",
+              "Trader",
+              "Trader horse",
+              "Deer",
+              "Lion",
+              "Rabbit",
+              "Camel",
+              "Crow",
+              "Seagull",
+              "Siege tent",
+              "Cow",
+              "Hunter dog",
+              "Fireman",
+              "Ghost",
+              "Lord",
+              "Lady",
+              "Jester",
+              "Siege tower",
+              "Battering ram",
+              "Portable shield",
+              "Tower ballista",
+              "Chicken",
+              "Mother",
+              "Child",
+              "Juggler",
+              "Fireeater",
+              "Dog",
+              "unknown2",
+              "unknown3",
+              "Arabian archer",
+              "Arabian slave",
+              "Arabian slinger",
+              "Arabian assassin",
+              "Arabian horse archer",
+              "Arabian swordsman",
+              "Arabian firethrower",
+              "Fire ballista"
+            ]
+          }
+        }
+      }
+    },
     "decorations": {
       "type": "object",
       "maxProperties": 33,
@@ -870,6 +964,267 @@
           ],
           "description": "Separate replacement for native siege cow ammunition and automatic AI cow shots. Omission preserves cows. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
+        "ammo_by_target": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "units": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "Peasant": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Burning man": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Woodcutter": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Fletcher": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Tunneler": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Hunter": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Quarry mason": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Quarry grunt": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Quarry ox": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Pitch worker": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Wheat farmer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Hops farmer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Apple farmer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Dairy farmer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Miller": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Baker": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Brewer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Poleturner": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Blacksmith": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Armourer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Tanner": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "European archer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "European crossbowman": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "European spearman": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "European pikeman": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "European maceman": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "European swordsman": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "European knight": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Ladderman": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Engineer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Iron miner1": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Iron miner2": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Priest": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Healer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Drunkard": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Innkeeper": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Monk": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "unknown1": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Catapult": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Trebuchet": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Mangonel": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Trader": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Trader horse": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Deer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Lion": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Rabbit": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Camel": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Crow": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Seagull": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Siege tent": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Cow": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Hunter dog": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Fireman": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Ghost": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Lord": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Lady": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Jester": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Siege tower": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Battering ram": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Portable shield": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Tower ballista": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Chicken": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Mother": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Child": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Juggler": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Fireeater": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Dog": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "unknown2": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "unknown3": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Arabian archer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Arabian slave": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Arabian slinger": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Arabian assassin": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Arabian horse archer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Arabian swordsman": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Arabian firethrower": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Fire ballista": {
+                      "$ref": "#/$defs/ammunition"
+                    }
+                  }
+                },
+                "groups": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "patternProperties": {
+                    "^[a-z][a-z0-9_-]{0,47}$": {
+                      "$ref": "#/$defs/ammunition"
+                    }
+                  }
+                }
+              },
+              "description": "Optional ammunition for configured automatic unit shots. Requires an automatic-fire interval. Units rules override named unit_groups; conflicting overlapping groups require an explicit units rule. regular/cow select the configured ammunition slots and counts; a projectile/variant uses regular count. Unmatched targets keep existing behavior. Manual native attack orders and native cow orders are unchanged. Maps replace inherited maps; native clears the map. Mixed volleys choose ammunition per actual victim, keeping the initially admitted volley count."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Optional ammunition for configured automatic unit shots. Requires an automatic-fire interval. Units rules override named unit_groups; conflicting overlapping groups require an explicit units rule. regular/cow select the configured ammunition slots and counts; a projectile/variant uses regular count. Unmatched targets keep existing behavior. Manual native attack orders and native cow orders are unchanged. Maps replace inherited maps; native clears the map. Mixed volleys choose ammunition per actual victim, keeping the initially admitted volley count. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
         "targets": {
           "anyOf": [
             {
@@ -1564,6 +1919,267 @@
           ],
           "description": "Separate replacement for native siege cow ammunition and automatic AI cow shots. Omission preserves cows. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
+        "ammo_by_target": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "units": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "Peasant": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Burning man": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Woodcutter": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Fletcher": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Tunneler": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Hunter": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Quarry mason": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Quarry grunt": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Quarry ox": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Pitch worker": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Wheat farmer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Hops farmer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Apple farmer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Dairy farmer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Miller": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Baker": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Brewer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Poleturner": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Blacksmith": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Armourer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Tanner": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "European archer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "European crossbowman": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "European spearman": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "European pikeman": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "European maceman": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "European swordsman": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "European knight": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Ladderman": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Engineer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Iron miner1": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Iron miner2": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Priest": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Healer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Drunkard": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Innkeeper": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Monk": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "unknown1": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Catapult": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Trebuchet": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Mangonel": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Trader": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Trader horse": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Deer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Lion": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Rabbit": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Camel": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Crow": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Seagull": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Siege tent": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Cow": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Hunter dog": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Fireman": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Ghost": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Lord": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Lady": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Jester": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Siege tower": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Battering ram": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Portable shield": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Tower ballista": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Chicken": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Mother": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Child": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Juggler": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Fireeater": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Dog": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "unknown2": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "unknown3": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Arabian archer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Arabian slave": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Arabian slinger": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Arabian assassin": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Arabian horse archer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Arabian swordsman": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Arabian firethrower": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Fire ballista": {
+                      "$ref": "#/$defs/ammunition"
+                    }
+                  }
+                },
+                "groups": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "patternProperties": {
+                    "^[a-z][a-z0-9_-]{0,47}$": {
+                      "$ref": "#/$defs/ammunition"
+                    }
+                  }
+                }
+              },
+              "description": "Optional ammunition for configured automatic unit shots. Requires an automatic-fire interval. Units rules override named unit_groups; conflicting overlapping groups require an explicit units rule. regular/cow select the configured ammunition slots and counts; a projectile/variant uses regular count. Unmatched targets keep existing behavior. Manual native attack orders and native cow orders are unchanged. Maps replace inherited maps; native clears the map. Mixed volleys choose ammunition per actual victim, keeping the initially admitted volley count."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Optional ammunition for configured automatic unit shots. Requires an automatic-fire interval. Units rules override named unit_groups; conflicting overlapping groups require an explicit units rule. regular/cow select the configured ammunition slots and counts; a projectile/variant uses regular count. Unmatched targets keep existing behavior. Manual native attack orders and native cow orders are unchanged. Maps replace inherited maps; native clears the map. Mixed volleys choose ammunition per actual victim, keeping the initially admitted volley count. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
         "targets": {
           "anyOf": [
             {
@@ -2222,6 +2838,267 @@
           ],
           "description": "Separate replacement for native siege cow ammunition and automatic AI cow shots. Omission preserves cows. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
         },
+        "ammo_by_target": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "units": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "Peasant": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Burning man": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Woodcutter": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Fletcher": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Tunneler": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Hunter": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Quarry mason": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Quarry grunt": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Quarry ox": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Pitch worker": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Wheat farmer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Hops farmer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Apple farmer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Dairy farmer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Miller": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Baker": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Brewer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Poleturner": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Blacksmith": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Armourer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Tanner": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "European archer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "European crossbowman": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "European spearman": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "European pikeman": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "European maceman": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "European swordsman": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "European knight": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Ladderman": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Engineer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Iron miner1": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Iron miner2": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Priest": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Healer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Drunkard": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Innkeeper": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Monk": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "unknown1": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Catapult": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Trebuchet": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Mangonel": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Trader": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Trader horse": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Deer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Lion": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Rabbit": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Camel": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Crow": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Seagull": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Siege tent": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Cow": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Hunter dog": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Fireman": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Ghost": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Lord": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Lady": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Jester": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Siege tower": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Battering ram": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Portable shield": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Tower ballista": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Chicken": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Mother": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Child": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Juggler": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Fireeater": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Dog": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "unknown2": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "unknown3": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Arabian archer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Arabian slave": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Arabian slinger": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Arabian assassin": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Arabian horse archer": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Arabian swordsman": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Arabian firethrower": {
+                      "$ref": "#/$defs/ammunition"
+                    },
+                    "Fire ballista": {
+                      "$ref": "#/$defs/ammunition"
+                    }
+                  }
+                },
+                "groups": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "patternProperties": {
+                    "^[a-z][a-z0-9_-]{0,47}$": {
+                      "$ref": "#/$defs/ammunition"
+                    }
+                  }
+                }
+              },
+              "description": "Optional ammunition for configured automatic unit shots. Requires an automatic-fire interval. Units rules override named unit_groups; conflicting overlapping groups require an explicit units rule. regular/cow select the configured ammunition slots and counts; a projectile/variant uses regular count. Unmatched targets keep existing behavior. Manual native attack orders and native cow orders are unchanged. Maps replace inherited maps; native clears the map. Mixed volleys choose ammunition per actual victim, keeping the initially admitted volley count."
+            },
+            {
+              "const": "native"
+            }
+          ],
+          "description": "Optional ammunition for configured automatic unit shots. Requires an automatic-fire interval. Units rules override named unit_groups; conflicting overlapping groups require an explicit units rule. regular/cow select the configured ammunition slots and counts; a projectile/variant uses regular count. Unmatched targets keep existing behavior. Manual native attack orders and native cow orders are unchanged. Maps replace inherited maps; native clears the map. Mixed volleys choose ammunition per actual victim, keeping the initially admitted volley count. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults."
+        },
         "targets": {
           "anyOf": [
             {
@@ -2735,6 +3612,61 @@
           "maximum": 255
         }
       }
+    },
+    "ammunition": {
+      "anyOf": [
+        {
+          "enum": [
+            "regular",
+            "cow"
+          ]
+        },
+        {
+          "anyOf": [
+            {
+              "enum": [
+                "arrow",
+                "arrow_untargeted",
+                "ballista_bolt",
+                "catapult_rock",
+                "cow",
+                "crossbow_bolt",
+                "crossbow_bolt_untargeted",
+                "fire_arrow",
+                "fire_arrow_untargeted",
+                "fire_ballista_bolt",
+                "firethrower_pot",
+                "firethrower_pot_untargeted",
+                "mangonel_pebble",
+                "slinger_stone",
+                "slinger_stone_untargeted",
+                "trebuchet_rock",
+                1,
+                2,
+                3,
+                4,
+                7,
+                20,
+                23,
+                24,
+                25,
+                33,
+                34,
+                35,
+                36,
+                37,
+                91,
+                92
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_-]{0,47}$"
+            }
+          ],
+          "description": "Native projectile or a name defined in projectiles. The game loader rejects undefined variant names."
+        }
+      ]
     }
   }
 }

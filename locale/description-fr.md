@@ -1,4 +1,6 @@
-# Custom Projectiles 1.8.12
+# Custom Projectiles 1.8.13
+
+Munitions automatiques : définir les cibles dans unit_groups, puis ammo_by_target.groups: {siege: regular} par tireur, ou ammo_by_target.units: {Monk: cow}. Les types précis ont priorité ; les autres cibles gardent leur comportement. Intervalle requis ; native efface les règles. Exemple Reconquista inclus.
 
 Configurez les 77 types d’unités en YAML. Munitions normales et vaches sont indépendantes. Les intervalles respectent les animations de tir prises en charge ; inaccuracy utilise les unités natives : 1 = 1/8 de case, 8 = 1 case, 0 = visée exacte.
 

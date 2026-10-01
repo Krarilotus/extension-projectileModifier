@@ -1,4 +1,6 @@
-# Custom Projectiles 1.8.12
+# Custom Projectiles 1.8.13
+
+自动弹药：在 unit_groups 中定义目标列表，再为射手设置 ammo_by_target.groups: {siege: regular} 或 ammo_by_target.units: {Monk: cow}。单个兵种优先，其他目标保持原有行为。需要射击间隔；native 清除规则。附带 Reconquista 示例。
 
 通过 YAML 配置全部 77 种单位。普通弹药和牛弹可分别设置。射击间隔遵循受支持的射击动画；inaccuracy 使用游戏原生单位：1 = 1/8 格，8 = 1 格，0 = 精确瞄准。
 
