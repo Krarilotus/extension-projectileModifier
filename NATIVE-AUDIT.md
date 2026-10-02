@@ -1,5 +1,23 @@
 # Native integration audit, 12 September 2026
 
+## 2 October 2026: replacement projectile flight
+
+| Capability | Existing owner reused / precise gap |
+|---|---|
+| Global flight properties | Rebalancer `init.lua:edit_projectiles` and exported `namespace.apply_rebalance`, inspected at `8d5b47e` (1.1.4) and the Store's `b3e1a36` (1.1.3). Its existing `enable` caller applies the same tables. Add only a validated config adapter: fixed-speed mode maps to arch 0, fixed-angle to 1, Catapult-style adaptive-angle to 2. The owner's legacy `velocity` parameter represents degrees in the latter modes; do not expose a misleading speed/angle pair. |
+| Startup ordering | Framework `hooks.lua:registerHookCallback('afterInit', ...)`, already used by version/resource owners. Native event fires before the Windows message loop, after extension enable. Reuse it to apply flight settings after all balance files without introducing a private dispatcher or native hook. |
+| Native binding | Rebalancer already resolves the two property tables through `core.scanForAOB`. No consumer scan, binding, fixed address or fallback. Tests verify those table roots against decoded operands of the native property-setup reader on both PE families. Existing unrelated Rebalancer bindings are outside this delta. |
+| Solver and entity state | Verified original `setProjectileEntityValues2`, `initializeProjectileVelocities`, `computeVelocity`, angle solver and `moveProjectileEntity` against OpenSHC declarations and original instructions. Modes 0/1/2 reuse native setup and motion. An unreachable fixed-speed shot reaches native angle fallback; fixed-angle mode calculates launch speed for the existing aim. No copy of the ballistic equations, collision path or allocator. |
+| Normalized projectile forms | Native allocator converts untargeted/fire forms to their base type. Canonical physics entries target the nine shared native types. Fire-ballista bolts share type-20 `ballista_bolt` physics; exposing the owner's separate type-37 table as independently effective would be misleading. Custom sprites already inherit their native base. |
+| Configuration/persistence | Extend `configuration.validate` with opt-in global `projectile_physics`. Add its normalized result to existing save identity only when nonempty, preserving old fingerprints. Existing Map Extensions retuning/strict matching remains the owner. No additional per-unit blocks, RNG draws, allocations during firing or world scans. |
+
+Rebalancer is an **optional active prerequisite for these settings**, not an
+unconditional module dependency: its `enable` requires a balance file and also
+installs general balance hooks. Automatically enabling it would change existing
+configurations. Missing owner/event support rejects before native mutation.
+Global flight tuning is deliberate balance configuration, default omitted/native,
+not a silent change to every ordinary archer or firethrower.
+
 ## 2 October 2026: save retuning and rejected manual shots
 
 Inspected the current module at `94a5804`, the Map Extensions validate-before-

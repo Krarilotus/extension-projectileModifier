@@ -5,6 +5,40 @@
   "additionalProperties": false,
   "description": "Projectile preset. All unit entries and settings are optional; omitted settings preserve native behavior or documented automatic-fire defaults. UCP required/suggested qualifiers apply to the file selector, not fields inside this file. See README.md.",
   "properties": {
+    "projectile_physics": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Optional global native projectile flight settings. Requires ACTIVE Rebalancer 1.1.3+ with a balance config; applied through its API after balance initialization. All users of this projectile, including sprite variants, share them. Fixed speed may not reach every target; fixed angle asks the native solver to calculate speed for the target. Omission/native leaves current values unchanged. Collision, damage and targeting remain native. Fire-ballista bolts share ballista_bolt physics.",
+      "properties": {
+        "arrow": {
+          "$ref": "#/$defs/projectilePhysics"
+        },
+        "ballista_bolt": {
+          "$ref": "#/$defs/projectilePhysics"
+        },
+        "catapult_rock": {
+          "$ref": "#/$defs/projectilePhysics"
+        },
+        "cow": {
+          "$ref": "#/$defs/projectilePhysics"
+        },
+        "crossbow_bolt": {
+          "$ref": "#/$defs/projectilePhysics"
+        },
+        "firethrower_pot": {
+          "$ref": "#/$defs/projectilePhysics"
+        },
+        "mangonel_pebble": {
+          "$ref": "#/$defs/projectilePhysics"
+        },
+        "slinger_stone": {
+          "$ref": "#/$defs/projectilePhysics"
+        },
+        "trebuchet_rock": {
+          "$ref": "#/$defs/projectilePhysics"
+        }
+      }
+    },
     "allow_config_changes_on_load": {
       "type": "boolean",
       "default": true,
@@ -3670,6 +3704,54 @@
             }
           ],
           "description": "Native projectile or a name defined in projectiles. The game loader rejects undefined variant names."
+        }
+      ]
+    },
+    "projectilePhysics": {
+      "anyOf": [
+        {
+          "const": "native"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "speed"
+          ],
+          "properties": {
+            "mode": {
+              "const": "fixed_speed"
+            },
+            "speed": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000,
+              "description": "Native launch-speed parameter, not tiles per tick. Native default arrow is 125, slinger stone 100, firethrower pot 80. A speed alone does not extend target eligibility."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "angle"
+          ],
+          "properties": {
+            "mode": {
+              "enum": [
+                "fixed_angle",
+                "adaptive_angle"
+              ]
+            },
+            "angle": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 89,
+              "description": "Native launch angle in degrees. Fixed angle computes speed for the target; adaptive angle uses the Catapult-style native height/fallback rules. Geometry/collisions can still prevent a hit."
+            }
+          }
         }
       ]
     }

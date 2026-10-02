@@ -94,6 +94,12 @@ HEADER='''# yaml-language-server: $schema=./projectile-config.schema.json
 #       count: 2
 #
 # Optional top-level definitions (alongside units, not inside a unit):
+# projectile_physics:           # Global per native type; Rebalancer owns the tables.
+#                               # Requires active Rebalancer 1.1.3+ with a balance config.
+#   firethrower_pot: {mode: fixed_angle, angle: 30} # Native speed solver reaches the aim point.
+#   arrow: {mode: fixed_speed, speed: 125} # Native speed units, not tiles/tick.
+#                               # native/omission preserves existing balance values.
+#                               # Sprite variants share their base type's physics.
 # unit_groups:
 #   siege: [Catapult, Trebuchet, Mangonel, Siege tower, Battering ram]
 # Per shooting unit (requires an automatic-fire interval):
@@ -140,7 +146,9 @@ def generate():
     text+='# to 20 tiles. Set range explicitly if you want a different limit.\n'
     text+='# auto_targeting: native preserves native autonomy; false requires manual orders.\n'
     text+='# The *_tiles compatibility aliases are documented above; canonical fields use eighth-tiles.\n\n'
-    text+='allow_config_changes_on_load: true\nprojectiles: {}\ndecorations: {}\nunit_groups: {}\nunits:\n'
+    text+='allow_config_changes_on_load: true\nprojectile_physics:\n'
+    for name in sorted(cfg.flight_projectiles.keys()): text+='  '+name+': native\n'
+    text+='projectiles: {}\ndecorations: {}\nunit_groups: {}\nunits:\n'
     canonical=[key for key in cfg.numbers.keys() if not key.endswith('_tiles')]
     # Use reference order, not Lua table iteration order.
     canonical=sorted(set(canonical)|set(cfg.booleans.keys())|{'projectile','cow_projectile','targets','target_bias_tiles','ammo_by_target'},

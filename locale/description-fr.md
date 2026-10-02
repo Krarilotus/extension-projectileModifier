@@ -1,4 +1,6 @@
-# Custom Projectiles 1.8.14
+# Custom Projectiles 1.8.15
+
+Remplacements à longue portée : projectile_physics: {firethrower_pot: {mode: fixed_angle, angle: 30}} laisse le jeu calculer la vitesse de départ. Nécessite Rebalancer 1.1.3+ actif avec une configuration d’équilibrage. Global par type, variantes graphiques comprises ; native conserve les valeurs. Portée et collisions restent applicables.
 
 Les réglages de jeu peuvent changer avant le chargement ; les anciennes files de tirs et minuteries du module sont réinitialisées. Les définitions graphiques personnalisées doivent rester identiques. allow_config_changes_on_load: false exige les réglages d’origine. strict_range: false désactive aussi le nouveau contrôle de portée des tirs manuels.
 

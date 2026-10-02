@@ -68,10 +68,21 @@ def build_schema():
                 description='First matching rule wins within the native brazier 3-tile square and height difference below 45. Sparse fields apply after fortification overrides. Names must exist in decorations.')
     fields['on_fortification'] = {'$ref': '#/$defs/override'}
     fields['near_decorations'] = dict(type='array',maxItems=33,items={'$ref':'#/$defs/decorationRule'})
+    physics = dict(anyOf=[{'const':'native'},
+        dict(type='object', additionalProperties=False, required=['mode','speed'],
+             properties={'mode':{'const':'fixed_speed'},'speed':dict(type='integer',minimum=1,maximum=1000,
+                 description='Native launch-speed parameter, not tiles per tick. Native default arrow is 125, slinger stone 100, firethrower pot 80. A speed alone does not extend target eligibility.')}),
+        dict(type='object', additionalProperties=False, required=['mode','angle'],
+             properties={'mode':dict(enum=['fixed_angle','adaptive_angle']),
+                 'angle':dict(type='integer',minimum=1,maximum=89,
+                     description='Native launch angle in degrees. Fixed angle computes speed for the target; adaptive angle uses the Catapult-style native height/fallback rules. Geometry/collisions can still prevent a hit.')})])
     return {'$schema': 'https://json-schema.org/draft/2020-12/schema',
             'title': 'Custom Projectiles preset', 'type': 'object', 'additionalProperties': False,
             'description': 'Projectile preset. All unit entries and settings are optional; omitted settings preserve native behavior or documented automatic-fire defaults. UCP required/suggested qualifiers apply to the file selector, not fields inside this file. See README.md.',
-            'properties': {'allow_config_changes_on_load': dict(type='boolean', default=True,
+            'properties': {'projectile_physics': dict(type='object', additionalProperties=False,
+                            description='Optional global native projectile flight settings. Requires ACTIVE Rebalancer 1.1.3+ with a balance config; applied through its API after balance initialization. All users of this projectile, including sprite variants, share them. Fixed speed may not reach every target; fixed angle asks the native solver to calculate speed for the target. Omission/native leaves current values unchanged. Collision, damage and targeting remain native. Fire-ballista bolts share ballista_bolt physics.',
+                            properties={name: {'$ref':'#/$defs/projectilePhysics'} for name in sorted(cfg.flight_projectiles.keys())}),
+                          'allow_config_changes_on_load': dict(type='boolean', default=True,
                             description='Allow gameplay retuning when loading a save. Reset old module firing timers and queued volleys, retaining the saved random seed and visual identities. Custom projectile/decorations definitions and graphics slots must match. False requires the exact saved gameplay configuration. Older saves with custom graphics must first be loaded and saved with their original configuration.'),
                           'unit_groups': dict(type='object', maxProperties=77, additionalProperties=False,
                           patternProperties={'^[a-z][a-z0-9_-]{0,47}$': dict(type='array', minItems=1,
@@ -91,7 +102,7 @@ def build_schema():
                           'units': {'type': 'object', 'additionalProperties': False,
                           'properties': {name: {'$ref': '#/$defs/unit'} for _, name in sorted(constants.unit_names.items())}}},
             '$defs': {'unit': unit, 'override': override, 'decorationRule':rule,
-                      'targetBiasTiles': priority, 'ammunition': ammo}}
+                      'targetBiasTiles': priority, 'ammunition': ammo, 'projectilePhysics': physics}}
 
 if __name__ == '__main__':
     (ROOT/'projectile-config.schema.json').write_text(

@@ -10,10 +10,12 @@ local function canonical(value)
     return '{' .. table.concat(parts, ';') .. '}'
 end
 function M.new(blocks, config, profile_count, rebuild)
+    local gameplay = {units=config.units, projectiles=config.projectiles, decorations=config.decorations}
+    if config.projectile_physics then gameplay.projectile_physics = config.projectile_physics end
     -- Load policy is not gameplay identity. Existing format-5 saves keep the
     -- same fingerprint when their gameplay fields have not changed.
     local state = {blocks=blocks, allow_config_changes=config.allow_config_changes_on_load ~= false,
-        config=canonical({units=config.units, projectiles=config.projectiles, decorations=config.decorations}),
+        config=canonical(gameplay),
         assets=canonical({projectiles=config.projectiles or {}, decorations=config.decorations or {}})}
     local no_assets = not next(config.projectiles or {}) and not next(config.decorations or {})
     local retained = {seed=true, ['entity-variant']=true, ['entity-uid']=true,

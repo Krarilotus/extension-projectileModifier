@@ -1,5 +1,39 @@
 # Validation — unreleased work
 
+## 1.8.15 native flight settings, 2 October
+
+Six focused tests pass using actual Rebalancer table-writing/API code and the
+framework's real afterInit registration. Native construction/movement tests cover
+120 cases: normal/Extreme 1.41, five engines, arrow/crossbow/sling/firethrower
+replacements, and 30/40/50-tile targets on flat terrain. Fixed-angle mode finishes
+within one tile of the prepared aim; native collision can land slightly before
+the ground coordinate. Shooter owner/type attribution remains native. These
+tests execute the game's initializer, ballistic solver and movement/collision
+owner, rather than a synthetic trajectory or spawner stub for the flight stage.
+
+Other cases cover mode/parameter validation before writes, existing owner table
+roots matching native reader operands, inactive/native configurations staying
+inert, missing owner/event rejection, initialization ordering after balance
+presets and physics changes participating in existing save retuning/strict mode.
+Flight settings are global deliberate balance options, not silently applied to
+existing presets. Physics requires an already active Rebalancer balance config;
+the module does not enable its general hooks automatically.
+
+The preceding native dispatcher suite passed all 34 existing tests, including
+the 77-unit/every-projectile allocation matrix and deterministic saved staggered
+shots. Two early test-fixture mistakes (an empty Lua list indistinguishable from
+an empty mapping, and a table-operand offset) were corrected; focused tests then
+passed. All 24 final physics/save/native-config feedback regressions and all 23
+GUI/archive tests pass. The published schema shares one physics definition for
+all types; native configuration remains inert for all 77 units.
+
+Live rendered flight/impact/damage, paired multiplayer/replay and broader builds
+remain acceptance gaps. This session's native desktop bindings are unavailable,
+as recorded in the 1.8.14 probe. No desktop reservation is retained. The tests
+do not prove that every angle, terrain or wall geometry admits an unobstructed
+shot. Startup errors remain with the existing English configuration owner; all
+nine launcher preview languages include the short setup instructions.
+
 ## 1.8.14 tester feedback, 2 October
 
 Seven new production Lua/FASM/x86/save-owner regressions pass against normal and

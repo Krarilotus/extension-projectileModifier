@@ -1,4 +1,6 @@
-# Custom Projectiles 1.8.14
+# Custom Projectiles 1.8.15
+
+远程替换弹药：projectile_physics: {firethrower_pot: {mode: fixed_angle, angle: 30}} 让原游戏计算发射速度。需要启用 Rebalancer 1.1.3+ 并配置平衡文件。按类型全局生效，包括自定义贴图变体；native 保留原值。目标射程和碰撞规则仍有效。
 
 修改玩法设置后仍可读取存档；模块旧的射击队列和计时器会重置。自定义图形定义必须保持一致。allow_config_changes_on_load: false 要求使用原设置。strict_range: false 也会关闭新的手动射击射程检查。
 

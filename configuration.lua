@@ -39,6 +39,15 @@ end
 local projectile_ids = {}
 for _, id in pairs(constants.projectile_names) do projectile_ids[id] = true end
 
+-- Rebalancer owns these native flight tables and their startup mutation API.
+-- Its legacy `velocity` field is an angle in native fixed-angle modes.
+M.flight_projectiles = {
+    arrow='arrow', catapult_rock='catapult_rock', trebuchet_rock='trebuchet_rock',
+    mangonel_pebble='mangonel_pebble', crossbow_bolt='crossbow_bolt',
+    ballista_bolt='towerbal_bolt', cow='cow', slinger_stone='slinger_stone',
+    firethrower_pot='firethrower_grenade',
+}
+
 local function fail(path, reason)
     error('[custom-projectiles] ' .. path .. ': ' .. reason, 0)
 end
@@ -59,7 +68,7 @@ local function validate_flat(config, variants, groups)
     object(config, 'config')
     for key in pairs(config) do
         if key ~= 'units' and key ~= 'projectiles' and key ~= 'decorations' and key ~= 'unit_groups'
-            and key ~= 'allow_config_changes_on_load' then fail(tostring(key), 'unknown section; expected units, projectiles, decorations, unit_groups or allow_config_changes_on_load') end
+            and key ~= 'allow_config_changes_on_load' and key ~= 'projectile_physics' then fail(tostring(key), 'unknown section; expected units, projectiles, decorations, unit_groups, projectile_physics or allow_config_changes_on_load') end
     end
     local units = config.units
     if units == nil then units = {} end
@@ -229,6 +238,29 @@ end
 
 function M.validate(config)
     object(config, 'config')
+    local physics = {}
+    local supplied = config.projectile_physics == nil and {} or config.projectile_physics
+    object(supplied, 'projectile_physics')
+    for name, spec in pairs(supplied) do
+        local path = 'projectile_physics.' .. tostring(name)
+        if not M.flight_projectiles[name] then fail(path, 'expected a supported native projectile name; variants inherit their base physics') end
+        if spec ~= 'native' then
+            object(spec, path)
+            local modes = {fixed_speed=0, fixed_angle=1, adaptive_angle=2}
+            local mode = modes[spec.mode]
+            if mode == nil then fail(path .. '.mode', 'expected fixed_speed, fixed_angle or adaptive_angle') end
+            local parameter = mode == 0 and 'speed' or 'angle'
+            for key in pairs(spec) do
+                if key ~= 'mode' and key ~= parameter then fail(path .. '.' .. tostring(key), 'this mode requires only ' .. parameter) end
+            end
+            local value = spec[parameter]
+            local maximum = mode == 0 and 1000 or 89
+            if type(value) ~= 'number' or value % 1 ~= 0 or value < 1 or value > maximum then
+                fail(path .. '.' .. parameter, 'expected a whole number from 1 to ' .. maximum)
+            end
+            physics[M.flight_projectiles[name]] = {arch_type=mode, velocity=value}
+        end
+    end
     local groups = config.unit_groups == nil and {} or config.unit_groups
     object(groups, 'unit_groups')
     local group_count = 0
@@ -283,6 +315,7 @@ function M.validate(config)
     for key, value in pairs(config) do copied[key] = value end
     copied.units = plain
     local result = validate_flat(copied, variants, groups)
+    if next(physics) then result.projectile_physics = physics end
     local alternates = validate_flat({units=fortified}, variants, groups)
     if next(variants) then result.projectiles = variants end
     if next(definitions) then result.decorations = definitions end

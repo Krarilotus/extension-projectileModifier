@@ -1,4 +1,6 @@
-# Custom Projectiles 1.8.14
+# Custom Projectiles 1.8.15
+
+Nagy távolságú helyettesítő lövedékekhez: projectile_physics: {firethrower_pot: {mode: fixed_angle, angle: 30}} a játékkal számíttatja ki az induló sebességet. Aktív Rebalancer 1.1.3+ és egyensúly-konfiguráció szükséges. Típusonként globális, a sprite-változatokra is érvényes; native megőrzi az értékeket. A célhatótáv és ütközés továbbra is számít.
 
 A játékbeállítások mentésbetöltés előtt módosíthatók; a modul régi lövéssorai és időzítői nullázódnak. Az egyéni grafikai definícióknak egyezniük kell. allow_config_changes_on_load: false az eredeti beállításokat követeli meg. strict_range: false az új kézi lövési hatótávellenőrzést is kikapcsolja.
 

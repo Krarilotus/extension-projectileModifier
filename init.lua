@@ -1085,8 +1085,24 @@ end
 namespace.apply = function(config)
     assert(not installed, '[custom-projectiles] settings cannot be changed during a running session; relaunch the game')
     local validated = configuration.validate(config)
-    if next(validated.units) == nil and not next(validated.decorations or {}) then return end
-    install(validated)
+    if validated.projectile_physics then
+        local owner = modules.rebalancer
+        assert(owner and type(owner.apply_rebalance) == 'function',
+            '[custom-projectiles] projectile_physics requires active Rebalancer 1.1.3+ with a balance configuration')
+        -- Use the existing owner; no private flight tables, resolver or solver.
+        -- The framework event runs after every extension enabled its balance
+        -- preset, regardless of load order. No extra native hook is installed.
+        assert(hooks and type(hooks.registerHookCallback) == 'function',
+            '[custom-projectiles] projectile_physics requires the framework afterInit callback')
+    end
+    local native_changes = next(validated.units) ~= nil or next(validated.decorations or {}) ~= nil
+    if native_changes then install(validated) end
+    if validated.projectile_physics then
+        hooks.registerHookCallback('afterInit', function()
+            modules.rebalancer.apply_rebalance({projectiles=validated.projectile_physics})
+        end)
+    end
+    if not native_changes and not validated.projectile_physics then return end
     installed = true
 end
 

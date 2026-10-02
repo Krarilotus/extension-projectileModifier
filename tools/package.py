@@ -25,6 +25,7 @@ files=['definition.yml','options.yml','init.lua','constants.lua',
        'examples/ucp-plugin-unspecified.yml']
 files.append('examples/custom-sprites-and-decorations.yml')
 files.append('examples/reconquista-projectiles.yml')
+files.append('examples/long-range-replacements.yml')
 for lang in LANGUAGES:
     files.extend([f'locale/{lang}.yml', f'locale/description-{lang}.md'])
 

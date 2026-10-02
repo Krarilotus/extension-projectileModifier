@@ -38,6 +38,10 @@ the new accepted-aim correction still needs a combined live direct-click test.
 - [ ] Live acceptance of retuned saves and Mangonel out-of-range/valid retargeting;
   2 October desktop probe has no Windows native bindings. Multiplayer/replay and
   wider executable acceptance remain outstanding, as recorded in VALIDATION.md.
+- [x] Optional global native flight modes via existing Rebalancer/framework APIs;
+  120 long-range native flight cases across both game families and five engines.
+- [ ] Live rendered replacement-projectile impact/damage and paired multiplayer/
+  replay with flight changes; native desktop connection remains unavailable.
 
 ## Earlier provisional 1.8.6 delivery
 

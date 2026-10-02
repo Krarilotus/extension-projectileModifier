@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=../projectile-config.schema.json
-# Reconquista preset for custom-projectiles 1.8.14 test.
+# Reconquista preset for custom-projectiles 1.8.15 test.
 # Copy this file beside projectile-config.schema.json and change the first line to:
 # yaml-language-server: $schema=./projectile-config.schema.json
 # Select the copy in Customizations > Balance Changes. Restart after editing.

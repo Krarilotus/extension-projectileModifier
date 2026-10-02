@@ -1,4 +1,6 @@
-# Custom Projectiles 1.8.14
+# Custom Projectiles 1.8.15
+
+Proyectiles sustitutos de largo alcance: projectile_physics: {firethrower_pot: {mode: fixed_angle, angle: 30}} deja que el juego calcule la velocidad inicial. Requiere Rebalancer 1.1.3+ activo con configuración de equilibrio. Es global por tipo, incluidas variantes gráficas; native conserva los valores. Alcance y colisiones siguen aplicándose.
 
 Los ajustes de juego pueden cambiar antes de cargar; se reinician las antiguas colas de disparo y temporizadores del módulo. Las definiciones gráficas personalizadas deben coincidir. allow_config_changes_on_load: false exige los ajustes originales. strict_range: false también desactiva la nueva comprobación de alcance de disparos manuales.
 

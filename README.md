@@ -1,4 +1,4 @@
-# Custom Projectiles 1.8.14 (test candidate)
+# Custom Projectiles 1.8.15 (test candidate)
 
 Configure projectile types, volley sizes and automatic firing for all 77 unit
 types using one readable YAML file. Based on Monsterfish's supplied 1.2.0 module.
@@ -45,6 +45,7 @@ with `ai_only: true`), not one individually selected catapult.
 | Bias automatic unit targets | `target_bias_tiles: {Monk: 3}` on the shooting unit; each point subtracts one tile-equivalent from the game's distance-and-attention score before its remaining target rules |
 | Search distance | `range` in tiles for automatic search; native-timed manual shots also obey this limit when `strict_range` is true, alongside the game's own checks |
 | Retune an existing save | Gameplay edits load by default; old module firing queues/timers reset. Set root `allow_config_changes_on_load: false` for strict matching. Custom graphics definitions must remain unchanged. |
+| A replacement projectile falls short | Optional root `projectile_physics: {firethrower_pot: {mode: fixed_angle, angle: 30}}` uses the game's launch-speed solver. Requires active Rebalancer 1.1.3+; applies globally to that projectile type. |
 | Exact aim | `inaccuracy: 0` and `spread: 0`; moving targets can still move before impact |
 | An eighth-tile aim-error radius | `inaccuracy: 1`; **8 native coordinate units = 1 tile**; use whole numbers |
 | Restrict changes to AI owners | `ai_only: true`; this controls whose settings change, not an autonomous-fire toggle |
@@ -79,7 +80,7 @@ manual-only attack, and `strict_range` require 1.8.7 and its matching schema.
 The old 1.8.6 tester does not understand these fields. See [VALIDATION.md](VALIDATION.md)
 for acceptance limits.
 
-Only `units`, `projectiles`, `decorations`, `unit_groups` and the boolean
+Only `units`, `projectiles`, `projectile_physics`, `decorations`, `unit_groups` and the boolean
 `allow_config_changes_on_load` belong at the top of a projectile
 file. Do not paste GitHub workflow keys (`name`, `on`) or UCP `config-sparse`
 wrappers into it. Use spaces for indentation and restart the game after edits.
@@ -138,7 +139,7 @@ as in the earlier preset; change `projectile` to `catapult_rock` if you want roc
 
 ## Installation and use
 
-Import `custom-projectiles-1.8.14.zip` and the matching
+Import `custom-projectiles-1.8.15.zip` and the matching
 `gmResourceModifier-0.3.1.zip` draft dependency into a developer launcher, then
 enable them with map-extensions, protocol and ui. For the direct enemy-click
 catapult check, also enable the separate Fixed Engineers 0.2.0 tester. This
@@ -506,13 +507,55 @@ binding requires restoring the original files to load that save, or starting
 a new match. Build selections travel in a lockstep command; remote execution
 does not depend on another player's currently selected menu item.
 
+## Projectile flight and long-range replacements
+
+Target `range` and physical flight are separate native rules. Increasing range
+does not increase a fixed-speed projectile's ballistic reach. An arrow, sling
+stone or firethrower pot can therefore fall short when used by a siege engine.
+
+Optional `projectile_physics` delegates global flight changes to the existing
+Rebalancer API. **Activate Rebalancer 1.1.3+ with your existing balance file or
+balance plugin first.** The module does not automatically activate it: doing so
+would also install its unrelated balance hooks. Settings apply at the framework's
+`afterInit` event, after balance presets have enabled, regardless of load order.
+The module adds no projectile solver, movement hook or physics-table binding.
+
+```yaml
+projectile_physics:
+  firethrower_pot: {mode: fixed_angle, angle: 30}
+units:
+  Catapult:
+    projectile: firethrower_pot
+    interval: 700
+    range: 40
+```
+
+| Mode | Required parameter | Native behavior |
+|---|---|---|
+| `fixed_speed` | `speed: 1..1000` | Fixed native launch-speed parameter; the game solves the angle. Not tiles per tick. An unreachable distance can still fall short. Native arrow speed is 125, sling stone 100 and firethrower pot 80. |
+| `fixed_angle` | `angle: 1..89` | Angle in degrees; the game computes speed for its prepared target. Use `angle: 30` as the long-range example, not a guarantee through obstacles. |
+| `adaptive_angle` | `angle: 1..89` | Catapult-style native height and fallback angle rules, then native speed computation. The game may replace the supplied starting angle. |
+
+Specify only the parameter belonging to the mode. Omit a type or use `native`
+to leave existing game/Rebalancer values unchanged. Supported canonical types:
+`arrow`, `catapult_rock`, `trebuchet_rock`, `mangonel_pebble`, `crossbow_bolt`,
+`ballista_bolt`, `cow`, `slinger_stone`, `firethrower_pot`.
+
+**Global per native type:** every shooter and every custom sprite variant
+inheriting that type shares the setting. Untargeted/fire arrow forms use their
+native arrow base; fire-ballista bolts share `ballista_bolt` flight. No per-unit
+flight copy is created. Native allocation, ownership, damage, collision, fire
+effects and cleanup remain unchanged. Terrain, walls, height and extreme angle
+choices can still obstruct a shot. Targeting limits and reload timing remain
+separate. See [the opt-in example](examples/long-range-replacements.yml).
+
 ## Saves and compatibility
 
 The `map-extensions` section saves the random generator, identities, cooldowns,
 movement tracking, pending volleys, mounted bow clocks and custom projectile/decoration identities. New maps and saves without this section
 initialize fresh state. With the same gameplay settings, all simulation state
 resumes as before. By default, changing gameplay settings also allows loading:
-the new settings apply, old module firing queues/timers reset, and the saved
+the new settings (including active projectile physics) apply, old module firing queues/timers reset, and the saved
 random seed and custom visual identities remain intact. This deliberately changes
 the continuation; all multiplayer peers must use the same edited file.
 

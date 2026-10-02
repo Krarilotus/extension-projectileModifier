@@ -1,4 +1,6 @@
-# Custom Projectiles 1.8.14
+# Custom Projectiles 1.8.15
+
+Long-range replacements: optional projectile_physics: {firethrower_pot: {mode: fixed_angle, angle: 30}} lets the native game compute launch speed. Requires active Rebalancer 1.1.3+ with a balance config. Global per type, including sprite variants; native preserves existing values. Target range and collisions still apply.
 
 Gameplay edits can load existing saves; old module firing queues/timers reset. Custom graphics definitions must match. allow_config_changes_on_load: false requires the original settings. strict_range: false also disables the new manual range guard.
 

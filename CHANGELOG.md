@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.8.15 (provisional test candidate)
+
+- Add optional root `projectile_physics` using existing Rebalancer
+  `apply_rebalance` and framework `afterInit` APIs. Fixed speed uses the native
+  angle solver; fixed/adaptive angle use the native launch-speed solver. This
+  lets non-stone replacements reach siege distances with explicit flight tuning.
+- Require an active Rebalancer balance configuration only for this feature;
+  unchanged configurations do not activate its unrelated balance hooks. Flight
+  settings are global per native type, including inherited sprite variants.
+- Include nine canonical native physics entries as explicit `native` in the
+  inert vanilla reference, schema completions, short help in nine preview
+  languages and `examples/long-range-replacements.yml`. Physics participates in
+  the existing saved configuration identity; gameplay retuning rules still apply.
+- No new native hook, fixed address, private table resolver or trajectory solver.
+
 ## 1.8.14 (provisional test candidate)
 
 - Allow gameplay config edits when loading format-5 saves. Reset obsolete module

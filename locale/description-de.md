@@ -1,4 +1,6 @@
-# Custom Projectiles 1.8.14
+# Custom Projectiles 1.8.15
+
+Ersatzgeschosse auf große Distanz: projectile_physics: {firethrower_pot: {mode: fixed_angle, angle: 30}} lässt das Spiel die Startgeschwindigkeit berechnen. Benötigt aktiven Rebalancer 1.1.3+ mit Balance-Konfiguration. Global je Typ, auch für Sprite-Varianten; native erhält bestehende Werte. Zielreichweite und Kollisionen gelten weiter.
 
 Spielwerte können vor dem Laden geändert werden; alte Modul-Schusswarteschlangen und Zeitgeber werden zurückgesetzt. Definitionen eigener Grafiken müssen gleich bleiben. allow_config_changes_on_load: false verlangt die ursprünglichen Einstellungen. strict_range: false deaktiviert auch die neue Reichweitenprüfung manueller Schüsse.
 

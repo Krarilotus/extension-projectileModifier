@@ -1,4 +1,6 @@
-# Custom Projectiles 1.8.14
+# Custom Projectiles 1.8.15
+
+Uzun menzilli değiştirilmiş mermiler: projectile_physics: {firethrower_pot: {mode: fixed_angle, angle: 30}} başlangıç hızını oyuna hesaplatır. Denge yapılandırmasıyla etkin Rebalancer 1.1.3+ gerektirir. Özel görsel çeşitleri dahil tür başına geneldir; native mevcut değerleri korur. Hedef menzili ve çarpışmalar hâlâ geçerlidir.
 
 Oyun ayarları değiştirilmiş olsa da kayıt yüklenebilir; modülün eski atış kuyrukları ve zamanlayıcıları sıfırlanır. Özel grafik tanımları aynı kalmalıdır. allow_config_changes_on_load: false özgün ayarları gerektirir. strict_range: false yeni elle atış menzil denetimini de kapatır.
 

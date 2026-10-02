@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=../projectile-config.schema.json
+# Optional flight balance example for custom-projectiles 1.8.15.
+# Requires ACTIVE Rebalancer 1.1.3+ with your existing balance configuration.
+# The module does not enable Rebalancer automatically or change its other settings.
+# Native fixed-speed grenades can fall short at siege distances. Fixed angle
+# delegates the required launch speed to the original game's solver.
+# GLOBAL: every firethrower pot uses this flight, including ordinary firethrowers
+# and custom GM1 variants inheriting firethrower_pot. Target range is separate.
+# Omit the block/use native to preserve existing Rebalancer values.
+# Native collision, damage, terrain and wall obstruction still apply.
+projectile_physics:
+  firethrower_pot: {mode: fixed_angle, angle: 30}
+
+units:
+  Catapult:
+    projectile: firethrower_pot
+    interval: 700
+    range: 40
+    targets: units
