@@ -1,4 +1,6 @@
-# Custom Projectiles 1.8.13
+# Custom Projectiles 1.8.14
+
+Spielwerte können vor dem Laden geändert werden; alte Modul-Schusswarteschlangen und Zeitgeber werden zurückgesetzt. Definitionen eigener Grafiken müssen gleich bleiben. allow_config_changes_on_load: false verlangt die ursprünglichen Einstellungen. strict_range: false deaktiviert auch die neue Reichweitenprüfung manueller Schüsse.
 
 Automatische Munition: Ziellisten unter unit_groups anlegen, beim Schützen ammo_by_target.groups: {siege: regular} oder ammo_by_target.units: {Monk: cow} setzen. Einzelne Typen haben Vorrang; andere Ziele bleiben unverändert. Intervall nötig; native entfernt Regeln. Reconquista-Beispiel enthalten.
 

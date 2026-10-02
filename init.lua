@@ -383,7 +383,8 @@ local function install(config)
     local manual_only = false
     local has_priorities = false
     local has_ammo_rules = false
-    for _, cfg in pairs(config.units) do
+    local has_manual_range = false
+    for name, cfg in pairs(config.units) do
         if configuration.any_profile(cfg, function(profile)
             return profile.threat_priority ~= nil
         end) then
@@ -395,6 +396,9 @@ local function install(config)
         if configuration.any_profile(cfg, function(profile) return profile.ammo_by_target ~= nil end) then
             has_ammo_rules = true
         end
+        if constants.native_reload_crews[name] ~= nil and configuration.any_profile(cfg, function(profile)
+            return profile.interval ~= nil and profile.sync_to_animation ~= false and profile.strict_range ~= false
+        end) then has_manual_range = true end
     end
     local native = resolve(cadence.required(config), config, has_priorities)
     MAX_UNITS = native.capacity
@@ -493,6 +497,7 @@ local function install(config)
         AUTOTARGETT   = data_addr + OFF_AUTOTARGET,
         HASPRIORITY   = has_priorities and 1 or 0,
         HASAMMORULES  = has_ammo_rules and 1 or 0,
+        HASMANUALRANGE = has_manual_range and 1 or 0,
         AMMOPTRT      = data_addr + OFF_AMMOPTR,
         PRIORITYPTRT  = data_addr + OFF_PRIORITYPTR,
         PRIORITYTYPET = data_addr + OFF_PRIORITYTYPE,
@@ -700,6 +705,7 @@ local function install(config)
     end
     values.WANTSCOW = assemble_blob(templates.aicow_code, values)
     values.MANUALORDER = assemble_blob(templates.manual_order_code, values)
+    values.SHOOTTARGETINRANGE = assemble_blob(templates.shoot_target_in_range_code, values)
     values.TARGETAMMO = has_ammo_rules and assemble_blob(templates.target_ammo_code, values) or 0
     values.CHOOSEAMMO = assemble_blob(templates.ammo_code, values)
     values.SYNCREADY = assemble_blob(templates.sync_code, values)
@@ -713,8 +719,9 @@ local function install(config)
     values.NATIVECONTEXT = assemble_blob(cadence.context_code, values)
     values.ACCEPTEDVALID = assemble_blob(cadence.accepted_code, values)
     local acquire_hook
-    if manual_only then
+    if manual_only or has_manual_range then
         values.RESUME = acquire_target_addr + 6
+        values.ACQUIREORIGINAL = has_manual_range and assemble_blob(templates.acquire_original_code, values) or 0
         acquire_hook = assemble_blob(templates.acquire_hook_code, values)
     end
     values.PICKTARGET = assemble_blob(templates.pick_code, values)

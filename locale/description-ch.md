@@ -1,4 +1,6 @@
-# Custom Projectiles 1.8.13
+# Custom Projectiles 1.8.14
+
+修改玩法设置后仍可读取存档；模块旧的射击队列和计时器会重置。自定义图形定义必须保持一致。allow_config_changes_on_load: false 要求使用原设置。strict_range: false 也会关闭新的手动射击射程检查。
 
 自动弹药：在 unit_groups 中定义目标列表，再为射手设置 ammo_by_target.groups: {siege: regular} 或 ammo_by_target.units: {Monk: cow}。单个兵种优先，其他目标保持原有行为。需要射击间隔；native 清除规则。附带 Reconquista 示例。
 

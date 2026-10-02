@@ -5,6 +5,11 @@
   "additionalProperties": false,
   "description": "Projectile preset. All unit entries and settings are optional; omitted settings preserve native behavior or documented automatic-fire defaults. UCP required/suggested qualifiers apply to the file selector, not fields inside this file. See README.md.",
   "properties": {
+    "allow_config_changes_on_load": {
+      "type": "boolean",
+      "default": true,
+      "description": "Allow gameplay retuning when loading a save. Reset old module firing timers and queued volleys, retaining the saved random seed and visual identities. Custom projectile/decorations definitions and graphics slots must match. False requires the exact saved gameplay configuration. Older saves with custom graphics must first be loaded and saved with their original configuration."
+    },
     "unit_groups": {
       "type": "object",
       "maxProperties": 77,
@@ -811,13 +816,13 @@
             {
               "type": "boolean",
               "default": true,
-              "description": "Check automatic targets at native coordinate precision, including building centres. False restores the old rounded tile checks. Does not clamp projectile scatter or change native manual range rules."
+              "description": "Check automatic targets at native coordinate precision, including building centres. Native-timed manual shots also respect the configured range before wind-up, in addition to native eligibility checks. Rejected shots finish an existing swing without firing. False restores rounded automatic checks and the previous manual behavior. Projectile scatter is not clamped."
             },
             {
               "const": "native"
             }
           ],
-          "description": "Check automatic targets at native coordinate precision, including building centres. False restores the old rounded tile checks. Does not clamp projectile scatter or change native manual range rules. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults.",
+          "description": "Check automatic targets at native coordinate precision, including building centres. Native-timed manual shots also respect the configured range before wind-up, in addition to native eligibility checks. Rejected shots finish an existing swing without firing. False restores rounded automatic checks and the previous manual behavior. Projectile scatter is not clamped. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults.",
           "default": true
         },
         "suppress_default": {
@@ -1766,13 +1771,13 @@
             {
               "type": "boolean",
               "default": true,
-              "description": "Check automatic targets at native coordinate precision, including building centres. False restores the old rounded tile checks. Does not clamp projectile scatter or change native manual range rules."
+              "description": "Check automatic targets at native coordinate precision, including building centres. Native-timed manual shots also respect the configured range before wind-up, in addition to native eligibility checks. Rejected shots finish an existing swing without firing. False restores rounded automatic checks and the previous manual behavior. Projectile scatter is not clamped."
             },
             {
               "const": "native"
             }
           ],
-          "description": "Check automatic targets at native coordinate precision, including building centres. False restores the old rounded tile checks. Does not clamp projectile scatter or change native manual range rules. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults.",
+          "description": "Check automatic targets at native coordinate precision, including building centres. Native-timed manual shots also respect the configured range before wind-up, in addition to native eligibility checks. Rejected shots finish an existing swing without firing. False restores rounded automatic checks and the previous manual behavior. Projectile scatter is not clamped. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults.",
           "default": true
         },
         "suppress_default": {
@@ -2685,13 +2690,13 @@
             {
               "type": "boolean",
               "default": true,
-              "description": "Check automatic targets at native coordinate precision, including building centres. False restores the old rounded tile checks. Does not clamp projectile scatter or change native manual range rules."
+              "description": "Check automatic targets at native coordinate precision, including building centres. Native-timed manual shots also respect the configured range before wind-up, in addition to native eligibility checks. Rejected shots finish an existing swing without firing. False restores rounded automatic checks and the previous manual behavior. Projectile scatter is not clamped."
             },
             {
               "const": "native"
             }
           ],
-          "description": "Check automatic targets at native coordinate precision, including building centres. False restores the old rounded tile checks. Does not clamp projectile scatter or change native manual range rules. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults.",
+          "description": "Check automatic targets at native coordinate precision, including building centres. Native-timed manual shots also respect the configured range before wind-up, in addition to native eligibility checks. Rejected shots finish an existing swing without firing. False restores rounded automatic checks and the previous manual behavior. Projectile scatter is not clamped. Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults.",
           "default": true
         },
         "suppress_default": {

@@ -1,5 +1,30 @@
 # Validation — unreleased work
 
+## 1.8.14 tester feedback, 2 October
+
+Seven new production Lua/FASM/x86/save-owner regressions pass against normal and
+Extreme 1.41. They cover exact-edge manual range admission, the OFF control,
+native thiscall stack balance, an older out-of-range Mangonel wind-up finishing
+without projectiles, valid retargeting, seven-shot volleys and 400-tick cadence.
+Save cases cover read-only validation, retuned queues/timers, retained seed and
+visual IDs, strict mode, legacy format-5 saves and changed-graphics rejection.
+
+The surrounding suite ran 69 tests: 68 passed, with one schema check having
+loaded the previous schema before regeneration. That check passed when rerun
+against the final schema. The final rerun also passed all six inert/native
+configuration tests, five save-validation tests and both selected acquisition
+policy regressions (15 tests including the schema/load-policy cases). All seven
+feedback tests were rerun after sharing the original acquisition trampoline and
+passed. All 23 GUI/archive tests pass for the 1.8.14 package and nine locales.
+
+On 2 October the queued native probe again returned `Native app bindings are
+unavailable for windows`; the slot was released immediately. Actual game
+rendering, paired multiplayer, save/recorder playback, long-match performance and
+broader executable variants remain unverified. This is a provisional test build,
+not accepted Store completion. Gameplay retuning intentionally changes a saved
+continuation; same-config resume preserves existing semantics. Custom graphics
+definitions/slots remain subject to compatibility checks.
+
 ## 1.8.13 target ammunition, 1 October
 
 The 13 focused target-ammunition tests pass, plus the additional native artillery

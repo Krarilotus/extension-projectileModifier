@@ -1,4 +1,4 @@
-# Custom Projectiles 1.8.13 (test candidate)
+# Custom Projectiles 1.8.14 (test candidate)
 
 Configure projectile types, volley sizes and automatic firing for all 77 unit
 types using one readable YAML file. Based on Monsterfish's supplied 1.2.0 module.
@@ -43,7 +43,8 @@ with `ai_only: true`), not one individually selected catapult.
 | Automatically search for buildings | `targets: [buildings, units]`; first kind that finds a target wins; boulders alone do not enable building searches |
 | Allow automatic attacks | `auto_targeting: true` or `false` per unit type; `false` keeps human manual attack orders |
 | Bias automatic unit targets | `target_bias_tiles: {Monk: 3}` on the shooting unit; each point subtracts one tile-equivalent from the game's distance-and-attention score before its remaining target rules |
-| Search distance | `range` in tiles for automatic search, including opt-in native candidate selection; native manual-order range remains separate |
+| Search distance | `range` in tiles for automatic search; native-timed manual shots also obey this limit when `strict_range` is true, alongside the game's own checks |
+| Retune an existing save | Gameplay edits load by default; old module firing queues/timers reset. Set root `allow_config_changes_on_load: false` for strict matching. Custom graphics definitions must remain unchanged. |
 | Exact aim | `inaccuracy: 0` and `spread: 0`; moving targets can still move before impact |
 | An eighth-tile aim-error radius | `inaccuracy: 1`; **8 native coordinate units = 1 tile**; use whole numbers |
 | Restrict changes to AI owners | `ai_only: true`; this controls whose settings change, not an autonomous-fire toggle |
@@ -78,7 +79,8 @@ manual-only attack, and `strict_range` require 1.8.7 and its matching schema.
 The old 1.8.6 tester does not understand these fields. See [VALIDATION.md](VALIDATION.md)
 for acceptance limits.
 
-Only `units`, `projectiles`, `decorations` and `unit_groups` belong at the top of a projectile
+Only `units`, `projectiles`, `decorations`, `unit_groups` and the boolean
+`allow_config_changes_on_load` belong at the top of a projectile
 file. Do not paste GitHub workflow keys (`name`, `on`) or UCP `config-sparse`
 wrappers into it. Use spaces for indentation and restart the game after edits.
 
@@ -136,7 +138,7 @@ as in the earlier preset; change `projectile` to `catapult_rock` if you want roc
 
 ## Installation and use
 
-Import `custom-projectiles-1.8.13.zip` and the matching
+Import `custom-projectiles-1.8.14.zip` and the matching
 `gmResourceModifier-0.3.1.zip` draft dependency into a developer launcher, then
 enable them with map-extensions, protocol and ui. For the direct enemy-click
 catapult check, also enable the separate Fixed Engineers 0.2.0 tester. This
@@ -320,8 +322,8 @@ completion and validation; Lua also checks cross-field comparisons.
 | `interval` | 1–60000 ticks; optional fallback automatic-fire interval |
 | `interval_moving`, `interval_standing` | 0–60000; independently enable firing; inherit fallback or hold fire if omitted |
 | `targets` | One to four distinct target kinds in priority order; default `units` |
-| `range` | 1–100 tiles, default 20; automatic targeting only  Projectile choice does not change this limit. |
-| `strict_range` | Default true; exact automatic range checks using unit positions, building centres and wall aim points. False restores rounded tile checks. |
+| `range` | 1–100 tiles, default 20; automatic targeting and native-timed manual shots with `strict_range` enabled.  Projectile choice does not change this limit. |
+| `strict_range` | Default true; exact automatic range checks using unit positions, building centres and wall aim points. Native-timed manual shots also obey the configured limit before wind-up; an already started rejected swing finishes without firing. False restores rounded automatic checks and the previous manual behavior. Native range/eligibility rules still apply; scatter is not clamped. |
 | `auto_targeting` | False requires human attack orders, including without an interval. True permits native acquisition and configured automatic searches. Native preserves the game when no interval is set. |
 | `target_bias_tiles` | Optional unit-type score biases 0–255 for native automatic unit acquisition and configured non-random `targets: units` searches. One point subtracts eight native score units (one tile-equivalent) from the game's distance-and-attention score, floored at zero. The game's eligibility, range, type, line-of-sight and engaged-target rules still decide; a larger bias does not guarantee selection or extend range. Unlisted types get zero. Omit or use `native` to keep the native score. Wall/decoration mappings replace the inherited map; `native` clears it. Manual orders, cluster and random volleys keep their existing policies. The old `threat_priority` name remains valid for existing presets; use only one name in each unit or override. |
 | `spread`, `inaccuracy` | 0–800 whole native coordinate units: **1 = ⅛ tile, 8 = 1 tile** |
@@ -508,9 +510,19 @@ does not depend on another player's currently selected menu item.
 
 The `map-extensions` section saves the random generator, identities, cooldowns,
 movement tracking, pending volleys, mounted bow clocks and custom projectile/decoration identities. New maps and saves without this section
-initialize fresh state. Saved state with different settings is rejected: restore
-the settings used to make the save. Loading with this module disabled does not
-retain its gameplay changes.
+initialize fresh state. With the same gameplay settings, all simulation state
+resumes as before. By default, changing gameplay settings also allows loading:
+the new settings apply, old module firing queues/timers reset, and the saved
+random seed and custom visual identities remain intact. This deliberately changes
+the continuation; all multiplayer peers must use the same edited file.
+
+Set root `allow_config_changes_on_load: false` to require the original settings.
+Custom projectile/decorations definitions, sprite bytes and graphics slots must
+still match: changing those can reinterpret existing entities. Older format-5
+saves without custom graphics support gameplay retuning directly. For an older
+save with custom graphics, load and resave once using its original configuration
+on 1.8.14 before editing gameplay settings. Earlier save formats still require a
+new match. Loading with this module disabled does not retain its gameplay changes.
 
 Rebalancer damage, speed and projectile physics tables remain owned by Rebalancer.
 This module hooks native firing, timing and aim-error stages. When configured,

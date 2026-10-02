@@ -1,5 +1,27 @@
 # Native integration audit, 12 September 2026
 
+## 2 October 2026: save retuning and rejected manual shots
+
+Inspected the current module at `94a5804`, the Map Extensions validate-before-
+restore caller/tests at `aic-tactics-map-required-state` revision `04449b7`
+(1.1.0, with the optional-section API retained from 1.0.0), and the framework
+AOB/assembly owners previously recorded at `02a7a6b`.
+
+| Capability | Existing owner reused / precise gap |
+|---|---|
+| Saved configuration edits | `state.new` and Map Extensions' existing validate/deserialize callbacks. Format 5 gains an optional asset identity header; validation remains read-only before any extension restores. Changed gameplay settings discard only obsolete module firing queues/timers, preserving the saved seed and visual identities. Same settings restore the same blocks. No private loader, migration cache or save service. |
+| Visual identity safety | Existing immutable GM slot/hash blocks must match. Definitions also match via the new asset header. Legacy saves lacking that header permit retuning only with no custom visual identities; custom-graphics saves require one unchanged resave. No remapping of native entity ownership or resources. |
+| Manual range admission | Reuse the existing native acquisition entry hook and decoded original continuation. The original thiscall executes once with its native eligibility rules, then the existing prepared aim point is checked against the configured range. The shared `shootTargetInRange` is the former `pickTarget` exact check, extracted once for both callers. No command replacement, additional signature or target search. |
+| ABI and discovery | Existing UCP AOB resolution verifies the six displaced prologue bytes (`83 EC 40 53 56 57`) and the native continuation. The original trampoline preserves the native thiscall/`ret 4` contract. Existing bindings cover Crusader and Extreme; no new fixed VA/RVA or fallback. |
+| Existing stuck animation | `configuredAnimationHold` reuses `NATIVETARGET` before native scatter and the existing `NATIVEBLOCKT` release gate. A rejected manual target passes the animation through; existing release cancellation/refund handles ammunition. It does not run acquisition inside the late projectile dispatcher. |
+| Defaults/performance | Range correction is default ON for configured native-timed profiles, OFF with existing `strict_range: false`. Save retuning is default ON, OFF with root `allow_config_changes_on_load: false`. Guarded O(1) checks, no extra scan, allocation, RNG draw or saved per-unit block. |
+
+Native damage, allocation, target identity, projectile scatter and world-state
+serialization remain owned by their existing subsystems. Changing a gameplay
+configuration intentionally changes a save's continuation; unchanged settings
+retain the previous resume semantics. Actual desktop, multiplayer and recorder
+acceptance remain distinct from emulated production-code regressions.
+
 ## 1 October 2026: ammunition by victim type
 
 Based on source main `cf063d9` (merged 1.8.12), inspected before this change:

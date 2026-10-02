@@ -48,7 +48,7 @@ def build_schema():
     fields['interval_moving']['description'] = 'Enables firing while moving; 0 holds fire. If omitted, use interval, or hold fire if neither is set.'
     fields['interval_standing']['description'] = 'Enables firing while stopped, not specifically docked; 0 holds fire. If omitted, use interval, or hold fire if neither is set.'
     fields['attached_interval']['description'] = 'Enables firing for a siege tower docked to a wall, overriding moving/standing intervals; 0 holds fire. Omission keeps the current moving/standing rate or fallback.'
-    fields['strict_range'] = dict(type='boolean', default=True, description='Check automatic targets at native coordinate precision, including building centres. False restores the old rounded tile checks. Does not clamp projectile scatter or change native manual range rules.')
+    fields['strict_range'] = dict(type='boolean', default=True, description='Check automatic targets at native coordinate precision, including building centres. Native-timed manual shots also respect the configured range before wind-up, in addition to native eligibility checks. Rejected shots finish an existing swing without firing. False restores rounded automatic checks and the previous manual behavior. Projectile scatter is not clamped.')
     fields['auto_targeting'] = dict(type='boolean', default=True, description='False requires an explicit human attack order and disables module automatic search and native automatic acquisition for this unit. True preserves native acquisition and permits configured interval searches. Native leaves the game unchanged when no interval is configured.')
     for name, field in list(fields.items()):
         fields[name] = dict(anyOf=[field, {'const':'native'}], description=field.get('description','') + ' Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults.')
@@ -71,7 +71,9 @@ def build_schema():
     return {'$schema': 'https://json-schema.org/draft/2020-12/schema',
             'title': 'Custom Projectiles preset', 'type': 'object', 'additionalProperties': False,
             'description': 'Projectile preset. All unit entries and settings are optional; omitted settings preserve native behavior or documented automatic-fire defaults. UCP required/suggested qualifiers apply to the file selector, not fields inside this file. See README.md.',
-            'properties': {'unit_groups': dict(type='object', maxProperties=77, additionalProperties=False,
+            'properties': {'allow_config_changes_on_load': dict(type='boolean', default=True,
+                            description='Allow gameplay retuning when loading a save. Reset old module firing timers and queued volleys, retaining the saved random seed and visual identities. Custom projectile/decorations definitions and graphics slots must match. False requires the exact saved gameplay configuration. Older saves with custom graphics must first be loaded and saved with their original configuration.'),
+                          'unit_groups': dict(type='object', maxProperties=77, additionalProperties=False,
                           patternProperties={'^[a-z][a-z0-9_-]{0,47}$': dict(type='array', minItems=1,
                               maxItems=77, uniqueItems=True, items=dict(enum=[name for _, name in sorted(constants.unit_names.items())]))}),
                           'decorations': {'type':'object','maxProperties':33,'additionalProperties':False,

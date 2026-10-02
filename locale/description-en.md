@@ -1,4 +1,6 @@
-# Custom Projectiles 1.8.13
+# Custom Projectiles 1.8.14
+
+Gameplay edits can load existing saves; old module firing queues/timers reset. Custom graphics definitions must match. allow_config_changes_on_load: false requires the original settings. strict_range: false also disables the new manual range guard.
 
 Automatic ammunition: define target lists in unit_groups, then ammo_by_target.groups: {siege: regular} per shooter, or ammo_by_target.units: {Monk: cow}. Exact units win; unmatched targets keep existing behavior. Requires an interval; native clears rules. Reconquista example included.
 

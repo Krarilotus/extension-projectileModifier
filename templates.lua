@@ -674,8 +674,8 @@ h_pass:
 ]],
 
 -- Restrict the existing native acquisition owner, before wind-up/ammunition.
--- Installed only for an explicit manual-only profile. Pass-through replays
--- the complete six-byte prologue; thiscall failure returns without a shot.
+-- Manual range is checked after the original acquisition prepared its aim,
+-- before its caller starts wind-up. Share the scheduled-shot range owner.
 acquire_hook_code = [[
 acquirePolicy:
     pushfd
@@ -684,6 +684,7 @@ acquirePolicy:
     push ebx
     call PROFILE
     add esp, 4
+    mov edi, eax
     cmp eax, MAXPROFILES
     jae ap_pass
     cmp dword [AUTOTARGETT+eax*4], 0
@@ -706,13 +707,83 @@ ap_order:
     xor eax, eax
     ret 4
 ap_pass:
+    if HASMANUALRANGE
+        cmp edi, MAXPROFILES
+        jae ap_native
+        cmp dword [NATIVECYCLET+edi*4], 0
+        je ap_native
+        cmp dword [STRICTRANGET+edi*4], 0
+        je ap_native
+        imul esi, ebx, 0x490
+        add esi, UNITARRAY
+        cmp word [esi+0x3B0], 0
+        jne ap_native
+        push ebx
+        call MANUALORDER
+        add esp, 4
+        test eax, eax
+        jz ap_native
+        mov ecx, [esp+24]       ; original this pointer
+        push ebx
+        call ACQUIREORIGINAL   ; original prologue/continuation exactly once
+        test eax, eax
+        jz ap_result
+        mov edx, edi
+        call SHOOTTARGETINRANGE
+    ap_result:
+        mov [esp+28], eax
+        popad
+        popfd
+        ret 4
+    ap_native:
+    end if
     popad
     popfd
+    if HASMANUALRANGE
+      jmp ACQUIREORIGINAL
+    else
     sub esp, 0x40
     push ebx
     push esi
     push edi
     jmp RESUME
+    end if
+  ]],
+
+acquire_original_code = [[
+acquireOriginal:
+    sub esp, 0x40
+    push ebx
+    push esi
+    push edi
+    jmp RESUME
+]],
+
+-- Existing pickTarget exact range check, also used by native acquisition.
+-- ESI=shooter pointer, EDX=effective profile; preserve all except EAX=result.
+shoot_target_in_range_code = [[
+shootTargetInRange:
+    pushad
+    movsx eax, word [esi+0xBE]
+    movsx ecx, word [esi+0xC0]
+    movsx ebx, word [esi+0xB6]
+    sub eax, ebx
+    imul eax, eax
+    movsx ebx, word [esi+0xB8]
+    sub ecx, ebx
+    imul ecx, ecx
+    add eax, ecx
+    mov ecx, [RANGET+edx*4]
+    imul ecx, ecx
+    shl ecx, 6
+    cmp eax, ecx
+    mov eax, 0
+    ja str_done
+    inc eax
+str_done:
+    mov [esp+28], eax
+    popad
+    ret
 ]],
 
 -- The game's Catapult/Trebuchet modes return before its automatic unit-list
@@ -936,7 +1007,8 @@ pk_nativeorder:
     call pk_saveorder           ; keep native cleanup of stale/reused orders
     test eax, eax
     jz pk_fail                  ; native acquisition must accept the order
-    call pk_inrange           ; respect the configured range on scheduled shots
+    mov edx, [ebp+0x0C]
+    call SHOOTTARGETINRANGE   ; same range owner as native manual acquisition
     test eax, eax
     jz pk_fail
     mov eax, 2                 ; keep the chosen target; no random-target scan
@@ -1039,7 +1111,8 @@ pk_leadready:
 pk_nativecoords:
     cmp dword [S_RANGE8SQ], 0
     je pk_nativecoords_ok
-    call pk_inrange
+    mov edx, [ebp+0x0C]
+    call SHOOTTARGETINRANGE
     test eax, eax
     jz pk_next
 pk_nativecoords_ok:
@@ -1089,26 +1162,6 @@ pk_out:
     pop esi
     pop ebx
     pop ebp
-    ret
-
-pk_inrange:
-    mov esi, [S_UNITPTR]
-    movsx eax, word [esi+0xBE]
-    movsx ecx, word [esi+0xC0]
-    movsx edx, word [esi+0xB6]
-    sub eax, edx
-    imul eax, eax
-    movsx edx, word [esi+0xB8]
-    sub ecx, edx
-    imul ecx, ecx
-    add eax, ecx
-    mov ecx, [S_R2]
-    shl ecx, 6
-    cmp eax, ecx
-    mov eax, 0
-    ja pk_rangeout
-    inc eax
-pk_rangeout:
     ret
 
 pk_saveorder:

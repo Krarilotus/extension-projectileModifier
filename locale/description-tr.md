@@ -1,4 +1,6 @@
-# Custom Projectiles 1.8.13
+# Custom Projectiles 1.8.14
+
+Oyun ayarları değiştirilmiş olsa da kayıt yüklenebilir; modülün eski atış kuyrukları ve zamanlayıcıları sıfırlanır. Özel grafik tanımları aynı kalmalıdır. allow_config_changes_on_load: false özgün ayarları gerektirir. strict_range: false yeni elle atış menzil denetimini de kapatır.
 
 Otomatik mühimmat: hedef listelerini unit_groups altında tanımlayın; ateş eden birimde ammo_by_target.groups: {siege: regular} veya ammo_by_target.units: {Monk: cow} kullanın. Tekil türler önceliklidir; diğer hedefler değişmez. Atış aralığı gerekir; native kuralları siler. Reconquista örneği dahildir.
 

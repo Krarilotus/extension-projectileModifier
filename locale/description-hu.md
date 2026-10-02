@@ -1,4 +1,6 @@
-# Custom Projectiles 1.8.13
+# Custom Projectiles 1.8.14
+
+A játékbeállítások mentésbetöltés előtt módosíthatók; a modul régi lövéssorai és időzítői nullázódnak. Az egyéni grafikai definícióknak egyezniük kell. allow_config_changes_on_load: false az eredeti beállításokat követeli meg. strict_range: false az új kézi lövési hatótávellenőrzést is kikapcsolja.
 
 Automatikus lőszer: célcsoportok a unit_groups alatt, lövőnként ammo_by_target.groups: {siege: regular} vagy ammo_by_target.units: {Monk: cow}. Az egyedi típus az elsődleges; más célok változatlanok. Lövési intervallum szükséges; native törli a szabályokat. Reconquista-példa mellékelve.
 

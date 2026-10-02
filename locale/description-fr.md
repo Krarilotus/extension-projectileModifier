@@ -1,4 +1,6 @@
-# Custom Projectiles 1.8.13
+# Custom Projectiles 1.8.14
+
+Les réglages de jeu peuvent changer avant le chargement ; les anciennes files de tirs et minuteries du module sont réinitialisées. Les définitions graphiques personnalisées doivent rester identiques. allow_config_changes_on_load: false exige les réglages d’origine. strict_range: false désactive aussi le nouveau contrôle de portée des tirs manuels.
 
 Munitions automatiques : définir les cibles dans unit_groups, puis ammo_by_target.groups: {siege: regular} par tireur, ou ammo_by_target.units: {Monk: cow}. Les types précis ont priorité ; les autres cibles gardent leur comportement. Intervalle requis ; native efface les règles. Exemple Reconquista inclus.
 

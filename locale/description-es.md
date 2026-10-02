@@ -1,4 +1,6 @@
-# Custom Projectiles 1.8.13
+# Custom Projectiles 1.8.14
+
+Los ajustes de juego pueden cambiar antes de cargar; se reinician las antiguas colas de disparo y temporizadores del módulo. Las definiciones gráficas personalizadas deben coincidir. allow_config_changes_on_load: false exige los ajustes originales. strict_range: false también desactiva la nueva comprobación de alcance de disparos manuales.
 
 Munición automática: defina listas de objetivos en unit_groups y use ammo_by_target.groups: {siege: regular} por tirador, o ammo_by_target.units: {Monk: cow}. Los tipos concretos tienen prioridad; los demás objetivos conservan su comportamiento. Requiere intervalo; native borra las reglas. Incluye ejemplo Reconquista.
 

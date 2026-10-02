@@ -6,6 +6,9 @@
 # It preserves the game and other modules; it does not undo their balance changes.
 # Copy this file and the schema into ucp/resources/custom-projectiles/ and select
 # your edited copy in the launcher. Restart the game after changing a file.
+# Gameplay edits can load existing saves; old module firing queues/timers reset.
+# Set allow_config_changes_on_load: false to require the original settings.
+# Custom projectile/decorations definitions must stay unchanged for that save.
 #
 # Replace native only for settings you want to override, for example:
 #   Catapult:
@@ -23,7 +26,8 @@
 #   suppress_default: false      # Add native shots only in independent timer mode.
 # Automatic attacks:
 #   auto_targeting: false        # Manual orders only; true permits automatic acquisition.
-#   strict_range: true           # Exact automatic range checks; false restores old tile checks.
+#   strict_range: true           # Exact automatic range; cap native-timed manual shots too.
+#                               # false restores old automatic/manual range behavior.
 #   interval: 100                # Optional fallback; 1..60000 ticks, not ms.
 #                                # Applies only without a matching state rate.
 #   interval_moving: 200          # 0..60000; 0 holds fire while moving.
@@ -32,7 +36,7 @@
 #   target_bias_tiles:             # Optional native automatic target-score bias.
 #     Monk: 3                     # Treat Monk as up to 3 tiles closer in the native score.
 #                                # Eligibility, range, LOS and other native rules still apply.
-#   range: 20                    # 1..100 tiles; automatic targeting only.
+#   range: 20                    # 1..100 tiles; also caps native-timed manual shots.
 #   require_manned: 1            # 0..4 engineers aboard; true=1, false=0.
 #   random_targets: false        # Pick per projectile; targets can repeat.
 #   shoot_height: 0              # 0..500 extra native height units.
@@ -129,6 +133,7 @@
 # auto_targeting: native preserves native autonomy; false requires manual orders.
 # The *_tiles compatibility aliases are documented above; canonical fields use eighth-tiles.
 
+allow_config_changes_on_load: true
 projectiles: {}
 decorations: {}
 unit_groups: {}

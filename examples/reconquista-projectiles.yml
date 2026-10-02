@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=../projectile-config.schema.json
-# Reconquista preset for custom-projectiles 1.8.13 test.
+# Reconquista preset for custom-projectiles 1.8.14 test.
 # Copy this file beside projectile-config.schema.json and change the first line to:
 # yaml-language-server: $schema=./projectile-config.schema.json
 # Select the copy in Customizations > Balance Changes. Restart after editing.
@@ -11,6 +11,10 @@
 # Regular ammunition against siege: configured catapult pebbles / trebuchet stones.
 # Other troop targets retain existing AIC cow permission and native cow ammunition.
 # Ammunition rules do not add targeting priority or change impact/damage rules.
+
+# Gameplay edits can load this preset's saves; old module queues/timers reset.
+# Keep custom projectile/decorations definitions unchanged for existing saves.
+allow_config_changes_on_load: true
 
 unit_groups:
   siege:

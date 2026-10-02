@@ -58,12 +58,17 @@ end
 local function validate_flat(config, variants, groups)
     object(config, 'config')
     for key in pairs(config) do
-        if key ~= 'units' and key ~= 'projectiles' and key ~= 'decorations' and key ~= 'unit_groups' then fail(tostring(key), 'unknown section; expected units, projectiles, decorations or unit_groups') end
+        if key ~= 'units' and key ~= 'projectiles' and key ~= 'decorations' and key ~= 'unit_groups'
+            and key ~= 'allow_config_changes_on_load' then fail(tostring(key), 'unknown section; expected units, projectiles, decorations, unit_groups or allow_config_changes_on_load') end
     end
     local units = config.units
     if units == nil then units = {} end
     object(units, 'units')
     local result = {units = {}}
+    if config.allow_config_changes_on_load ~= nil then
+        if type(config.allow_config_changes_on_load) ~= 'boolean' then fail('allow_config_changes_on_load', 'expected true or false') end
+        result.allow_config_changes_on_load = config.allow_config_changes_on_load
+    end
     for name, cfg in pairs(units) do
         local path = 'units.' .. tostring(name)
         if not M.units[name] then fail(path, 'unknown unit name') end

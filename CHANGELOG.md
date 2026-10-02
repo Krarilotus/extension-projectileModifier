@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.8.14 (provisional test candidate)
+
+- Allow gameplay config edits when loading format-5 saves. Reset obsolete module
+  firing timers/queues while retaining the saved random seed and visual identities.
+  Root `allow_config_changes_on_load: false` preserves strict configuration matching.
+  Custom graphics definitions and slots must still match; older custom-graphics
+  saves need one unchanged load/resave before gameplay retuning.
+- Reuse native acquisition and the existing exact range check to reject
+  out-of-range native-timed manual shots before wind-up. Let an already started
+  rejected swing finish without firing, instead of freezing at its release frame.
+  `strict_range: false` disables this correction. Keep native scatter, targeting,
+  projectile dispatch and cow controls with their existing owners.
+- Update the schema, full vanilla reference, Reconquista example and nine preview
+  languages without adding GUI controls or another hook site.
+
 ## 1.8.13 (provisional test candidate)
 
 - Add optional `ammo_by_target.units` and `ammo_by_target.groups`, with reusable
