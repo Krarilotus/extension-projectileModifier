@@ -1,0 +1,72 @@
+# yaml-language-server: $schema=../projectile-config.schema.json
+# Monsterfish's supplied Reconquista settings, for custom-projectiles 1.8.16 test.
+# Copy beside the schema and change ../ above to ./; select in Balance Changes.
+# Restart after editing. Reload intervals are simulation ticks; native animation
+# sets the minimum achievable interval. range limits the selected target in tiles.
+# inaccuracy/spread use eighth-tiles: 8 = one tile. inaccuracy: 0 makes the
+# primary aim exact; spread still scatters additional projectiles independently.
+# Mangonel spread: 48 permits +/-6 tiles on each axis around its selected target.
+# Native pebbles compute their launch speed for each aim; no physics override needed.
+# Duplicate Catapult keys were consolidated using their last supplied values.
+
+allow_config_changes_on_load: true
+
+units:
+  Catapult:
+    ai_cow_vs_units: false
+    projectile: mangonel_pebble
+    count: 3
+    spread: 60
+    interval: 200
+    targets: [cluster, units]
+    density_min: 10
+    density_radius: 6
+    range: 40
+    strict_range: true
+    suppress_default: true
+    sync_to_animation: true
+    require_manned: 2
+  Trebuchet:
+    ai_cow_vs_units: true
+    interval: 500
+    targets: cluster
+    density_min: 10
+    density_radius: 6
+    range: 30
+    strict_range: true
+    spread: 2
+    suppress_default: true
+    sync_to_animation: true
+    require_manned: 3
+    inaccuracy: 1
+    projectile: trebuchet_rock
+    count: 1
+  Mangonel:
+    interval: 100
+    targets: cluster
+    density_min: 5
+    density_radius: 20
+    range: 30
+    strict_range: true
+    count: 8
+    spread: 48
+    suppress_default: true
+    sync_to_animation: true
+    require_manned: 2
+    inaccuracy: 0
+  Siege tower:
+    attached_interval: 500
+    attached_ignore_crew: true
+    attached_stop_when_boarded: true
+    attached_board_radius: 2
+    projectile: arrow
+    interval_moving: 700
+    interval_standing: 600
+    count: 4
+    stagger_min: 5
+    stagger_max: 25
+    targets: units
+    range: 48
+    require_manned: 1
+    random_targets: true
+    shoot_height: 40

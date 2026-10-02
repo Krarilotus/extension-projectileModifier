@@ -1,5 +1,32 @@
 # Native integration audit, 12 September 2026
 
+## 1.8.16 manual range without reload customization
+
+Inspected the existing consumer at d1bbe93: `install` only enabled the native
+manual range guard for an interval using native synchronization, and the
+acquisition hook required NATIVECYCLET. A reproducible Mangonel range-only
+configuration therefore bypassed the configured range. Extend those existing
+owners: enable the existing guard for an explicit range, and encode eligibility
+in bit 1 of the existing immutable STRICTRANGET profile flag (bit 0 retains
+scheduled exact checks). There is no new flag table, persistent block or cache.
+The native original acquisition still runs exactly once before the existing
+SHOOTTARGETINRANGE helper. Reuse ISAIOWNED to preserve AI-only human behavior.
+OFF remains strict_range false; unconfigured/native range retains native timing.
+
+Runtime discovery stays with the existing UCP AOB-resolved ACQUIRE entry,
+displaced prologue/trampoline and ABI; no new binding or competing hook is added.
+OpenSHC EntityState initializer/velocity declarations and the actual reference
+solver confirm native pebbles use fixed-angle speed solving. Execute the real
+native Mangonel handler, then projectile allocator/initializer/movement in both
+1.41 families using the supplied settings. Target admission is separate from
+intentional projectile scatter: preserve spread/RNG order and native physics,
+allocation, ownership, damage and cleanup. Final diff adds no physics solver,
+world scan, per-frame allocation, private resolver or copied dispatcher.
+The framework's `dll/lua/yaml/LuaYamlParser.cpp:parseTableNode` iterates mapping
+entries and writes each with `lua_setfield`; later duplicate Catapult keys thus
+replace earlier values. The cleaned example consolidates them without adding a
+private YAML parser or changing the supplied effective values.
+
 ## 2 October 2026: replacement projectile flight
 
 | Capability | Existing owner reused / precise gap |

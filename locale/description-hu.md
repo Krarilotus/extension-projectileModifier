@@ -1,4 +1,6 @@
-# Custom Projectiles 1.8.15
+# Custom Projectiles 1.8.16
+
+A range mezőben megadott távolság a kiválasztott célpontot korlátozza, natív újratöltés mellett is. A spread és inaccuracy ezen túlra is szórhatja a lövedékeket. strict_range: false kikapcsolja a kézi célzás hatótávjavítását.
 
 Nagy távolságú helyettesítő lövedékekhez: projectile_physics: {firethrower_pot: {mode: fixed_angle, angle: 30}} a játékkal számíttatja ki az induló sebességet. Aktív Rebalancer 1.1.3+ és egyensúly-konfiguráció szükséges. Típusonként globális, a sprite-változatokra is érvényes; native megőrzi az értékeket. A célhatótáv és ütközés továbbra is számít.
 

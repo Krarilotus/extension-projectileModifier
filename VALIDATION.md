@@ -1,5 +1,41 @@
 # Validation — unreleased work
 
+## 1.8.16 Mangonel range investigation, 2 October
+
+Four new native-code regressions pass on normal/Extreme 1.41. Before the change,
+range: 3 without an interval accepted a manual target four tiles away; adding
+interval: 400 rejected it. The same native acquisition hook now rejects the
+out-of-range target with native timing, native-synchronized timing and independent
+timer mode, for native pebbles and firethrower replacements. Tests cover the
+exact eighth-tile boundary, OFF control, AI-only human pass-through and a wall
+override. Native timing retains seven shots and completes its animation with
+no module animation hook. The initial wall fixture omitted its required native
+structure height; correcting that fixture made the inherited-profile test pass.
+
+The supplied Monsterfish Mangonel settings reject a target 30 tiles plus one
+eighth-tile away and accept exactly 30. Eight shots execute native allocation,
+initialization/velocity solving and movement/collision to completion on flat
+terrain. Each impact lies within one tile of its scattered aim; native speed
+varies with each aim distance. Both families produce identical aim/impact/speed
+results. With spread: 48, additional aims can extend six tiles per axis beyond
+the selected target; this intentional spread is not clamped or silently changed.
+No fixed-speed limitation was reproduced for these native pebbles. No new
+physics override or Rebalancer dependency is needed for this supplied config.
+
+The cleaned bundled example keeps every supplied gameplay value, consolidating
+duplicate Catapult fields using their last values. All nine preview languages
+explain target radius versus scatter. These are native-code emulation results,
+not live rendered game acceptance. Desktop bindings remain unavailable; actual
+input/cursor range presentation, hills/walls, live saves, multiplayer/replay,
+crowded performance and broader executable variants remain acceptance gaps.
+
+Final selected suite: 31 tests pass in 196.138 seconds, including the 24 earlier
+physics/save/native-config regressions and three manual-only policy regressions.
+All 23 GUI/archive tests pass; deterministic packaging contains 50 files and
+three explicit directories. The cleaned example validates against the schema
+and existing runtime configuration owner. Final production review confirms the
+only native code changes extend the existing acquisition guard/profile flags.
+
 ## 1.8.15 native flight settings, 2 October
 
 Six focused tests pass using actual Rebalancer table-writing/API code and the

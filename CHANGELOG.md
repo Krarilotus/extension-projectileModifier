@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.8.16 (provisional test candidate)
+
+- Enforce an explicit range on supported native shooters' manual acquisition
+  independently of a custom reload interval or animation synchronization.
+  Reuse the existing native acquisition hook, exact range helper and profile
+  flag table. Respect AI-only profiles; strict_range false retains native behavior.
+- Include Monsterfish's supplied Reconquista settings with duplicate keys
+  consolidated, preserving the last supplied values and all timing/spread values.
+  Explain selected-target range versus scattered impacts in the schema, guide
+  and short preview help in all nine GUI languages.
+- Native-code checks on both 1.41 families reject a target one eighth-tile past
+  the 30-tile boundary. The supplied eight-pebble volley reaches each scattered
+  aim using native speed solving; spread 48 can land beyond the selected radius.
+  No projectile solver, velocity override, native dispatcher or extra hook added.
+
 ## 1.8.15 (provisional test candidate)
 
 - Add optional root `projectile_physics` using existing Rebalancer

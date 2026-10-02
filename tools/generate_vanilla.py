@@ -30,7 +30,7 @@ HEADER='''# yaml-language-server: $schema=./projectile-config.schema.json
 #   suppress_default: false      # Add native shots only in independent timer mode.
 # Automatic attacks:
 #   auto_targeting: false        # Manual orders only; true permits automatic acquisition.
-#   strict_range: true           # Exact automatic range; cap native-timed manual shots too.
+#   strict_range: true           # Exact automatic/manual target range; independent of reload.
 #                               # false restores old automatic/manual range behavior.
 #   interval: 100                # Optional fallback; 1..60000 ticks, not ms.
 #                                # Applies only without a matching state rate.
@@ -40,7 +40,7 @@ HEADER='''# yaml-language-server: $schema=./projectile-config.schema.json
 #   target_bias_tiles:             # Optional native automatic target-score bias.
 #     Monk: 3                     # Treat Monk as up to 3 tiles closer in the native score.
 #                                # Eligibility, range, LOS and other native rules still apply.
-#   range: 20                    # 1..100 tiles; also caps native-timed manual shots.
+#   range: 20                    # 1..100 tiles; explicit manual cap even with native reload.
 #   require_manned: 1            # 0..4 engineers aboard; true=1, false=0.
 #   random_targets: false        # Pick per projectile; targets can repeat.
 #   shoot_height: 0              # 0..500 extra native height units.

@@ -675,7 +675,8 @@ h_pass:
 
 -- Restrict the existing native acquisition owner, before wind-up/ammunition.
 -- Manual range is checked after the original acquisition prepared its aim,
--- before its caller starts wind-up. Share the scheduled-shot range owner.
+-- before its caller starts wind-up. Share the scheduled-shot range owner;
+-- configuring range alone does not require replacing native reload timing.
 acquire_hook_code = [[
 acquirePolicy:
     pushfd
@@ -710,10 +711,16 @@ ap_pass:
     if HASMANUALRANGE
         cmp edi, MAXPROFILES
         jae ap_native
-        cmp dword [NATIVECYCLET+edi*4], 0
-        je ap_native
-        cmp dword [STRICTRANGET+edi*4], 0
-        je ap_native
+        test dword [STRICTRANGET+edi*4], 2
+        jz ap_native
+        cmp dword [AIONLYT+edi*4], 0
+        je ap_range
+        push ebx
+        call ISAIOWNED
+        add esp, 4
+        test eax, eax
+        jz ap_native
+    ap_range:
         imul esi, ebx, 0x490
         add esi, UNITARRAY
         cmp word [esi+0x3B0], 0

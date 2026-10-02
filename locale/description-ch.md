@@ -1,4 +1,6 @@
-# Custom Projectiles 1.8.15
+# Custom Projectiles 1.8.16
+
+range 以格为单位限制所选目标的距离，即使使用原生装填时间也有效。spread 和 inaccuracy 可能使落点超出该半径。strict_range: false 关闭手动瞄准的射程修正。
 
 远程替换弹药：projectile_physics: {firethrower_pot: {mode: fixed_angle, angle: 30}} 让原游戏计算发射速度。需要启用 Rebalancer 1.1.3+ 并配置平衡文件。按类型全局生效，包括自定义贴图变体；native 保留原值。目标射程和碰撞规则仍有效。
 

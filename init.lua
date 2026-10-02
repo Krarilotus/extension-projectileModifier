@@ -397,7 +397,8 @@ local function install(config)
             has_ammo_rules = true
         end
         if constants.native_reload_crews[name] ~= nil and configuration.any_profile(cfg, function(profile)
-            return profile.interval ~= nil and profile.sync_to_animation ~= false and profile.strict_range ~= false
+            return profile.strict_range ~= false and (profile.range ~= nil
+                or (profile.interval ~= nil and profile.sync_to_animation ~= false))
         end) then has_manual_range = true end
     end
     local native = resolve(cadence.required(config), config, has_priorities)
@@ -909,7 +910,12 @@ apply_unit = function(name, cfg, profile)
         core.writeByte(data_addr + OFF_PRIORITYTYPE + configuration.units[name], 1)
     end
     set_entry(OFF_TURNBEFORE, id, cfg.turn_before_shot == false and 0 or 1)
-    set_entry(OFF_STRICTRANGE, id, cfg.strict_range == false and 0 or 1)
+    -- Bit 0 keeps existing scheduled-shot range checks; bit 1 admits the
+    -- native manual acquisition guard independently of reload customization.
+    -- Reuse this immutable profile flag rather than another per-unit table.
+    local manual_range = constants.native_reload_crews[name] ~= nil
+        and (cfg.range ~= nil or (cfg.interval ~= nil and cfg.sync_to_animation ~= false))
+    set_entry(OFF_STRICTRANGE, id, cfg.strict_range == false and 0 or (manual_range and 3 or 1))
     set_entry(OFF_AUTOTARGET, id, cfg.auto_targeting == false and 0 or 1)
 
     if cfg["projectile"] ~= nil then

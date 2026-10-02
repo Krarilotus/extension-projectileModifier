@@ -1,4 +1,6 @@
-# Custom Projectiles 1.8.15
+# Custom Projectiles 1.8.16
+
+range begrenzt die Zielentfernung in Feldern, auch bei nativer Nachladezeit. spread und inaccuracy können Einschläge außerhalb dieses Radius verursachen. strict_range: false deaktiviert die manuelle Reichweitenkorrektur.
 
 Ersatzgeschosse auf große Distanz: projectile_physics: {firethrower_pot: {mode: fixed_angle, angle: 30}} lässt das Spiel die Startgeschwindigkeit berechnen. Benötigt aktiven Rebalancer 1.1.3+ mit Balance-Konfiguration. Global je Typ, auch für Sprite-Varianten; native erhält bestehende Werte. Zielreichweite und Kollisionen gelten weiter.
 

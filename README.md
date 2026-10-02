@@ -43,7 +43,7 @@ with `ai_only: true`), not one individually selected catapult.
 | Automatically search for buildings | `targets: [buildings, units]`; first kind that finds a target wins; boulders alone do not enable building searches |
 | Allow automatic attacks | `auto_targeting: true` or `false` per unit type; `false` keeps human manual attack orders |
 | Bias automatic unit targets | `target_bias_tiles: {Monk: 3}` on the shooting unit; each point subtracts one tile-equivalent from the game's distance-and-attention score before its remaining target rules |
-| Search distance | `range` in tiles for automatic search; native-timed manual shots also obey this limit when `strict_range` is true, alongside the game's own checks |
+| Search distance | `range` in tiles for the selected target. Supported native shooters also enforce it on manual orders, independently of reload customization, when `strict_range` is true. Scatter can land beyond that radius. |
 | Retune an existing save | Gameplay edits load by default; old module firing queues/timers reset. Set root `allow_config_changes_on_load: false` for strict matching. Custom graphics definitions must remain unchanged. |
 | A replacement projectile falls short | Optional root `projectile_physics: {firethrower_pot: {mode: fixed_angle, angle: 30}}` uses the game's launch-speed solver. Requires active Rebalancer 1.1.3+; applies globally to that projectile type. |
 | Exact aim | `inaccuracy: 0` and `spread: 0`; moving targets can still move before impact |
@@ -139,7 +139,7 @@ as in the earlier preset; change `projectile` to `catapult_rock` if you want roc
 
 ## Installation and use
 
-Import `custom-projectiles-1.8.15.zip` and the matching
+Import `custom-projectiles-1.8.16.zip` and the matching
 `gmResourceModifier-0.3.1.zip` draft dependency into a developer launcher, then
 enable them with map-extensions, protocol and ui. For the direct enemy-click
 catapult check, also enable the separate Fixed Engineers 0.2.0 tester. This
@@ -182,6 +182,15 @@ units:
 `example-projectiles.yml` also arms a siege tower. `all-settings-reference.yml`
 is an active advanced example. The vanilla template is the no-change starting
 point; it preserves other modules rather than reverting their balance changes.
+
+[`examples/reconquista-monsterfish.yml`](examples/reconquista-monsterfish.yml)
+preserves Monsterfish's supplied 1.8.6 preset values, with duplicate Catapult
+keys consolidated using their last values. Its Mangonel selects targets within
+30 tiles and fires eight pebbles. `inaccuracy: 0` removes primary aim error;
+`spread: 48` still offsets extra shots by up to six tiles on each axis. Those
+scattered impacts can land beyond 30 tiles. Native pebbles already compute
+launch speed for each aim; they need no `projectile_physics` override. To have
+all eight shots share the exact aim, explicitly change `spread` to zero.
 
 Missing units and missing fields are allowed. Empty unit mappings are ignored.
 `native` explicitly leaves a field unmodified, like omission. In a conditional
@@ -323,8 +332,8 @@ completion and validation; Lua also checks cross-field comparisons.
 | `interval` | 1–60000 ticks; optional fallback automatic-fire interval |
 | `interval_moving`, `interval_standing` | 0–60000; independently enable firing; inherit fallback or hold fire if omitted |
 | `targets` | One to four distinct target kinds in priority order; default `units` |
-| `range` | 1–100 tiles, default 20; automatic targeting and native-timed manual shots with `strict_range` enabled.  Projectile choice does not change this limit. |
-| `strict_range` | Default true; exact automatic range checks using unit positions, building centres and wall aim points. Native-timed manual shots also obey the configured limit before wind-up; an already started rejected swing finishes without firing. False restores rounded automatic checks and the previous manual behavior. Native range/eligibility rules still apply; scatter is not clamped. |
+| `range` | 1–100 tiles, default 20 for configured automatic fire; selected-target radius. An explicit value also limits supported native shooters' manual orders, even with native reload timing or independent timer mode (1.8.16+). Projectile choice does not change this limit. Native eligibility still applies. |
+| `strict_range` | Default true; exact automatic range checks using unit positions, building centres and wall aim points. Supported native shooters obey an explicit manual range before wind-up; native-timed shots also obey their scheduler range. An already rejected native-timed swing finishes without firing. False restores rounded automatic checks and previous manual behavior. Scatter is not clamped. |
 | `auto_targeting` | False requires human attack orders, including without an interval. True permits native acquisition and configured automatic searches. Native preserves the game when no interval is set. |
 | `target_bias_tiles` | Optional unit-type score biases 0–255 for native automatic unit acquisition and configured non-random `targets: units` searches. One point subtracts eight native score units (one tile-equivalent) from the game's distance-and-attention score, floored at zero. The game's eligibility, range, type, line-of-sight and engaged-target rules still decide; a larger bias does not guarantee selection or extend range. Unlisted types get zero. Omit or use `native` to keep the native score. Wall/decoration mappings replace the inherited map; `native` clears it. Manual orders, cluster and random volleys keep their existing policies. The old `threat_priority` name remains valid for existing presets; use only one name in each unit or override. |
 | `spread`, `inaccuracy` | 0–800 whole native coordinate units: **1 = ⅛ tile, 8 = 1 tile** |

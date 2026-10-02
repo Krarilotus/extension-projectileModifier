@@ -1,4 +1,6 @@
-# Custom Projectiles 1.8.15
+# Custom Projectiles 1.8.16
+
+range, özgün yeniden doldurma süresinde de seçilen hedefin uzaklığını kare cinsinden sınırlar. spread ve inaccuracy, mermileri bu yarıçapın dışına taşıyabilir. strict_range: false, elle hedefleme menzil düzeltmesini kapatır.
 
 Uzun menzilli değiştirilmiş mermiler: projectile_physics: {firethrower_pot: {mode: fixed_angle, angle: 30}} başlangıç hızını oyuna hesaplatır. Denge yapılandırmasıyla etkin Rebalancer 1.1.3+ gerektirir. Özel görsel çeşitleri dahil tür başına geneldir; native mevcut değerleri korur. Hedef menzili ve çarpışmalar hâlâ geçerlidir.
 

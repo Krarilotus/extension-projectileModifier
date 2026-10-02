@@ -1,4 +1,6 @@
-# Custom Projectiles 1.8.15
+# Custom Projectiles 1.8.16
+
+range limits selected targets in tiles, even with native reload timing. spread and inaccuracy can move impacts beyond that radius. strict_range: false disables the manual range correction.
 
 Long-range replacements: optional projectile_physics: {firethrower_pot: {mode: fixed_angle, angle: 30}} lets the native game compute launch speed. Requires active Rebalancer 1.1.3+ with a balance config. Global per type, including sprite variants; native preserves existing values. Target range and collisions still apply.
 

@@ -1,4 +1,6 @@
-# Custom Projectiles 1.8.15
+# Custom Projectiles 1.8.16
+
+range limite la distance des cibles en cases, même avec le rechargement natif. spread et inaccuracy peuvent déplacer les impacts au-delà de ce rayon. strict_range: false désactive la correction de portée manuelle.
 
 Remplacements à longue portée : projectile_physics: {firethrower_pot: {mode: fixed_angle, angle: 30}} laisse le jeu calculer la vitesse de départ. Nécessite Rebalancer 1.1.3+ actif avec une configuration d’équilibrage. Global par type, variantes graphiques comprises ; native conserve les valeurs. Portée et collisions restent applicables.
 

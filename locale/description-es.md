@@ -1,4 +1,6 @@
-# Custom Projectiles 1.8.15
+# Custom Projectiles 1.8.16
+
+range limita la distancia del objetivo en casillas, incluso con la recarga original. spread e inaccuracy pueden desplazar los impactos fuera de ese radio. strict_range: false desactiva la corrección de alcance manual.
 
 Proyectiles sustitutos de largo alcance: projectile_physics: {firethrower_pot: {mode: fixed_angle, angle: 30}} deja que el juego calcule la velocidad inicial. Requiere Rebalancer 1.1.3+ activo con configuración de equilibrio. Es global por tipo, incluidas variantes gráficas; native conserva los valores. Alcance y colisiones siguen aplicándose.
 

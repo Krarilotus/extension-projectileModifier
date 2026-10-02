@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=../projectile-config.schema.json
-# Optional flight balance example for custom-projectiles 1.8.15.
+# Optional flight balance example for custom-projectiles 1.8.16.
 # Requires ACTIVE Rebalancer 1.1.3+ with your existing balance configuration.
 # The module does not enable Rebalancer automatically or change its other settings.
 # Native fixed-speed grenades can fall short at siege distances. Fixed angle
