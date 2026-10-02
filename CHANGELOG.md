@@ -1,5 +1,64 @@
 # Changelog
 
+## 1.8.16 (provisional test candidate)
+
+- Enforce an explicit range on supported native shooters' manual acquisition
+  independently of a custom reload interval or animation synchronization.
+  Reuse the existing native acquisition hook, exact range helper and profile
+  flag table. Respect AI-only profiles; strict_range false retains native behavior.
+- Include Monsterfish's supplied Reconquista settings with duplicate keys
+  consolidated, preserving the last supplied values and all timing/spread values.
+  Explain selected-target range versus scattered impacts in the schema, guide
+  and short preview help in all nine GUI languages.
+- Native-code checks on both 1.41 families reject a target one eighth-tile past
+  the 30-tile boundary. The supplied eight-pebble volley reaches each scattered
+  aim using native speed solving; spread 48 can land beyond the selected radius.
+  No projectile solver, velocity override, native dispatcher or extra hook added.
+
+## 1.8.15 (provisional test candidate)
+
+- Add optional root `projectile_physics` using existing Rebalancer
+  `apply_rebalance` and framework `afterInit` APIs. Fixed speed uses the native
+  angle solver; fixed/adaptive angle use the native launch-speed solver. This
+  lets non-stone replacements reach siege distances with explicit flight tuning.
+- Require an active Rebalancer balance configuration only for this feature;
+  unchanged configurations do not activate its unrelated balance hooks. Flight
+  settings are global per native type, including inherited sprite variants.
+- Include nine canonical native physics entries as explicit `native` in the
+  inert vanilla reference, schema completions, short help in nine preview
+  languages and `examples/long-range-replacements.yml`. Physics participates in
+  the existing saved configuration identity; gameplay retuning rules still apply.
+- No new native hook, fixed address, private table resolver or trajectory solver.
+
+## 1.8.14 (provisional test candidate)
+
+- Allow gameplay config edits when loading format-5 saves. Reset obsolete module
+  firing timers/queues while retaining the saved random seed and visual identities.
+  Root `allow_config_changes_on_load: false` preserves strict configuration matching.
+  Custom graphics definitions and slots must still match; older custom-graphics
+  saves need one unchanged load/resave before gameplay retuning.
+- Reuse native acquisition and the existing exact range check to reject
+  out-of-range native-timed manual shots before wind-up. Let an already started
+  rejected swing finish without firing, instead of freezing at its release frame.
+  `strict_range: false` disables this correction. Keep native scatter, targeting,
+  projectile dispatch and cow controls with their existing owners.
+- Update the schema, full vanilla reference, Reconquista example and nine preview
+  languages without adding GUI controls or another hook site.
+
+## 1.8.13 (provisional test candidate)
+
+- Add optional `ammo_by_target.units` and `ammo_by_target.groups`, with reusable
+  top-level `unit_groups`. Exact unit rules win; conflicting overlapping groups
+  require an exact rule. Compile once into the existing ammunition selector.
+- Keep existing ammunition behavior for unmatched targets and native manual/cow
+  orders. Regular/cow slots retain their own counts and custom sprites. Random
+  volleys choose ammunition per actual victim without resizing the volley.
+- Ship the Reconquista example: catapults/trebuchets use regular ammunition
+  against the named siege group and retain AIC cow behavior against troops.
+  Opt into individual-unit fallback after clusters, including isolated troops.
+- Extend the VS Code schema, full inert vanilla reference, guide and all nine
+  GUI preview languages. No new GUI control, hook, binding or targeting system.
+
 ## 1.8.12 (provisional test candidate)
 
 - Rename the preset-facing automatic unit score setting to

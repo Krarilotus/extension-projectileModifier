@@ -1,0 +1,89 @@
+# yaml-language-server: $schema=../projectile-config.schema.json
+# Reconquista preset for custom-projectiles 1.8.16 test.
+# Copy this file beside projectile-config.schema.json and change the first line to:
+# yaml-language-server: $schema=./projectile-config.schema.json
+# Select the copy in Customizations > Balance Changes. Restart after editing.
+# Intervals are simulation ticks between volley starts, not milliseconds.
+# Accuracy/spread: 1 = 1/8 tile; 8 = one tile; inaccuracy 0 = exact aim.
+# Native cow controls and human attack orders remain unchanged.
+# AI catapults/trebuchets prefer clusters, then search individual enemies so a
+# lone siege engine is eligible too. This fallback also permits lone troop targets.
+# Regular ammunition against siege: configured catapult pebbles / trebuchet stones.
+# Other troop targets retain existing AIC cow permission and native cow ammunition.
+# Ammunition rules do not add targeting priority or change impact/damage rules.
+
+# Gameplay edits can load this preset's saves; old module queues/timers reset.
+# Keep custom projectile/decorations definitions unchanged for existing saves.
+allow_config_changes_on_load: true
+
+unit_groups:
+  siege:
+    - Catapult
+    - Trebuchet
+    - Mangonel
+    - Siege tower
+    - Battering ram
+    - Portable shield
+    - Tower ballista
+    - Fire ballista
+
+units:
+  Catapult:
+    ai_cow_vs_units: true
+    ammo_by_target:
+      groups:
+        siege: regular
+    projectile: mangonel_pebble
+    count: 3
+    spread: 60
+    interval: 700
+    targets: [cluster, units]
+    density_min: 30
+    density_radius: 10
+    range: 40
+    suppress_default: true
+    sync_to_animation: true
+    require_manned: 2
+  Trebuchet:
+    ai_cow_vs_units: true
+    ammo_by_target:
+      groups:
+        siege: regular
+    interval: 800
+    targets: [cluster, units]
+    density_min: 30
+    density_radius: 10
+    range: 30
+    spread: 2
+    suppress_default: true
+    sync_to_animation: true
+    require_manned: 3
+    inaccuracy: 0
+  Mangonel:
+    interval: 400
+    targets: cluster
+    density_min: 30
+    density_radius: 10
+    range: 30
+    count: 8
+    spread: 48
+    suppress_default: true
+    sync_to_animation: true
+    require_manned: 2
+    inaccuracy: 0
+  Siege tower:
+    attached_interval: 600
+    attached_ignore_crew: true
+    attached_stop_when_boarded: true
+    attached_board_radius: 2
+    projectile: arrow
+    interval_moving: 700
+    interval_standing: 600
+    count: 4
+    stagger_min: 5
+    stagger_max: 25
+    targets: units
+    range: 48
+    require_manned: 1
+    random_targets: true
+    shoot_height: 40

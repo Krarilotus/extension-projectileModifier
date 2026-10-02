@@ -1,4 +1,12 @@
-# Custom Projectiles 1.8.12
+# Custom Projectiles 1.8.16
+
+range, özgün yeniden doldurma süresinde de seçilen hedefin uzaklığını kare cinsinden sınırlar. spread ve inaccuracy, mermileri bu yarıçapın dışına taşıyabilir. strict_range: false, elle hedefleme menzil düzeltmesini kapatır.
+
+Uzun menzilli değiştirilmiş mermiler: projectile_physics: {firethrower_pot: {mode: fixed_angle, angle: 30}} başlangıç hızını oyuna hesaplatır. Denge yapılandırmasıyla etkin Rebalancer 1.1.3+ gerektirir. Özel görsel çeşitleri dahil tür başına geneldir; native mevcut değerleri korur. Hedef menzili ve çarpışmalar hâlâ geçerlidir.
+
+Oyun ayarları değiştirilmiş olsa da kayıt yüklenebilir; modülün eski atış kuyrukları ve zamanlayıcıları sıfırlanır. Özel grafik tanımları aynı kalmalıdır. allow_config_changes_on_load: false özgün ayarları gerektirir. strict_range: false yeni elle atış menzil denetimini de kapatır.
+
+Otomatik mühimmat: hedef listelerini unit_groups altında tanımlayın; ateş eden birimde ammo_by_target.groups: {siege: regular} veya ammo_by_target.units: {Monk: cow} kullanın. Tekil türler önceliklidir; diğer hedefler değişmez. Atış aralığı gerekir; native kuralları siler. Reconquista örneği dahildir.
 
 77 birim türünün tamamını YAML ile ayarlayın. Normal mühimmat ve inekler ayrı ayarlanır. Aralıklar desteklenen atış animasyonlarına uyar; inaccuracy yerel oyun birimlerini kullanır: 1 = 1/8 karo, 8 = 1 karo, 0 = tam isabetli nişan.
 

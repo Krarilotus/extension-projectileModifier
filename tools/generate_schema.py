@@ -13,9 +13,16 @@ def build_schema():
         dict(type='string',pattern='^[a-z][a-z0-9_-]{0,47}$')],
         description='Native projectile or a name defined in projectiles. The game loader rejects undefined variant names.')
     fields['cow_projectile'] = dict(fields['projectile'], description='Separate replacement for native siege cow ammunition and automatic AI cow shots. Omission preserves cows.')
+    ammo = dict(anyOf=[dict(enum=['regular', 'cow']), fields['projectile']])
+    fields['ammo_by_target'] = dict(type='object', additionalProperties=False,
+        properties={'units': dict(type='object', additionalProperties=False,
+            properties={name: {'$ref': '#/$defs/ammunition'} for _, name in sorted(constants.unit_names.items())}),
+            'groups': dict(type='object', additionalProperties=False,
+                patternProperties={'^[a-z][a-z0-9_-]{0,47}$': {'$ref': '#/$defs/ammunition'}})},
+        description='Optional ammunition for configured automatic unit shots. Requires an automatic-fire interval. Units rules override named unit_groups; conflicting overlapping groups require an explicit units rule. regular/cow select the configured ammunition slots and counts; a projectile/variant uses regular count. Unmatched targets keep existing behavior. Manual native attack orders and native cow orders are unchanged. Maps replace inherited maps; native clears the map. Mixed volleys choose ammunition per actual victim, keeping the initially admitted volley count.')
     fields['inaccuracy']['description'] = 'Maximum random aim-error radius in whole native coordinate units: 1 = 1/8 tile, 8 = 1 tile. Explicit 0 removes native random error; omission preserves it. Separate spread still applies. Do not combine with inaccuracy_tiles.'
     fields['inaccuracy_tiles']['description'] = 'Compatibility alias in whole tiles, converted by multiplying by 8. Prefer inaccuracy for native 1/8-tile steps. Do not combine both fields.'
-    fields['spread']['description'] = 'Additional simultaneous-shot spread per axis, in whole native coordinate units: 1 = 1/8 tile, 8 = 1 tile. Zero adds no spread. Independent of inaccuracy.'
+    fields['spread']['description'] = 'Additional simultaneous-shot spread per axis, in whole native coordinate units: 1 = 1/8 tile, 8 = 1 tile. Zero adds no spread. Independent of inaccuracy. Range limits the selected target, not the scattered impact positions.'
     fields['spread_tiles']['description'] = 'Compatibility alias in whole tiles, converted by multiplying by 8. Prefer spread for native 1/8-tile steps. Do not combine both fields.'
     target = dict(type='string', enum=sorted(constants.target_kinds.keys()))
     fields['targets'] = dict(oneOf=[target, dict(type='array', items=target,
@@ -41,7 +48,8 @@ def build_schema():
     fields['interval_moving']['description'] = 'Enables firing while moving; 0 holds fire. If omitted, use interval, or hold fire if neither is set.'
     fields['interval_standing']['description'] = 'Enables firing while stopped, not specifically docked; 0 holds fire. If omitted, use interval, or hold fire if neither is set.'
     fields['attached_interval']['description'] = 'Enables firing for a siege tower docked to a wall, overriding moving/standing intervals; 0 holds fire. Omission keeps the current moving/standing rate or fallback.'
-    fields['strict_range'] = dict(type='boolean', default=True, description='Check automatic targets at native coordinate precision, including building centres. False restores the old rounded tile checks. Does not clamp projectile scatter or change native manual range rules.')
+    fields['range']['description'] = 'Selected-target radius in tiles. Supported native shooters also enforce an explicit range on manual orders before wind-up, independently of interval or sync_to_animation. Native eligibility checks still apply. Projectile flight, spread and inaccuracy are separate; scattered impacts can lie beyond this radius.'
+    fields['strict_range'] = dict(type='boolean', default=True, description='Check automatic targets at native coordinate precision, including building centres. Supported native shooters respect an explicit manual range before wind-up even without a configured reload interval. Native-timed shots also obey their scheduler range. Rejected native-timed shots finish an existing swing without firing. False restores rounded automatic checks and the previous manual behavior. Native eligibility still applies; projectile scatter is not clamped.')
     fields['auto_targeting'] = dict(type='boolean', default=True, description='False requires an explicit human attack order and disables module automatic search and native automatic acquisition for this unit. True preserves native acquisition and permits configured interval searches. Native leaves the game unchanged when no interval is configured.')
     for name, field in list(fields.items()):
         fields[name] = dict(anyOf=[field, {'const':'native'}], description=field.get('description','') + ' Native explicitly leaves this field unmodified; configured automatic fire still has its documented module defaults.')
@@ -61,10 +69,26 @@ def build_schema():
                 description='First matching rule wins within the native brazier 3-tile square and height difference below 45. Sparse fields apply after fortification overrides. Names must exist in decorations.')
     fields['on_fortification'] = {'$ref': '#/$defs/override'}
     fields['near_decorations'] = dict(type='array',maxItems=33,items={'$ref':'#/$defs/decorationRule'})
+    physics = dict(anyOf=[{'const':'native'},
+        dict(type='object', additionalProperties=False, required=['mode','speed'],
+             properties={'mode':{'const':'fixed_speed'},'speed':dict(type='integer',minimum=1,maximum=1000,
+                 description='Native launch-speed parameter, not tiles per tick. Native default arrow is 125, slinger stone 100, firethrower pot 80. A speed alone does not extend target eligibility.')}),
+        dict(type='object', additionalProperties=False, required=['mode','angle'],
+             properties={'mode':dict(enum=['fixed_angle','adaptive_angle']),
+                 'angle':dict(type='integer',minimum=1,maximum=89,
+                     description='Native launch angle in degrees. Fixed angle computes speed for the target; adaptive angle uses the Catapult-style native height/fallback rules. Geometry/collisions can still prevent a hit.')})])
     return {'$schema': 'https://json-schema.org/draft/2020-12/schema',
             'title': 'Custom Projectiles preset', 'type': 'object', 'additionalProperties': False,
             'description': 'Projectile preset. All unit entries and settings are optional; omitted settings preserve native behavior or documented automatic-fire defaults. UCP required/suggested qualifiers apply to the file selector, not fields inside this file. See README.md.',
-            'properties': {'decorations': {'type':'object','maxProperties':33,'additionalProperties':False,
+            'properties': {'projectile_physics': dict(type='object', additionalProperties=False,
+                            description='Optional global native projectile flight settings. Requires ACTIVE Rebalancer 1.1.3+ with a balance config; applied through its API after balance initialization. All users of this projectile, including sprite variants, share them. Fixed speed may not reach every target; fixed angle asks the native solver to calculate speed for the target. Omission/native leaves current values unchanged. Collision, damage and targeting remain native. Fire-ballista bolts share ballista_bolt physics.',
+                            properties={name: {'$ref':'#/$defs/projectilePhysics'} for name in sorted(cfg.flight_projectiles.keys())}),
+                          'allow_config_changes_on_load': dict(type='boolean', default=True,
+                            description='Allow gameplay retuning when loading a save. Reset old module firing timers and queued volleys, retaining the saved random seed and visual identities. Custom projectile/decorations definitions and graphics slots must match. False requires the exact saved gameplay configuration. Older saves with custom graphics must first be loaded and saved with their original configuration.'),
+                          'unit_groups': dict(type='object', maxProperties=77, additionalProperties=False,
+                          patternProperties={'^[a-z][a-z0-9_-]{0,47}$': dict(type='array', minItems=1,
+                              maxItems=77, uniqueItems=True, items=dict(enum=[name for _, name in sorted(constants.unit_names.items())]))}),
+                          'decorations': {'type':'object','maxProperties':33,'additionalProperties':False,
                           'patternProperties':{'^[a-z][a-z0-9_-]{0,47}$':{'type':'object','additionalProperties':False,
                               'properties':{'label':{'type':'string','minLength':1,'maxLength':96},
                                   'sprites':{'type':'string','minLength':5,'maxLength':240,'pattern':'\\.[gG][mM]1$',
@@ -79,7 +103,7 @@ def build_schema():
                           'units': {'type': 'object', 'additionalProperties': False,
                           'properties': {name: {'$ref': '#/$defs/unit'} for _, name in sorted(constants.unit_names.items())}}},
             '$defs': {'unit': unit, 'override': override, 'decorationRule':rule,
-                      'targetBiasTiles': priority}}
+                      'targetBiasTiles': priority, 'ammunition': ammo, 'projectilePhysics': physics}}
 
 if __name__ == '__main__':
     (ROOT/'projectile-config.schema.json').write_text(

@@ -59,7 +59,7 @@ class SaveValidationTests(unittest.TestCase):
             state.validate(state, empty)
         self.assertEqual(self.blocks(h, state), before)
 
-    def test_target_bonus_is_part_of_saved_configuration_identity(self):
+    def test_target_bonus_change_can_reconfigure_or_use_strict_load_policy(self):
         for extreme in (False, True):
             original = self.prepare({'Catapult': {'interval': 100,
                 'threat_priority': {'Monk': 3}}}, extreme)
@@ -70,8 +70,9 @@ class SaveValidationTests(unittest.TestCase):
                 'threat_priority': {'Monk': 2}}}, extreme)
             other_state = changed.sections[b'projectileModifier']
             other_handle = self.state_handle(changed)
-            other_handle[b'files'][b'format'] = handle[b'files'][b'format']
-            other_handle[b'files'][b'config'] = handle[b'files'][b'config']
+            for name, content in handle[b'files'].items(): other_handle[b'files'][name] = content
+            self.assertTrue(other_state.validate(other_state, other_handle)[b'reconfigure'])
+            other_state[b'allow_config_changes'] = False
             with self.assertRaisesRegex(Exception, 'saved projectile settings differ'):
                 other_state.validate(other_state, other_handle)
 

@@ -39,6 +39,15 @@ end
 local projectile_ids = {}
 for _, id in pairs(constants.projectile_names) do projectile_ids[id] = true end
 
+-- Rebalancer owns these native flight tables and their startup mutation API.
+-- Its legacy `velocity` field is an angle in native fixed-angle modes.
+M.flight_projectiles = {
+    arrow='arrow', catapult_rock='catapult_rock', trebuchet_rock='trebuchet_rock',
+    mangonel_pebble='mangonel_pebble', crossbow_bolt='crossbow_bolt',
+    ballista_bolt='towerbal_bolt', cow='cow', slinger_stone='slinger_stone',
+    firethrower_pot='firethrower_grenade',
+}
+
 local function fail(path, reason)
     error('[custom-projectiles] ' .. path .. ': ' .. reason, 0)
 end
@@ -46,15 +55,29 @@ local function object(value, path)
     if type(value) ~= 'table' then fail(path, 'expected a mapping') end
 end
 
-local function validate_flat(config, variants)
+-- The same validated native/custom projectile choices serve both ammo slots
+-- and per-target rules. Keep resolution with this configuration owner.
+local function projectile(value, variants, field)
+    local variant = variants and variants[value]
+    local id = variant and variant.id or (type(value) == 'string' and constants.projectile_names[value] or value)
+    if not variant and not projectile_ids[id] then fail(field, 'unknown or unsafe projectile type') end
+    return id
+end
+
+local function validate_flat(config, variants, groups)
     object(config, 'config')
     for key in pairs(config) do
-        if key ~= 'units' and key ~= 'projectiles' and key ~= 'decorations' then fail(tostring(key), 'unknown section; expected units, projectiles or decorations') end
+        if key ~= 'units' and key ~= 'projectiles' and key ~= 'decorations' and key ~= 'unit_groups'
+            and key ~= 'allow_config_changes_on_load' and key ~= 'projectile_physics' then fail(tostring(key), 'unknown section; expected units, projectiles, decorations, unit_groups, projectile_physics or allow_config_changes_on_load') end
     end
     local units = config.units
     if units == nil then units = {} end
     object(units, 'units')
     local result = {units = {}}
+    if config.allow_config_changes_on_load ~= nil then
+        if type(config.allow_config_changes_on_load) ~= 'boolean' then fail('allow_config_changes_on_load', 'expected true or false') end
+        result.allow_config_changes_on_load = config.allow_config_changes_on_load
+    end
     for name, cfg in pairs(units) do
         local path = 'units.' .. tostring(name)
         if not M.units[name] then fail(path, 'unknown unit name') end
@@ -67,7 +90,7 @@ local function validate_flat(config, variants)
             local field = path .. '.' .. tostring(key)
             local bounds = M.numbers[key]
             if value == 'native' and (bounds or M.booleans[key] or key == 'targets'
-                or key == 'threat_priority' or key == 'target_bias_tiles'
+                or key == 'threat_priority' or key == 'target_bias_tiles' or key == 'ammo_by_target'
                 or ((key == 'projectile' or key == 'cow_projectile') and not (variants and variants.native))) then
                 -- Explicit inheritance uses the same path as omission. Keep
                 -- native state-dependent behavior with its existing owner.
@@ -82,10 +105,7 @@ local function validate_flat(config, variants)
                 if type(value) ~= 'boolean' then fail(field, 'expected true or false') end
                 out[key] = value
             elseif key == 'projectile' or key == 'cow_projectile' then
-                local variant = variants and variants[value]
-                local id = variant and variant.id or (type(value) == 'string' and constants.projectile_names[value] or value)
-                if not variant and not projectile_ids[id] then fail(field, 'unknown or unsafe projectile type') end
-                out[key] = id
+                out[key] = projectile(value, variants, field)
             elseif key == 'targets' then
                 if type(value) == 'string' then value = {value} end
                 object(value, field)
@@ -103,6 +123,37 @@ local function validate_flat(config, variants)
                     targets[#targets+1] = kind
                 end
                 out[key] = targets
+            elseif key == 'ammo_by_target' then
+                object(value, field)
+                for section in pairs(value) do
+                    if section ~= 'units' and section ~= 'groups' then fail(field, 'expected units or groups') end
+                end
+                local direct = value.units == nil and {} or value.units
+                local grouped = value.groups == nil and {} or value.groups
+                local resolved = {}
+                object(direct, field .. '.units'); object(grouped, field .. '.groups')
+                local function ammunition(choice, where)
+                    if choice == 'regular' or choice == 'cow' then return choice end
+                    return projectile(choice, variants, where)
+                end
+                local names = {}
+                for group in pairs(grouped) do names[#names+1] = group end
+                table.sort(names, function(a,b) return tostring(a) < tostring(b) end)
+                for _, group in ipairs(names) do
+                    if not groups[group] then fail(field .. '.groups.' .. tostring(group), 'unknown unit group') end
+                    local choice = ammunition(grouped[group], field .. '.groups.' .. group)
+                    for _, target in ipairs(groups[group]) do
+                        if resolved[target] ~= nil and resolved[target] ~= choice and direct[target] == nil then
+                            fail(field .. '.' .. target, 'conflicting group ammunition; add an explicit units rule')
+                        end
+                        resolved[target] = choice
+                    end
+                end
+                for target, choice in pairs(direct) do
+                    if not M.units[target] then fail(field .. '.units.' .. tostring(target), 'unknown target unit name') end
+                    resolved[target] = ammunition(choice, field .. '.units.' .. target)
+                end
+                if next(resolved) then out.ammo_by_target = resolved end
             elseif key == 'threat_priority' or key == 'target_bias_tiles' then
                 object(value, field)
                 local priorities = {}
@@ -140,6 +191,9 @@ local function validate_flat(config, variants)
         end
         if not out.interval and out.stagger_max ~= nil then
             fail(path .. '.stagger_max', 'requires an automatic-fire interval: interval, interval_moving, interval_standing or attached_interval')
+        end
+        if out.ammo_by_target and not out.interval then
+            fail(path .. '.ammo_by_target', 'requires a configured automatic-fire interval')
         end
         if out.interval then
             -- Native reload must not bypass the engine's normal crew gate.
@@ -184,6 +238,49 @@ end
 
 function M.validate(config)
     object(config, 'config')
+    local physics = {}
+    local supplied = config.projectile_physics == nil and {} or config.projectile_physics
+    object(supplied, 'projectile_physics')
+    for name, spec in pairs(supplied) do
+        local path = 'projectile_physics.' .. tostring(name)
+        if not M.flight_projectiles[name] then fail(path, 'expected a supported native projectile name; variants inherit their base physics') end
+        if spec ~= 'native' then
+            object(spec, path)
+            local modes = {fixed_speed=0, fixed_angle=1, adaptive_angle=2}
+            local mode = modes[spec.mode]
+            if mode == nil then fail(path .. '.mode', 'expected fixed_speed, fixed_angle or adaptive_angle') end
+            local parameter = mode == 0 and 'speed' or 'angle'
+            for key in pairs(spec) do
+                if key ~= 'mode' and key ~= parameter then fail(path .. '.' .. tostring(key), 'this mode requires only ' .. parameter) end
+            end
+            local value = spec[parameter]
+            local maximum = mode == 0 and 1000 or 89
+            if type(value) ~= 'number' or value % 1 ~= 0 or value < 1 or value > maximum then
+                fail(path .. '.' .. parameter, 'expected a whole number from 1 to ' .. maximum)
+            end
+            physics[M.flight_projectiles[name]] = {arch_type=mode, velocity=value}
+        end
+    end
+    local groups = config.unit_groups == nil and {} or config.unit_groups
+    object(groups, 'unit_groups')
+    local group_count = 0
+    for name, members in pairs(groups) do
+        if type(name) ~= 'string' or #name > 48 or not name:match('^[a-z][a-z0-9_%-]*$') then
+            fail('unit_groups', 'use lowercase group names of at most 48 characters')
+        end
+        object(members, 'unit_groups.' .. name)
+        local seen, count = {}, 0
+        for index, member in pairs(members) do
+            if type(index) ~= 'number' or index % 1 ~= 0 or index < 1 or index > #members
+                or not M.units[member] or seen[member] then
+                fail('unit_groups.' .. name, 'expected a list of distinct known unit names')
+            end
+            seen[member], count = true, count + 1
+        end
+        if count < 1 or count > 77 or count ~= #members then fail('unit_groups.' .. name, 'use one to 77 unit names') end
+        group_count = group_count + 1
+    end
+    if group_count > 77 then fail('unit_groups', 'at most 77 groups are supported') end
     local variants = require('sprite_resources').definitions(config.projectiles)
     local decorations = require('decorations')
     local definitions = decorations.definitions(config.decorations)
@@ -217,8 +314,9 @@ function M.validate(config)
     local copied = {}
     for key, value in pairs(config) do copied[key] = value end
     copied.units = plain
-    local result = validate_flat(copied, variants)
-    local alternates = validate_flat({units=fortified}, variants)
+    local result = validate_flat(copied, variants, groups)
+    if next(physics) then result.projectile_physics = physics end
+    local alternates = validate_flat({units=fortified}, variants, groups)
     if next(variants) then result.projectiles = variants end
     if next(definitions) then result.decorations = definitions end
     for name in pairs(fortified) do
@@ -231,7 +329,7 @@ function M.validate(config)
             local function effective(parent, fields)
                 local merged = merge_fields(parent, fields,
                     'units.' .. name .. '.near_decorations')
-                return validate_flat({units={[name]=merged}}, variants).units[name] or {}
+                return validate_flat({units={[name]=merged}}, variants, groups).units[name] or {}
             end
             for _, rule in ipairs(rules) do
                 -- Validate sparse fields as part of their effective profile,

@@ -226,7 +226,8 @@ end
 
 -- Private tables, non-overlapping scratch and persistent per-unit firing state.
 local TABLE_BYTES, OFF_REENTRY, OFF_SEED, OFF_SCATY, OFF_REMAP, OFF_COUNT, OFF_SPREAD, OFF_INTERVAL, OFF_SUPPRESS, OFF_FORCED, OFF_COOLDOWN, OFF_ORDER, OFF_RANGE, OFF_WALLMIN, OFF_MULTI, OFF_HEIGHT, OFF_MANNED, OFF_BLDCLASS, OFF_SCRATCH, OFF_CANDS, OFF_IMOVE, OFF_ISTAND, OFF_LASTPOS, OFF_MOVECD, OFF_STAGMIN, OFF_STAGMAX, OFF_PENDING, OFF_PENDCD, OFF_DMIN, OFF_DRAD, OFF_ATTINT, OFF_ATTCREW, OFF_ATTBOARD, OFF_ATTBR2, OFF_AICOW, OFF_COWREMAP, OFF_COWCOUNT, OFF_PRELOAD, OFF_PRELPOLL, OFF_SYNC, OFF_SYNCMAX, OFF_SYNCWAIT, OFF_INACC, OFF_INACCSET, OFF_AIONLY, OFF_UID, OFF_IDENTITY, OFF_NATIVESEEN, OFF_FORTIFIED, OFF_PROFILESTATE, OFF_NATIVECYCLE, OFF_NATIVEINT, OFF_NATIVEBLOCK, OFF_NATIVEATTACK, OFF_NATIVESTART, OFF_WEAPONSEEN, OFF_WEAPONCYCLE, OFF_WEAPONTICK, OFF_WEAPONPHASE, OFF_SPRITE, OFF_COWSPRITE, OFF_CURRENTVARIANT, OFF_VARIANTGM, OFF_VARIANTBASEGM, OFF_VARIANTCOUNT, OFF_ENTITYVARIANT, OFF_ENTITYUID, OFF_ENTITYTYPE, OFF_DECORVARIANT, OFF_DECORUID, OFF_DECORGM, OFF_DECORGRID, OFF_DECORNEXT, OFF_DECORRULEMAP, OFF_DECORRULEST, OFF_TURNBEFORE, OFF_STRICTRANGE, OFF_AUTOTARGET, OFF_RELEASECYCLE, OFF_PRIORITYPTR, OFF_PRIORITYTYPE, OFF_ACTIVECOUNT, OFF_ACTIVEIDS, OFF_ACTIVEINDEX, OFF_DECORACTIVECOUNT, OFF_DECORACTIVEIDS, OFF_DECORCELLSCOUNT, OFF_DECORCELLS, OFF_DECORWRITE, DATA_SIZE
-local function layout(profile_count, has_visuals, has_decorations, has_priorities)
+local OFF_AMMOPTR
+local function layout(profile_count, has_visuals, has_decorations, has_priorities, has_ammo_rules)
     MAX_PROFILES = profile_count
     TABLE_BYTES = MAX_PROFILES * 4
     OFF_REENTRY   = 0x00
@@ -247,7 +248,7 @@ local function layout(profile_count, has_visuals, has_decorations, has_prioritie
     OFF_MANNED    = OFF_HEIGHT   + TABLE_BYTES     -- crew members required
     OFF_BLDCLASS  = OFF_MANNED   + TABLE_BYTES     -- byte per building type
     OFF_SCRATCH   = OFF_BLDCLASS + constants.MAX_BUILDING_TYPES
-    OFF_CANDS     = OFF_SCRATCH  + 0x100           -- scratch includes fields through 0xD4
+    OFF_CANDS     = OFF_SCRATCH  + 0x100           -- scratch includes fields through 0xE0
     OFF_IMOVE     = OFF_CANDS    + constants.MAX_CANDIDATES * 4
     OFF_ISTAND    = OFF_IMOVE    + TABLE_BYTES
     OFF_LASTPOS   = OFF_ISTAND   + TABLE_BYTES     -- packed position, per unit
@@ -309,7 +310,8 @@ local function layout(profile_count, has_visuals, has_decorations, has_prioritie
     OFF_RELEASECYCLE = OFF_AUTOTARGET + TABLE_BYTES
     OFF_PRIORITYPTR = OFF_RELEASECYCLE + MAX_TYPES * 4
     OFF_PRIORITYTYPE = OFF_PRIORITYPTR + (has_priorities and TABLE_BYTES or 0)
-    OFF_ACTIVECOUNT = OFF_PRIORITYTYPE + (has_priorities and MAX_TYPES or 0)
+    OFF_AMMOPTR = OFF_PRIORITYTYPE + (has_priorities and MAX_TYPES or 0)
+    OFF_ACTIVECOUNT = OFF_AMMOPTR + (has_ammo_rules and TABLE_BYTES or 0)
     OFF_ACTIVEIDS = OFF_ACTIVECOUNT + 4
     OFF_ACTIVEINDEX = OFF_ACTIVEIDS + 3000 * 4
     OFF_DECORACTIVECOUNT = OFF_ACTIVEINDEX + 3000 * 4
@@ -380,7 +382,9 @@ local function install(config)
     for _, cfg in pairs(config.units) do profile_count = profile_count + 2 * #(cfg.near_decorations or {}) end
     local manual_only = false
     local has_priorities = false
-    for _, cfg in pairs(config.units) do
+    local has_ammo_rules = false
+    local has_manual_range = false
+    for name, cfg in pairs(config.units) do
         if configuration.any_profile(cfg, function(profile)
             return profile.threat_priority ~= nil
         end) then
@@ -389,10 +393,17 @@ local function install(config)
         if configuration.any_profile(cfg, function(profile) return profile.auto_targeting == false end) then
             manual_only = true
         end
+        if configuration.any_profile(cfg, function(profile) return profile.ammo_by_target ~= nil end) then
+            has_ammo_rules = true
+        end
+        if constants.native_reload_crews[name] ~= nil and configuration.any_profile(cfg, function(profile)
+            return profile.strict_range ~= false and (profile.range ~= nil
+                or (profile.interval ~= nil and profile.sync_to_animation ~= false))
+        end) then has_manual_range = true end
     end
     local native = resolve(cadence.required(config), config, has_priorities)
     MAX_UNITS = native.capacity
-    layout(profile_count, next(config.projectiles or {})~=nil or has_decorations, has_decorations, has_priorities)
+    layout(profile_count, next(config.projectiles or {})~=nil or has_decorations, has_decorations, has_priorities, has_ammo_rules)
     local native_decorations = has_decorations and decorations.resolve(native.locate)
     if native_decorations then
         assert(native_decorations.entityState == native.entityArray - 20,
@@ -486,6 +497,9 @@ local function install(config)
         STRICTRANGET  = data_addr + OFF_STRICTRANGE,
         AUTOTARGETT   = data_addr + OFF_AUTOTARGET,
         HASPRIORITY   = has_priorities and 1 or 0,
+        HASAMMORULES  = has_ammo_rules and 1 or 0,
+        HASMANUALRANGE = has_manual_range and 1 or 0,
+        AMMOPTRT      = data_addr + OFF_AMMOPTR,
         PRIORITYPTRT  = data_addr + OFF_PRIORITYPTR,
         PRIORITYTYPET = data_addr + OFF_PRIORITYTYPE,
         FORCEACQUIRE  = data_addr + OFF_SCRATCH + 0xD0,
@@ -569,6 +583,9 @@ local function install(config)
         S_PROFILE     = data_addr + OFF_SCRATCH + 0xC0,
         S_FIRED       = data_addr + OFF_SCRATCH + 0xC8,
         S_RANGE8SQ    = data_addr + OFF_SCRATCH + 0xCC,
+        S_TARGETAMMO  = data_addr + OFF_SCRATCH + 0xD8,
+        S_DEFAULTPROJ = data_addr + OFF_SCRATCH + 0xDC,
+        S_DEFAULTVARIANT = data_addr + OFF_SCRATCH + 0xE0,
         S_SELF        = data_addr + OFF_SCRATCH + 0x50,
         S_ID          = data_addr + OFF_SCRATCH + 0x54,
         S_INTV        = data_addr + OFF_SCRATCH + 0x58,
@@ -688,6 +705,9 @@ local function install(config)
         values.ACCURACYSET = assemble_blob(templates.accuracy_set_code, values)
     end
     values.WANTSCOW = assemble_blob(templates.aicow_code, values)
+    values.MANUALORDER = assemble_blob(templates.manual_order_code, values)
+    values.SHOOTTARGETINRANGE = assemble_blob(templates.shoot_target_in_range_code, values)
+    values.TARGETAMMO = has_ammo_rules and assemble_blob(templates.target_ammo_code, values) or 0
     values.CHOOSEAMMO = assemble_blob(templates.ammo_code, values)
     values.SYNCREADY = assemble_blob(templates.sync_code, values)
     values.CHOOSEINTERVAL = assemble_blob(templates.interval_code, values)
@@ -697,12 +717,12 @@ local function install(config)
     values.SCANWALL = assemble_blob(templates.scan_wall_code, values)
     volley_addr = assemble_blob(templates.volley_code, values)
     values.VOLLEY = volley_addr
-    values.MANUALORDER = assemble_blob(templates.manual_order_code, values)
     values.NATIVECONTEXT = assemble_blob(cadence.context_code, values)
     values.ACCEPTEDVALID = assemble_blob(cadence.accepted_code, values)
     local acquire_hook
-    if manual_only then
+    if manual_only or has_manual_range then
         values.RESUME = acquire_target_addr + 6
+        values.ACQUIREORIGINAL = has_manual_range and assemble_blob(templates.acquire_original_code, values) or 0
         acquire_hook = assemble_blob(templates.acquire_hook_code, values)
     end
     values.PICKTARGET = assemble_blob(templates.pick_code, values)
@@ -890,7 +910,12 @@ apply_unit = function(name, cfg, profile)
         core.writeByte(data_addr + OFF_PRIORITYTYPE + configuration.units[name], 1)
     end
     set_entry(OFF_TURNBEFORE, id, cfg.turn_before_shot == false and 0 or 1)
-    set_entry(OFF_STRICTRANGE, id, cfg.strict_range == false and 0 or 1)
+    -- Bit 0 keeps existing scheduled-shot range checks; bit 1 admits the
+    -- native manual acquisition guard independently of reload customization.
+    -- Reuse this immutable profile flag rather than another per-unit table.
+    local manual_range = constants.native_reload_crews[name] ~= nil
+        and (cfg.range ~= nil or (cfg.interval ~= nil and cfg.sync_to_animation ~= false))
+    set_entry(OFF_STRICTRANGE, id, cfg.strict_range == false and 0 or (manual_range and 3 or 1))
     set_entry(OFF_AUTOTARGET, id, cfg.auto_targeting == false and 0 or 1)
 
     if cfg["projectile"] ~= nil then
@@ -908,6 +933,22 @@ apply_unit = function(name, cfg, profile)
         if variant_by_id[cfg.cow_projectile] then set_entry(OFF_COWSPRITE,id,cfg.cow_projectile-256) end
     end
     if cfg.cow_count ~= nil then set_entry(OFF_COWCOUNT, id, cfg.cow_count) end
+
+    if cfg.ammo_by_target then
+        -- Compile validated groups once into the existing ammunition selector.
+        -- No native target scan or new lifecycle hook is needed.
+        local rules = core.allocate(MAX_TYPES * 12, true)
+        for target, choice in pairs(cfg.ammo_by_target) do
+            local cow = choice == 'cow'
+            local value = cow and (cfg.cow_projectile or 23)
+                or choice == 'regular' and cfg.projectile or choice
+            local entry = rules + configuration.units[target] * 12
+            core.writeInteger(entry, projectile_id(value))
+            core.writeInteger(entry + 4, variant_by_id[value] and value - 256 or 0)
+            core.writeInteger(entry + 8, cow and 2 or 1)
+        end
+        set_entry(OFF_AMMOPTR, id, rules)
+    end
 
     if cfg["spread"] ~= nil then
         set_entry(OFF_SPREAD, id, cfg["spread"])
@@ -1050,8 +1091,24 @@ end
 namespace.apply = function(config)
     assert(not installed, '[custom-projectiles] settings cannot be changed during a running session; relaunch the game')
     local validated = configuration.validate(config)
-    if next(validated.units) == nil and not next(validated.decorations or {}) then return end
-    install(validated)
+    if validated.projectile_physics then
+        local owner = modules.rebalancer
+        assert(owner and type(owner.apply_rebalance) == 'function',
+            '[custom-projectiles] projectile_physics requires active Rebalancer 1.1.3+ with a balance configuration')
+        -- Use the existing owner; no private flight tables, resolver or solver.
+        -- The framework event runs after every extension enabled its balance
+        -- preset, regardless of load order. No extra native hook is installed.
+        assert(hooks and type(hooks.registerHookCallback) == 'function',
+            '[custom-projectiles] projectile_physics requires the framework afterInit callback')
+    end
+    local native_changes = next(validated.units) ~= nil or next(validated.decorations or {}) ~= nil
+    if native_changes then install(validated) end
+    if validated.projectile_physics then
+        hooks.registerHookCallback('afterInit', function()
+            modules.rebalancer.apply_rebalance({projectiles=validated.projectile_physics})
+        end)
+    end
+    if not native_changes and not validated.projectile_physics then return end
     installed = true
 end
 

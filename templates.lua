@@ -295,6 +295,19 @@ v_fire:
     ; through the siege cow path for its launch height, muzzle and ground-target
     ; metadata. The generic path would give it arrow-style target/height data.
     mov eax, [ebp+0x0C]
+    if HASAMMORULES
+        cmp dword [S_TARGETAMMO], 0
+        je v_ammodone
+        mov eax, [S_DEFAULTPROJ]
+        mov [S_PROJ], eax
+        mov eax, [S_DEFAULTVARIANT]
+        mov [CURRENTVARIANT], eax
+        call TARGETAMMO
+        mov eax, [S_PROJ]
+        mov edx, [S_SHOOTER]
+        mov word [edx+0x3B0], 0
+    v_ammodone:
+    end if
     cmp eax, 23
     jne v_dispatch
     mov edx, [S_SHOOTER]
@@ -619,6 +632,9 @@ h_nocount:
 h_single:
     mov edx, 1
 h_fire:
+    if HASAMMORULES
+        mov dword [S_TARGETAMMO], 0
+    end if
     mov dword [S_EXPLICIT], 0
     cmp ecx, -1
     je h_originaltype
@@ -658,8 +674,9 @@ h_pass:
 ]],
 
 -- Restrict the existing native acquisition owner, before wind-up/ammunition.
--- Installed only for an explicit manual-only profile. Pass-through replays
--- the complete six-byte prologue; thiscall failure returns without a shot.
+-- Manual range is checked after the original acquisition prepared its aim,
+-- before its caller starts wind-up. Share the scheduled-shot range owner;
+-- configuring range alone does not require replacing native reload timing.
 acquire_hook_code = [[
 acquirePolicy:
     pushfd
@@ -668,6 +685,7 @@ acquirePolicy:
     push ebx
     call PROFILE
     add esp, 4
+    mov edi, eax
     cmp eax, MAXPROFILES
     jae ap_pass
     cmp dword [AUTOTARGETT+eax*4], 0
@@ -690,13 +708,89 @@ ap_order:
     xor eax, eax
     ret 4
 ap_pass:
+    if HASMANUALRANGE
+        cmp edi, MAXPROFILES
+        jae ap_native
+        test dword [STRICTRANGET+edi*4], 2
+        jz ap_native
+        cmp dword [AIONLYT+edi*4], 0
+        je ap_range
+        push ebx
+        call ISAIOWNED
+        add esp, 4
+        test eax, eax
+        jz ap_native
+    ap_range:
+        imul esi, ebx, 0x490
+        add esi, UNITARRAY
+        cmp word [esi+0x3B0], 0
+        jne ap_native
+        push ebx
+        call MANUALORDER
+        add esp, 4
+        test eax, eax
+        jz ap_native
+        mov ecx, [esp+24]       ; original this pointer
+        push ebx
+        call ACQUIREORIGINAL   ; original prologue/continuation exactly once
+        test eax, eax
+        jz ap_result
+        mov edx, edi
+        call SHOOTTARGETINRANGE
+    ap_result:
+        mov [esp+28], eax
+        popad
+        popfd
+        ret 4
+    ap_native:
+    end if
     popad
     popfd
+    if HASMANUALRANGE
+      jmp ACQUIREORIGINAL
+    else
     sub esp, 0x40
     push ebx
     push esi
     push edi
     jmp RESUME
+    end if
+  ]],
+
+acquire_original_code = [[
+acquireOriginal:
+    sub esp, 0x40
+    push ebx
+    push esi
+    push edi
+    jmp RESUME
+]],
+
+-- Existing pickTarget exact range check, also used by native acquisition.
+-- ESI=shooter pointer, EDX=effective profile; preserve all except EAX=result.
+shoot_target_in_range_code = [[
+shootTargetInRange:
+    pushad
+    movsx eax, word [esi+0xBE]
+    movsx ecx, word [esi+0xC0]
+    movsx ebx, word [esi+0xB6]
+    sub eax, ebx
+    imul eax, eax
+    movsx ebx, word [esi+0xB8]
+    sub ecx, ebx
+    imul ecx, ecx
+    add eax, ecx
+    mov ecx, [RANGET+edx*4]
+    imul ecx, ecx
+    shl ecx, 6
+    cmp eax, ecx
+    mov eax, 0
+    ja str_done
+    inc eax
+str_done:
+    mov [esp+28], eax
+    popad
+    ret
 ]],
 
 -- The game's Catapult/Trebuchet modes return before its automatic unit-list
@@ -920,7 +1014,8 @@ pk_nativeorder:
     call pk_saveorder           ; keep native cleanup of stale/reused orders
     test eax, eax
     jz pk_fail                  ; native acquisition must accept the order
-    call pk_inrange           ; respect the configured range on scheduled shots
+    mov edx, [ebp+0x0C]
+    call SHOOTTARGETINRANGE   ; same range owner as native manual acquisition
     test eax, eax
     jz pk_fail
     mov eax, 2                 ; keep the chosen target; no random-target scan
@@ -1023,7 +1118,8 @@ pk_leadready:
 pk_nativecoords:
     cmp dword [S_RANGE8SQ], 0
     je pk_nativecoords_ok
-    call pk_inrange
+    mov edx, [ebp+0x0C]
+    call SHOOTTARGETINRANGE
     test eax, eax
     jz pk_next
 pk_nativecoords_ok:
@@ -1073,26 +1169,6 @@ pk_out:
     pop esi
     pop ebx
     pop ebp
-    ret
-
-pk_inrange:
-    mov esi, [S_UNITPTR]
-    movsx eax, word [esi+0xBE]
-    movsx ecx, word [esi+0xC0]
-    movsx edx, word [esi+0xB6]
-    sub eax, edx
-    imul eax, eax
-    movsx edx, word [esi+0xB8]
-    sub ecx, edx
-    imul ecx, ecx
-    add eax, ecx
-    mov ecx, [S_R2]
-    shl ecx, 6
-    cmp eax, ecx
-    mov eax, 0
-    ja pk_rangeout
-    inc eax
-pk_rangeout:
     ret
 
 pk_saveorder:
@@ -1445,6 +1521,9 @@ wc_no:
 ammo_code = [[
 chooseAmmo:
     pushad
+    if HASAMMORULES
+        mov dword [S_TARGETAMMO], 0
+    end if
     mov ecx, [SPRITET+edx*4]
     mov [CURRENTVARIANT], ecx
     mov ecx, [FORCEDT+edx*4]
@@ -1461,6 +1540,9 @@ chooseAmmo:
     mov ecx, 7                   ; native mangonel volley when count is omitted
 ca_regularcount:
     mov [S_VOLLEYCOUNT], ecx
+    if HASAMMORULES
+        mov ebx, ecx
+    end if
     cmp dword [AICOWT+edx*4], 0
     je ca_done
     cmp dword [S_MODE], 1
@@ -1483,10 +1565,81 @@ ca_cowtype:
     mov ecx, [COWCOUNTT+edx*4]
     mov [S_VOLLEYCOUNT], ecx
 ca_done:
+    if HASAMMORULES
+        mov ecx, [S_PROJ]
+        mov [S_DEFAULTPROJ], ecx
+        mov ecx, [CURRENTVARIANT]
+        mov [S_DEFAULTVARIANT], ecx
+        cmp dword [S_MODE], 1
+        jne ca_rule_done
+        cmp dword [AMMOPTRT+edx*4], 0
+        je ca_rule_done
+        push edx
+        push dword [S_ID]
+        call MANUALORDER
+        add esp, 4
+        pop edx
+        test eax, eax
+        jnz ca_rule_done
+        mov eax, [AMMOPTRT+edx*4]
+        mov [S_TARGETAMMO], eax
+        call TARGETAMMO
+        cmp eax, 1
+        jne ca_rule_cow
+        mov [S_VOLLEYCOUNT], ebx
+        jmp ca_rule_done
+    ca_rule_cow:
+        cmp eax, 2
+        jne ca_rule_done
+        mov ecx, [COWCOUNTT+edx*4]
+        mov [S_VOLLEYCOUNT], ecx
+    ca_rule_done:
+    end if
     cmp dword [S_VOLLEYCOUNT], 1
     jge ca_return
     mov dword [S_VOLLEYCOUNT], 1
 ca_return:
+    popad
+    ret
+]],
+
+-- Extend the ammunition selector using the accepted victim's native ID/UID.
+-- Returns slot 1 (regular), 2 (cow), or 0 (no rule). Does not resize a volley.
+target_ammo_code = [[
+targetAmmo:
+    pushad
+    xor eax, eax
+    mov [esp+28], eax
+    mov edx, [S_TARGETAMMO]
+    test edx, edx
+    jz ta_done
+    mov ecx, [S_UNITPTR]
+    movzx eax, word [ecx+0x344]
+    cmp eax, 1
+    jl ta_done
+    cmp eax, MAXUNITS
+    jge ta_done
+    imul eax, eax, 0x490
+    add eax, UNITARRAY
+    cmp word [eax+0x8C], 0
+    je ta_done
+    mov ebx, [eax+0x98]
+    cmp ebx, [ecx+0xA0]
+    jne ta_done
+    movzx eax, word [eax+0x8E]
+    cmp eax, MAXTYPES
+    jae ta_done
+    imul eax, eax, 12
+    add edx, eax
+    mov eax, [edx]
+    test eax, eax
+    jz ta_done
+    mov [S_PROJ], eax
+    mov eax, [edx+4]
+    mov [CURRENTVARIANT], eax
+    mov eax, [edx+8]
+    mov [esp+28], eax
+ta_done:
     popad
     ret
 ]],

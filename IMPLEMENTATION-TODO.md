@@ -31,6 +31,20 @@ the new accepted-aim correction still needs a combined live direct-click test.
   required/suggested/unspecified handling, all nine locale catalogs and previews.
 - [x] Inert vanilla configuration, full setting reference, editor schema and a
   runnable custom-sprite/decorations example without distributed game artwork.
+- [x] Gameplay-retuned format-5 saves through the existing save owner, with strict
+  OFF control and preserved random seed/visual identities; emulated regressions.
+- [x] Reject native-timed manual targets outside configured range and finish an
+  already rejected wind-up without firing; existing range OFF control, both EXEs.
+- [x] Explicit native manual range independent of reload customization, preserving
+  native seven-shot Mangonel timing. Test the supplied eight-pebble Reconquista
+  volley, exact 30-tile boundary and scatter/flight on both reference EXEs.
+- [ ] Live acceptance of retuned saves and Mangonel out-of-range/valid retargeting;
+  2 October desktop probe has no Windows native bindings. Multiplayer/replay and
+  wider executable acceptance remain outstanding, as recorded in VALIDATION.md.
+- [x] Optional global native flight modes via existing Rebalancer/framework APIs;
+  120 long-range native flight cases across both game families and five engines.
+- [ ] Live rendered replacement-projectile impact/damage and paired multiplayer/
+  replay with flight changes; native desktop connection remains unavailable.
 
 ## Earlier provisional 1.8.6 delivery
 

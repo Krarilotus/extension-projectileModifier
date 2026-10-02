@@ -1,4 +1,12 @@
-# Custom Projectiles 1.8.12
+# Custom Projectiles 1.8.16
+
+range 以格为单位限制所选目标的距离，即使使用原生装填时间也有效。spread 和 inaccuracy 可能使落点超出该半径。strict_range: false 关闭手动瞄准的射程修正。
+
+远程替换弹药：projectile_physics: {firethrower_pot: {mode: fixed_angle, angle: 30}} 让原游戏计算发射速度。需要启用 Rebalancer 1.1.3+ 并配置平衡文件。按类型全局生效，包括自定义贴图变体；native 保留原值。目标射程和碰撞规则仍有效。
+
+修改玩法设置后仍可读取存档；模块旧的射击队列和计时器会重置。自定义图形定义必须保持一致。allow_config_changes_on_load: false 要求使用原设置。strict_range: false 也会关闭新的手动射击射程检查。
+
+自动弹药：在 unit_groups 中定义目标列表，再为射手设置 ammo_by_target.groups: {siege: regular} 或 ammo_by_target.units: {Monk: cow}。单个兵种优先，其他目标保持原有行为。需要射击间隔；native 清除规则。附带 Reconquista 示例。
 
 通过 YAML 配置全部 77 种单位。普通弹药和牛弹可分别设置。射击间隔遵循受支持的射击动画；inaccuracy 使用游戏原生单位：1 = 1/8 格，8 = 1 格，0 = 精确瞄准。
 

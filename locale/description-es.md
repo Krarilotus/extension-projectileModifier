@@ -1,4 +1,12 @@
-# Custom Projectiles 1.8.12
+# Custom Projectiles 1.8.16
+
+range limita la distancia del objetivo en casillas, incluso con la recarga original. spread e inaccuracy pueden desplazar los impactos fuera de ese radio. strict_range: false desactiva la corrección de alcance manual.
+
+Proyectiles sustitutos de largo alcance: projectile_physics: {firethrower_pot: {mode: fixed_angle, angle: 30}} deja que el juego calcule la velocidad inicial. Requiere Rebalancer 1.1.3+ activo con configuración de equilibrio. Es global por tipo, incluidas variantes gráficas; native conserva los valores. Alcance y colisiones siguen aplicándose.
+
+Los ajustes de juego pueden cambiar antes de cargar; se reinician las antiguas colas de disparo y temporizadores del módulo. Las definiciones gráficas personalizadas deben coincidir. allow_config_changes_on_load: false exige los ajustes originales. strict_range: false también desactiva la nueva comprobación de alcance de disparos manuales.
+
+Munición automática: defina listas de objetivos en unit_groups y use ammo_by_target.groups: {siege: regular} por tirador, o ammo_by_target.units: {Monk: cow}. Los tipos concretos tienen prioridad; los demás objetivos conservan su comportamiento. Requiere intervalo; native borra las reglas. Incluye ejemplo Reconquista.
 
 Configura los 77 tipos de unidades mediante YAML. La munición normal y las vacas se ajustan por separado. Los intervalos respetan las animaciones de disparo compatibles; inaccuracy usa unidades nativas: 1 = 1/8 de casilla, 8 = 1 casilla, 0 = puntería exacta.
 

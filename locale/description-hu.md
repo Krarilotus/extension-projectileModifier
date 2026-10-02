@@ -1,4 +1,12 @@
-# Custom Projectiles 1.8.12
+# Custom Projectiles 1.8.16
+
+A range mezőben megadott távolság a kiválasztott célpontot korlátozza, natív újratöltés mellett is. A spread és inaccuracy ezen túlra is szórhatja a lövedékeket. strict_range: false kikapcsolja a kézi célzás hatótávjavítását.
+
+Nagy távolságú helyettesítő lövedékekhez: projectile_physics: {firethrower_pot: {mode: fixed_angle, angle: 30}} a játékkal számíttatja ki az induló sebességet. Aktív Rebalancer 1.1.3+ és egyensúly-konfiguráció szükséges. Típusonként globális, a sprite-változatokra is érvényes; native megőrzi az értékeket. A célhatótáv és ütközés továbbra is számít.
+
+A játékbeállítások mentésbetöltés előtt módosíthatók; a modul régi lövéssorai és időzítői nullázódnak. Az egyéni grafikai definícióknak egyezniük kell. allow_config_changes_on_load: false az eredeti beállításokat követeli meg. strict_range: false az új kézi lövési hatótávellenőrzést is kikapcsolja.
+
+Automatikus lőszer: célcsoportok a unit_groups alatt, lövőnként ammo_by_target.groups: {siege: regular} vagy ammo_by_target.units: {Monk: cow}. Az egyedi típus az elsődleges; más célok változatlanok. Lövési intervallum szükséges; native törli a szabályokat. Reconquista-példa mellékelve.
 
 Mind a 77 egységtípus YAML-ban állítható. A normál lövedékek és a tehenek külön kezelhetők. Az időközök igazodnak a támogatott tüzelési animációkhoz; az inaccuracy játékbeli egységei: 1 = 1/8 mező, 8 = 1 mező, 0 = pontos célzás.
 

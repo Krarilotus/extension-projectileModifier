@@ -1,4 +1,12 @@
-# Custom Projectiles 1.8.12
+# Custom Projectiles 1.8.16
+
+range limits selected targets in tiles, even with native reload timing. spread and inaccuracy can move impacts beyond that radius. strict_range: false disables the manual range correction.
+
+Long-range replacements: optional projectile_physics: {firethrower_pot: {mode: fixed_angle, angle: 30}} lets the native game compute launch speed. Requires active Rebalancer 1.1.3+ with a balance config. Global per type, including sprite variants; native preserves existing values. Target range and collisions still apply.
+
+Gameplay edits can load existing saves; old module firing queues/timers reset. Custom graphics definitions must match. allow_config_changes_on_load: false requires the original settings. strict_range: false also disables the new manual range guard.
+
+Automatic ammunition: define target lists in unit_groups, then ammo_by_target.groups: {siege: regular} per shooter, or ammo_by_target.units: {Monk: cow}. Exact units win; unmatched targets keep existing behavior. Requires an interval; native clears rules. Reconquista example included.
 
 Configure all 77 unit types in YAML. Regular and cow ammunition are independent. Intervals respect supported firing animations; inaccuracy uses native units: 1 = 1/8 tile, 8 = 1 tile, 0 = exact aim.
 

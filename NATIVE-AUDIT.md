@@ -1,5 +1,102 @@
 # Native integration audit, 12 September 2026
 
+## 1.8.16 manual range without reload customization
+
+Inspected the existing consumer at d1bbe93: `install` only enabled the native
+manual range guard for an interval using native synchronization, and the
+acquisition hook required NATIVECYCLET. A reproducible Mangonel range-only
+configuration therefore bypassed the configured range. Extend those existing
+owners: enable the existing guard for an explicit range, and encode eligibility
+in bit 1 of the existing immutable STRICTRANGET profile flag (bit 0 retains
+scheduled exact checks). There is no new flag table, persistent block or cache.
+The native original acquisition still runs exactly once before the existing
+SHOOTTARGETINRANGE helper. Reuse ISAIOWNED to preserve AI-only human behavior.
+OFF remains strict_range false; unconfigured/native range retains native timing.
+
+Runtime discovery stays with the existing UCP AOB-resolved ACQUIRE entry,
+displaced prologue/trampoline and ABI; no new binding or competing hook is added.
+OpenSHC EntityState initializer/velocity declarations and the actual reference
+solver confirm native pebbles use fixed-angle speed solving. Execute the real
+native Mangonel handler, then projectile allocator/initializer/movement in both
+1.41 families using the supplied settings. Target admission is separate from
+intentional projectile scatter: preserve spread/RNG order and native physics,
+allocation, ownership, damage and cleanup. Final diff adds no physics solver,
+world scan, per-frame allocation, private resolver or copied dispatcher.
+The framework's `dll/lua/yaml/LuaYamlParser.cpp:parseTableNode` iterates mapping
+entries and writes each with `lua_setfield`; later duplicate Catapult keys thus
+replace earlier values. The cleaned example consolidates them without adding a
+private YAML parser or changing the supplied effective values.
+
+## 2 October 2026: replacement projectile flight
+
+| Capability | Existing owner reused / precise gap |
+|---|---|
+| Global flight properties | Rebalancer `init.lua:edit_projectiles` and exported `namespace.apply_rebalance`, inspected at `8d5b47e` (1.1.4) and the Store's `b3e1a36` (1.1.3). Its existing `enable` caller applies the same tables. Add only a validated config adapter: fixed-speed mode maps to arch 0, fixed-angle to 1, Catapult-style adaptive-angle to 2. The owner's legacy `velocity` parameter represents degrees in the latter modes; do not expose a misleading speed/angle pair. |
+| Startup ordering | Framework `hooks.lua:registerHookCallback('afterInit', ...)`, already used by version/resource owners. Native event fires before the Windows message loop, after extension enable. Reuse it to apply flight settings after all balance files without introducing a private dispatcher or native hook. |
+| Native binding | Rebalancer already resolves the two property tables through `core.scanForAOB`. No consumer scan, binding, fixed address or fallback. Tests verify those table roots against decoded operands of the native property-setup reader on both PE families. Existing unrelated Rebalancer bindings are outside this delta. |
+| Solver and entity state | Verified original `setProjectileEntityValues2`, `initializeProjectileVelocities`, `computeVelocity`, angle solver and `moveProjectileEntity` against OpenSHC declarations and original instructions. Modes 0/1/2 reuse native setup and motion. An unreachable fixed-speed shot reaches native angle fallback; fixed-angle mode calculates launch speed for the existing aim. No copy of the ballistic equations, collision path or allocator. |
+| Normalized projectile forms | Native allocator converts untargeted/fire forms to their base type. Canonical physics entries target the nine shared native types. Fire-ballista bolts share type-20 `ballista_bolt` physics; exposing the owner's separate type-37 table as independently effective would be misleading. Custom sprites already inherit their native base. |
+| Configuration/persistence | Extend `configuration.validate` with opt-in global `projectile_physics`. Add its normalized result to existing save identity only when nonempty, preserving old fingerprints. Existing Map Extensions retuning/strict matching remains the owner. No additional per-unit blocks, RNG draws, allocations during firing or world scans. |
+
+Rebalancer is an **optional active prerequisite for these settings**, not an
+unconditional module dependency: its `enable` requires a balance file and also
+installs general balance hooks. Automatically enabling it would change existing
+configurations. Missing owner/event support rejects before native mutation.
+Global flight tuning is deliberate balance configuration, default omitted/native,
+not a silent change to every ordinary archer or firethrower.
+
+## 2 October 2026: save retuning and rejected manual shots
+
+Inspected the current module at `94a5804`, the Map Extensions validate-before-
+restore caller/tests at `aic-tactics-map-required-state` revision `04449b7`
+(1.1.0, with the optional-section API retained from 1.0.0), and the framework
+AOB/assembly owners previously recorded at `02a7a6b`.
+
+| Capability | Existing owner reused / precise gap |
+|---|---|
+| Saved configuration edits | `state.new` and Map Extensions' existing validate/deserialize callbacks. Format 5 gains an optional asset identity header; validation remains read-only before any extension restores. Changed gameplay settings discard only obsolete module firing queues/timers, preserving the saved seed and visual identities. Same settings restore the same blocks. No private loader, migration cache or save service. |
+| Visual identity safety | Existing immutable GM slot/hash blocks must match. Definitions also match via the new asset header. Legacy saves lacking that header permit retuning only with no custom visual identities; custom-graphics saves require one unchanged resave. No remapping of native entity ownership or resources. |
+| Manual range admission | Reuse the existing native acquisition entry hook and decoded original continuation. The original thiscall executes once with its native eligibility rules, then the existing prepared aim point is checked against the configured range. The shared `shootTargetInRange` is the former `pickTarget` exact check, extracted once for both callers. No command replacement, additional signature or target search. |
+| ABI and discovery | Existing UCP AOB resolution verifies the six displaced prologue bytes (`83 EC 40 53 56 57`) and the native continuation. The original trampoline preserves the native thiscall/`ret 4` contract. Existing bindings cover Crusader and Extreme; no new fixed VA/RVA or fallback. |
+| Existing stuck animation | `configuredAnimationHold` reuses `NATIVETARGET` before native scatter and the existing `NATIVEBLOCKT` release gate. A rejected manual target passes the animation through; existing release cancellation/refund handles ammunition. It does not run acquisition inside the late projectile dispatcher. |
+| Defaults/performance | Range correction is default ON for configured native-timed profiles, OFF with existing `strict_range: false`. Save retuning is default ON, OFF with root `allow_config_changes_on_load: false`. Guarded O(1) checks, no extra scan, allocation, RNG draw or saved per-unit block. |
+
+Native damage, allocation, target identity, projectile scatter and world-state
+serialization remain owned by their existing subsystems. Changing a gameplay
+configuration intentionally changes a save's continuation; unchanged settings
+retain the previous resume semantics. Actual desktop, multiplayer and recorder
+acceptance remain distinct from emulated production-code regressions.
+
+## 1 October 2026: ammunition by victim type
+
+Based on source main `cf063d9` (merged 1.8.12), inspected before this change:
+
+| Capability | Existing owner reused / precise gap |
+|---|---|
+| Configuration and profile inheritance | `configuration.validate` / `merge_fields` / `any_profile`; add optional maps and expand flat named groups during existing validation. Extract the existing native/custom projectile field validation into `projectile` so both slot fields and target rules share it, rather than introducing a second resolver. Group names do not create new runtime unit classes. |
+| Ammunition choice | `templates.ammo_code:chooseAmmo`, called by `automatic_code:t_shoot`; already receives the effective shooter profile and accepted native victim. Missing per-victim choice is added here, with a small shared `targetAmmo` lookup used by this selector and the existing random volley. No parallel selector or targeting service. |
+| Identity/layout | OpenSHC `Map/Units/Unit.hpp` confirms 0x490 stride, short shootTargetedUnit at +0x344, victim UID at +0xA0, unit type +0x8E/UID +0x98. Existing `PICKTARGET` and native acquisition prepare these fields. Guard slot, live state and UID; never find a new victim here. |
+| Native projectile dispatch | Existing `volley_code:v_fire` and UCP-resolved `FIREPROJ` keep projectile allocation, launch metadata, attribution, damage and cleanup. Reuse existing regular/cow remaps and `CURRENTVARIANT` for GM-owner sprites. Reset the temporary cow flag per mixed shot and restore the original afterward. |
+| Manual orders | Existing `manual_order_code:manualOrder` keeps supported native human attack orders out of the new automatic rule path. `fire_hook_code:h_fire` clears rule scratch before existing native volleys. Native cow orders stay in their existing native path. |
+| Runtime discovery | Framework `content/ucp/code/core.lua` at `02a7a6b`: `core.AOBScan` delegates unbounded discovery to `data.cache.AOB.retrieve`; bounded uniqueness checks use `scanForAOB`. Existing module `resolve` decodes shoot/acquire/unit roots. No new binding, scan, hook, VA/RVA table or fallback. Assembly allocation remains `core.allocateAssembly`. |
+| Persistence/synchronization | Existing `state.new` / Map Extensions format 5 canonicalizes the expanded rule map. Unused groups do not affect identity; equivalent groups/direct maps do. Only immutable init tables and scratch are added, not persistent blocks or commands. Existing volley RNG order is retained. |
+
+Lookup is O(1) per projectile, with no search, RNG draw or allocation. One
+80-type x 12-byte table is allocated at initialization per ruled effective
+profile, plus the optional profile-pointer table. Omitted rules compile out
+the new firing instructions and allocate no ammunition maps/helper. The final
+diff extends these owners; it adds no loader, cache, hook or native dispatch copy.
+Rules are opt-in balance policy, not a default bug correction. Runtime startup
+diagnostics retain the existing configuration owner's English errors; this is
+an existing localization gap, not a new GUI error/translation resolver.
+
+The new native tests exercise both 1.41 reference images, direct/group precedence,
+mixed victims, cow remaps, custom sprites and deterministic saved continuation.
+Actual rendered firing/impact, paired multiplayer/replay and broader variants
+remain acceptance gaps. On 1 October the queued native probe again returned
+`Native app bindings are unavailable for windows`; its slot was released.
+
+
 This audit began with the 1.8.6 candidate and tracks provisional 1.8.10 source;
 it is not release acceptance. Original source `main` and Store PR #31 remain
 preserved. User scope also includes combined live retargeting, optional threat
