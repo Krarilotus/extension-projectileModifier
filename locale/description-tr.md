@@ -1,19 +1,66 @@
-# Custom Projectiles 1.8.16
+# Custom Projectiles
 
-range, özgün yeniden doldurma süresinde de seçilen hedefin uzaklığını kare cinsinden sınırlar. spread ve inaccuracy, mermileri bu yarıçapın dışına taşıyabilir. strict_range: false, elle hedefleme menzil düzeltmesini kapatır.
+Birimlerin ne ateşlediğini, ne sıklıkla ve ne kadar uzağa atış yaptığını ve hangi hedefleri tercih ettiğini değiştirin.
 
-Uzun menzilli değiştirilmiş mermiler: projectile_physics: {firethrower_pot: {mode: fixed_angle, angle: 30}} başlangıç hızını oyuna hesaplatır. Denge yapılandırmasıyla etkin Rebalancer 1.1.3+ gerektirir. Özel görsel çeşitleri dahil tür başına geneldir; native mevcut değerleri korur. Hedef menzili ve çarpışmalar hâlâ geçerlidir.
+## Nasıl kullanılır
 
-Oyun ayarları değiştirilmiş olsa da kayıt yüklenebilir; modülün eski atış kuyrukları ve zamanlayıcıları sıfırlanır. Özel grafik tanımları aynı kalmalıdır. allow_config_changes_on_load: false özgün ayarları gerektirir. strict_range: false yeni elle atış menzil denetimini de kapatır.
+1. Normal oyun için **Mermi yapılandırma dosyası (YAML)** alanını boş bırakın.
+2. Eklenti klasöründen veya ZIP dosyasından `vanilla-projectiles.yml` dosyasını kopyalayın, kopyayı düzenleyin ve **Özelleştirmeler > Balance Changes** altından seçin.
+3. Oyunu yeniden başlatın.
 
-Otomatik mühimmat: hedef listelerini unit_groups altında tanımlayın; ateş eden birimde ammo_by_target.groups: {siege: regular} veya ammo_by_target.units: {Monk: cow} kullanın. Tekil türler önceliklidir; diğer hedefler değişmez. Atış aralığı gerekir; native kuralları siler. Reconquista örneği dahildir.
+## Neler yapabilirsiniz
 
-77 birim türünün tamamını YAML ile ayarlayın. Normal mühimmat ve inekler ayrı ayarlanır. Aralıklar desteklenen atış animasyonlarına uyar; inaccuracy yerel oyun birimlerini kullanır: 1 = 1/8 karo, 8 = 1 karo, 0 = tam isabetli nişan.
+Bu ayarları kopyanızdaki ilgili birimin altına ekleyin.
 
-Hedef grubu eşiği yalnızca yapay zekâ için geçerlidir; oyuncular saldırı hedefini elle seçebilir. Otomatik hedeflemede target_bias_tiles: {Monk: 3}, keşişleri yerel puanda en fazla üç kare daha yakın sayar; menzil ve diğer oyun kuralları geçerlidir.
+### Okçuların yeniden doldurmasını yavaşlatma
 
-ZIP içindeki eksiksiz vanilla-projectiles.yml dosyasını kopyalayın, düzenleyin ve kopyayı seçin. native oyunun kurallarını korur; boş yol hiçbir şeyi değiştirmez. auto_targeting: false yalnızca elle verilen saldırı emirlerine izin verir. strict_range: false yuvarlanmış menzil denetimlerini geri getirir; turn_before_shot: false dönüş düzeltmesini kapatır. Zorunlu/önerilen, dosya seçiminin tamamına uygulanır. Düzenledikten sonra oyunu yeniden başlatın.
+Avrupalı okçuların atışları arasındaki süreyi artırın.
 
-Özel görseller: projectiles altında inherits ve sprites içeren bir ad ekleyin (tam ve uyumlu GM1 dosyası). decorations ve birimlerin near_decorations kurallarını tanımlayın; mangal düğmesiyle yerleştirin. Biçimler: README.md ve examples/custom-sprites-and-decorations.yml. Uygun surlara veya kulelere yerleştirin; malikânelere yerleştirilemez.
+```yaml
+units:
+  European archer:
+    interval: 600
+```
 
-UCP 3.0.7+, Crusader/Extreme 1.41 ve modül bağımlılıkları gerekir. Test sürümü; bkz. VALIDATION.md.
+![Avrupalı okçuların yeniden doldurma karşılaştırması](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/archer-reload.jpg)
+
+### Mancınıklara daha fazla menzil verme
+
+Mancınıkların 40 kareye kadar uzaklıktaki hedeflere nişan almasını sağlayın.
+
+```yaml
+units:
+  Catapult:
+    interval: 700
+    range: 40
+```
+
+![Uzaktaki bir hedefe ateş eden mancınık](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/catapult-range.jpg)
+
+### Aynı anda daha fazla taş fırlatma
+
+Her mangonel yaylım atışının on taş fırlatmasını sağlayın.
+
+```yaml
+units:
+  Mangonel:
+    count: 10
+    spread: 48
+```
+
+![Havada uçan mangonel yaylım atışı](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/mangonel-volley.jpg)
+
+### Hedefe göre mühimmat seçme
+
+Mancınıkların düşman mancınıklarına otomatik olarak inek fırlatmasını sağlayın.
+
+```yaml
+units:
+  Catapult:
+    interval: 700
+    ammo_by_target: {units: {Catapult: cow}}
+```
+
+![Düşman mancınığına doğru fırlatılan bir inek](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/catapult-ammunition.jpg)
+
+*Not: Bu metin makine çevirisidir ve insan incelemesi beklemektedir.*

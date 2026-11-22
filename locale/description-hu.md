@@ -1,19 +1,66 @@
-# Custom Projectiles 1.8.16
+# Custom Projectiles
 
-A range mezőben megadott távolság a kiválasztott célpontot korlátozza, natív újratöltés mellett is. A spread és inaccuracy ezen túlra is szórhatja a lövedékeket. strict_range: false kikapcsolja a kézi célzás hatótávjavítását.
+Szabd testre, mit lőnek ki az egységek, milyen gyakran és milyen messzire tüzelnek, és mely célpontokat részesítik előnyben.
 
-Nagy távolságú helyettesítő lövedékekhez: projectile_physics: {firethrower_pot: {mode: fixed_angle, angle: 30}} a játékkal számíttatja ki az induló sebességet. Aktív Rebalancer 1.1.3+ és egyensúly-konfiguráció szükséges. Típusonként globális, a sprite-változatokra is érvényes; native megőrzi az értékeket. A célhatótáv és ütközés továbbra is számít.
+## Használat
 
-A játékbeállítások mentésbetöltés előtt módosíthatók; a modul régi lövéssorai és időzítői nullázódnak. Az egyéni grafikai definícióknak egyezniük kell. allow_config_changes_on_load: false az eredeti beállításokat követeli meg. strict_range: false az új kézi lövési hatótávellenőrzést is kikapcsolja.
+1. Normál játékhoz hagyd üresen a **Lövedékbeállítások fájlja (YAML)** mezőt.
+2. Másold ki a `vanilla-projectiles.yml` fájlt a bővítmény mappájából vagy a ZIP-fájlból, szerkeszd a másolatot, majd válaszd ki itt: **Testreszabások > Balance Changes**.
+3. Indítsd újra a játékot.
 
-Automatikus lőszer: célcsoportok a unit_groups alatt, lövőnként ammo_by_target.groups: {siege: regular} vagy ammo_by_target.units: {Monk: cow}. Az egyedi típus az elsődleges; más célok változatlanok. Lövési intervallum szükséges; native törli a szabályokat. Reconquista-példa mellékelve.
+## Mire képes
 
-Mind a 77 egységtípus YAML-ban állítható. A normál lövedékek és a tehenek külön kezelhetők. Az időközök igazodnak a támogatott tüzelési animációkhoz; az inaccuracy játékbeli egységei: 1 = 1/8 mező, 8 = 1 mező, 0 = pontos célzás.
+Add hozzá ezeket a beállításokat a megfelelő egységhez a másolatodban.
 
-A csoportméret-korlát csak az MI célzására vonatkozik; a játékos támadási parancsait nem tiltja. Automatikus egységcélzásnál a target_bias_tiles: {Monk: 3} a szerzeteseket legfeljebb három mezővel közelebbinek értékeli a natív pontszámban; a hatótáv és a többi szabály továbbra is érvényes.
+### Az íjászok újratöltésének lassítása
 
-Másold ki a teljes vanilla-projectiles.yml fájlt a ZIP-ből, szerkeszd, majd válaszd ki a másolatot. A native megőrzi a játék szabályait; az üres útvonal nem változtat semmin. Az auto_targeting: false csak kézi támadási parancsokat enged. A strict_range: false visszaállítja a kerekített hatótáv-ellenőrzést; a turn_before_shot: false kikapcsolja a fordulás javítását. A kötelező/javasolt jelölés a teljes fájl kiválasztására vonatkozik. Módosítás után indítsd újra a játékot.
+Adj az európai íjászoknak több időt két lövés között.
 
-Saját grafika: a projectiles alatt adj meg egy nevet inherits és sprites mezőkkel (teljes, megfelelő GM1-fájl). A decorations és az egységek near_decorations szabályai után a parázstartó gombbal helyezhetők el a díszítések. Formátumok: README.md és examples/custom-sprites-and-decorations.yml. Csak megfelelő falra vagy toronyra építhető; az udvarházra nem.
+```yaml
+units:
+  European archer:
+    interval: 600
+```
 
-UCP 3.0.7+, Crusader/Extreme 1.41 és a modul függőségei szükségesek. Tesztverzió; lásd VALIDATION.md.
+![Európai íjászok újratöltési idejének összehasonlítása](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/archer-reload.jpg)
+
+### Nagyobb hatótáv a katapultoknak
+
+Engedd, hogy a katapultok akár 40 mezőre lévő célpontokra is lőhessenek.
+
+```yaml
+units:
+  Catapult:
+    interval: 700
+    range: 40
+```
+
+![Távoli célpontra tüzelő katapult](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/catapult-range.jpg)
+
+### Több kő kilövése egyszerre
+
+Állítsd be, hogy a kővetőgép minden sortűzzel tíz követ lőjön ki.
+
+```yaml
+units:
+  Mangonel:
+    count: 10
+    spread: 48
+```
+
+![Repülő kővetőgép-sortűz](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/mangonel-volley.jpg)
+
+### Lőszer kiválasztása célpont szerint
+
+Állítsd be, hogy a katapultok automatikusan teheneket lőjenek az ellenséges katapultokra.
+
+```yaml
+units:
+  Catapult:
+    interval: 700
+    ammo_by_target: {units: {Catapult: cow}}
+```
+
+![Ellenséges katapult felé kilőtt tehén](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/catapult-ammunition.jpg)
+
+*Megjegyzés: ez egy gépi fordítás, amely még emberi ellenőrzésre vár.*

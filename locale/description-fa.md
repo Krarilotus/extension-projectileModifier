@@ -1,19 +1,66 @@
-# Custom Projectiles 1.8.16
+# Custom Projectiles
 
-range فاصلهٔ هدف انتخاب‌شده را بر حسب خانه محدود می‌کند، حتی با زمان بارگذاری اصلی بازی. spread و inaccuracy می‌توانند محل برخورد را بیرون از این شعاع ببرند. strict_range: false اصلاح برد هدف‌گیری دستی را غیرفعال می‌کند.
+تغییر دهید که واحدها چه چیزی شلیک کنند، با چه فاصله و تا چه بردی تیر بیندازند و کدام هدف‌ها را در اولویت قرار دهند.
 
-برای پرتابه جایگزین دوربرد: projectile_physics: {firethrower_pot: {mode: fixed_angle, angle: 30}} محاسبه سرعت پرتاب را به بازی می‌سپارد. به Rebalancer 1.1.3+ فعال با فایل تنظیمات تعادل نیاز دارد. برای هر نوع به‌صورت سراسری، شامل نمونه‌های گرافیکی سفارشی، اعمال می‌شود؛ native مقادیر فعلی را حفظ می‌کند. محدودیت برد هدف و برخوردها همچنان برقرارند.
+## نحوهٔ استفاده
 
-پس از تغییر تنظیمات بازی نیز می‌توان ذخیره را بارگذاری کرد؛ صف شلیک و زمان‌سنج‌های قدیمی ماژول بازنشانی می‌شوند. تعریف گرافیک سفارشی باید یکسان بماند. allow_config_changes_on_load: false تنظیمات اصلی را الزامی می‌کند. strict_range: false بررسی جدید برد شلیک دستی را نیز غیرفعال می‌کند.
+1. برای بازی عادی، **فایل تنظیمات پرتابه (YAML)** را خالی بگذارید.
+2. فایل `vanilla-projectiles.yml` را از پوشهٔ افزونه یا فایل ZIP کپی کنید، نسخهٔ کپی را ویرایش کنید و آن را در **شخصی‌سازی‌ها > Balance Changes** انتخاب کنید.
+3. بازی را دوباره اجرا کنید.
 
-مهمات خودکار: فهرست هدف‌ها را در unit_groups تعریف کنید؛ برای تیرانداز از ammo_by_target.groups: {siege: regular} یا ammo_by_target.units: {Monk: cow} استفاده کنید. نوع مشخص بر گروه اولویت دارد؛ هدف‌های دیگر تغییری نمی‌کنند. فاصلهٔ شلیک لازم است؛ native قوانین را پاک می‌کند. نمونهٔ Reconquista همراه است.
+## کارهایی که می‌توانید انجام دهید
 
-هر ۷۷ نوع واحد را با YAML تنظیم کنید. مهمات معمولی و گاوها مستقل هستند. فاصلهٔ شلیک با پویانمایی‌های پشتیبانی‌شده هماهنگ است؛ inaccuracy از واحد بومی بازی استفاده می‌کند: ۱ = یک‌هشتم خانه، ۸ = یک خانه، ۰ = نشانه‌گیری دقیق.
+این تنظیمات را به واحد متناظر در نسخهٔ کپی خود اضافه کنید.
 
-محدودیت تعداد اهداف خوشه فقط برای هوش مصنوعی است؛ بازیکن می‌تواند هدف حمله را دستی انتخاب کند. برای هدف‌گیری خودکار، target_bias_tiles: {Monk: 3} راهبان را در امتیاز بومی حداکثر سه خانه نزدیک‌تر حساب می‌کند؛ برد و سایر قواعد بازی همچنان برقرارند.
+### کند کردن زمان بارگذاری کمانداران
 
-فایل کامل vanilla-projectiles.yml را از ZIP کپی و ویرایش کنید، سپس نسخهٔ کپی را انتخاب کنید. native قواعد بازی را حفظ می‌کند؛ مسیر خالی چیزی را تغییر نمی‌دهد. auto_targeting: false فقط فرمان حملهٔ دستی را می‌پذیرد. strict_range: false بررسی بُرد گرد‌شده را برمی‌گرداند؛ turn_before_shot: false اصلاح چرخش را غیرفعال می‌کند. الزامی/پیشنهادی به انتخاب کل فایل مربوط است. پس از ویرایش بازی را دوباره اجرا کنید.
+به کمانداران اروپایی بین هر شلیک زمان بیشتری بدهید.
 
-گرافیک سفارشی: زیر projectiles نامی با inherits و sprites اضافه کنید (فایل GM1 کامل و سازگار). decorations و قواعد near_decorations واحدها را تعریف کنید؛ از دکمهٔ منقل برای ساخت استفاده کنید. قالب‌ها: README.md و examples/custom-sprites-and-decorations.yml. روی دیوار یا برجِ مجاز بسازید؛ عمارت اربابی محل ساخت منقل نیست.
+```yaml
+units:
+  European archer:
+    interval: 600
+```
 
-به UCP 3.0.7+، Crusader/Extreme 1.41 و وابستگی‌های ماژول نیاز است. نسخهٔ آزمایشی؛ VALIDATION.md را ببینید.
+![مقایسهٔ زمان بارگذاری کمانداران اروپایی](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/archer-reload.jpg)
+
+### افزایش برد منجنیق‌ها
+
+به منجنیق‌ها اجازه دهید هدف‌هایی تا فاصلهٔ ۴۰ خانه را نشانه بگیرند.
+
+```yaml
+units:
+  Catapult:
+    interval: 700
+    range: 40
+```
+
+![شلیک منجنیق به یک هدف دوردست](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/catapult-range.jpg)
+
+### پرتاب سنگ‌های بیشتر در هر نوبت
+
+کاری کنید هر رگبار منجنیق برجی ده سنگ پرتاب کند.
+
+```yaml
+units:
+  Mangonel:
+    count: 10
+    spread: 48
+```
+
+![رگبار منجنیق برجی در حال پرواز](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/mangonel-volley.jpg)
+
+### انتخاب مهمات بر اساس هدف
+
+کاری کنید منجنیق‌ها به‌طور خودکار به سمت منجنیق‌های دشمن گاو پرتاب کنند.
+
+```yaml
+units:
+  Catapult:
+    interval: 700
+    ammo_by_target: {units: {Catapult: cow}}
+```
+
+![گاوی که به سمت یک منجنیق دشمن پرتاب شده است](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/catapult-ammunition.jpg)
+
+*توجه: این یک ترجمهٔ ماشینی است و در انتظار بازبینی انسانی قرار دارد.*

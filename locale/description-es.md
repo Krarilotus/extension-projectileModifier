@@ -1,19 +1,66 @@
-# Custom Projectiles 1.8.16
+# Custom Projectiles
 
-range limita la distancia del objetivo en casillas, incluso con la recarga original. spread e inaccuracy pueden desplazar los impactos fuera de ese radio. strict_range: false desactiva la corrección de alcance manual.
+Cambia lo que disparan las unidades, con qué frecuencia y a qué distancia atacan, y qué objetivos prefieren.
 
-Proyectiles sustitutos de largo alcance: projectile_physics: {firethrower_pot: {mode: fixed_angle, angle: 30}} deja que el juego calcule la velocidad inicial. Requiere Rebalancer 1.1.3+ activo con configuración de equilibrio. Es global por tipo, incluidas variantes gráficas; native conserva los valores. Alcance y colisiones siguen aplicándose.
+## Cómo usarlo
 
-Los ajustes de juego pueden cambiar antes de cargar; se reinician las antiguas colas de disparo y temporizadores del módulo. Las definiciones gráficas personalizadas deben coincidir. allow_config_changes_on_load: false exige los ajustes originales. strict_range: false también desactiva la nueva comprobación de alcance de disparos manuales.
+1. Deja **Archivo de configuración de proyectiles (YAML)** en blanco para el juego normal.
+2. Copia `vanilla-projectiles.yml` desde la carpeta de la extensión o el archivo ZIP, edita la copia y selecciónala en **Personalizaciones > Balance Changes**.
+3. Reinicia el juego.
 
-Munición automática: defina listas de objetivos en unit_groups y use ammo_by_target.groups: {siege: regular} por tirador, o ammo_by_target.units: {Monk: cow}. Los tipos concretos tienen prioridad; los demás objetivos conservan su comportamiento. Requiere intervalo; native borra las reglas. Incluye ejemplo Reconquista.
+## Qué puedes hacer
 
-Configura los 77 tipos de unidades mediante YAML. La munición normal y las vacas se ajustan por separado. Los intervalos respetan las animaciones de disparo compatibles; inaccuracy usa unidades nativas: 1 = 1/8 de casilla, 8 = 1 casilla, 0 = puntería exacta.
+Añade estos ajustes a la unidad correspondiente en tu copia.
 
-El mínimo de enemigos agrupados solo se aplica a la IA; el jugador puede seguir dando órdenes de ataque. Para objetivos automáticos, target_bias_tiles: {Monk: 3} considera a los monjes hasta tres casillas más cercanos en la puntuación nativa; se mantienen el alcance y las demás reglas.
+### Ralentizar la recarga de los arqueros
 
-Copia el archivo completo vanilla-projectiles.yml del ZIP, edítalo y selecciona la copia. native conserva las reglas del juego; una ruta vacía no cambia nada. auto_targeting: false exige órdenes de ataque manuales. strict_range: false restaura las comprobaciones de alcance redondeadas; turn_before_shot: false desactiva la corrección de giro. Obligatorio/sugerido se aplica a la selección del archivo completo. Reinicia después de editar.
+Da más tiempo entre disparos a los arqueros europeos.
 
-Gráficos propios: añade un nombre en projectiles con inherits y sprites (archivo GM1 completo y compatible). Define decorations y las reglas near_decorations de las unidades; colócalas mediante el botón del brasero. Formatos: README.md y examples/custom-sprites-and-decorations.yml. Colócalas en murallas o torres válidas; las casas señoriales no admiten braseros.
+```yaml
+units:
+  European archer:
+    interval: 600
+```
 
-Requiere UCP 3.0.7+, Crusader/Extreme 1.41 y las dependencias del módulo. Versión de prueba; consulta VALIDATION.md.
+![Comparación de recarga de los arqueros europeos](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/archer-reload.jpg)
+
+### Dar más alcance a las catapultas
+
+Permite que las catapultas apunten a objetivos a una distancia de hasta 40 casillas.
+
+```yaml
+units:
+  Catapult:
+    interval: 700
+    range: 40
+```
+
+![Catapulta disparando a un objetivo lejano](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/catapult-range.jpg)
+
+### Disparar más piedras a la vez
+
+Haz que cada descarga del mangonel lance diez piedras.
+
+```yaml
+units:
+  Mangonel:
+    count: 10
+    spread: 48
+```
+
+![Descarga de mangonel en vuelo](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/mangonel-volley.jpg)
+
+### Elegir la munición según el objetivo
+
+Haz que las catapultas lancen vacas automáticamente contra las catapultas enemigas.
+
+```yaml
+units:
+  Catapult:
+    interval: 700
+    ammo_by_target: {units: {Catapult: cow}}
+```
+
+![Una vaca lanzada hacia una catapulta enemiga](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/catapult-ammunition.jpg)
+
+*Nota: esta es una traducción automática pendiente de revisión humana.*

@@ -1,4 +1,4 @@
-# Custom Projectiles 1.8.15 (test candidate)
+# Custom Projectiles 1.8.19 (test candidate)
 
 Configure projectile types, volley sizes and automatic firing for all 77 unit
 types using one readable YAML file. Based on Monsterfish's supplied 1.2.0 module.
@@ -132,14 +132,12 @@ victims does not resize an ongoing volley or change its reload timing.
 These rules do not add a targeting preference, infer plague immunity, extend
 range, or alter damage/impact behavior. `targets: [cluster, units]` searches a
 cluster first, then individual units; the fallback also allows isolated troops.
-The supplied [Reconquista example](examples/reconquista-projectiles.yml) opts
-into this fallback and regular ammunition against its named siege group for
-catapults and trebuchets. Catapult regular ammunition remains mangonel pebbles,
-as in the earlier preset; change `projectile` to `catapult_rock` if you want rocks.
+See [Targeted ammunition and preferences](examples/targeted-ammunition.yml)
+for Catapults that fire cows at enemy siege engines and archers that favor Monks.
 
 ## Installation and use
 
-Import `custom-projectiles-1.8.16.zip` and the matching
+Import `custom-projectiles-1.8.19.zip` and the matching
 `gmResourceModifier-0.3.1.zip` draft dependency into a developer launcher, then
 enable them with map-extensions, protocol and ui. For the direct enemy-click
 catapult check, also enable the separate Fixed Engineers 0.2.0 tester. This
@@ -183,14 +181,15 @@ units:
 is an active advanced example. The vanilla template is the no-change starting
 point; it preserves other modules rather than reverting their balance changes.
 
-[`examples/reconquista-monsterfish.yml`](examples/reconquista-monsterfish.yml)
-preserves Monsterfish's supplied 1.8.6 preset values, with duplicate Catapult
-keys consolidated using their last values. Its Mangonel selects targets within
-30 tiles and fires eight pebbles. `inaccuracy: 0` removes primary aim error;
-`spread: 48` still offsets extra shots by up to six tiles on each axis. Those
-scattered impacts can land beyond 30 tiles. Native pebbles already compute
-launch speed for each aim; they need no `projectile_physics` override. To have
-all eight shots share the exact aim, explicitly change `spread` to zero.
+For independent examples, see [Long-range replacements](examples/long-range-replacements.yml),
+[Custom sprites and decorations](examples/custom-sprites-and-decorations.yml),
+and [Targeted ammunition and preferences](examples/targeted-ammunition.yml).
+
+The selected target may be within range while scattered shots land outside it.
+For example, a 30-tile Mangonel profile with `inaccuracy: 0` and `spread: 48`
+aims the first shot precisely and offsets extra shots by up to six tiles in
+either axis. Native pebbles already compute their launch speed for each aim.
+Set `spread: 0` for all shots to share the aim.
 
 Missing units and missing fields are allowed. Empty unit mappings are ignored.
 `native` explicitly leaves a field unmodified, like omission. In a conditional

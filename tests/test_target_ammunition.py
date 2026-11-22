@@ -236,9 +236,9 @@ class TargetAmmunitionTests(unittest.TestCase):
                 h.put(h.v['UIDT'] + 4, 0)
                 self.assertEqual([s[9] for s in native_tests.NativeTests().tick(h, 1)], [1, 1, 1])
 
-    def test_schema_and_supplied_presets_cover_native_and_group_rules(self):
+    def test_schema_and_examples_cover_native_and_target_rules(self):
         schema = Draft202012Validator(json.loads((ROOT / 'projectile-config.schema.json').read_text()))
-        for name in ('vanilla-projectiles.yml', 'examples/reconquista-projectiles.yml'):
+        for name in ('vanilla-projectiles.yml', 'examples/targeted-ammunition.yml'):
             source = yaml.safe_load((ROOT / name).read_text(encoding='utf-8'))
             schema.validate(source)
             self.validate(source)

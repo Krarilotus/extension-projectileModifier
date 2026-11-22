@@ -1,19 +1,66 @@
-# Custom Projectiles 1.8.16
+# Custom Projectiles
 
-range begrenzt die Zielentfernung in Feldern, auch bei nativer Nachladezeit. spread und inaccuracy können Einschläge außerhalb dieses Radius verursachen. strict_range: false deaktiviert die manuelle Reichweitenkorrektur.
+Ändert, was Einheiten abfeuern, wie oft und wie weit sie schießen und welche Ziele sie bevorzugen.
 
-Ersatzgeschosse auf große Distanz: projectile_physics: {firethrower_pot: {mode: fixed_angle, angle: 30}} lässt das Spiel die Startgeschwindigkeit berechnen. Benötigt aktiven Rebalancer 1.1.3+ mit Balance-Konfiguration. Global je Typ, auch für Sprite-Varianten; native erhält bestehende Werte. Zielreichweite und Kollisionen gelten weiter.
+## Verwendung
 
-Spielwerte können vor dem Laden geändert werden; alte Modul-Schusswarteschlangen und Zeitgeber werden zurückgesetzt. Definitionen eigener Grafiken müssen gleich bleiben. allow_config_changes_on_load: false verlangt die ursprünglichen Einstellungen. strict_range: false deaktiviert auch die neue Reichweitenprüfung manueller Schüsse.
+1. **Geschosskonfigurationsdatei (YAML)** für das normale Spiel leer lassen.
+2. `vanilla-projectiles.yml` aus dem Erweiterungsordner oder der ZIP-Datei kopieren, die Kopie bearbeiten und unter **Anpassungen > Balance Changes** auswählen.
+3. Das Spiel neu starten.
 
-Automatische Munition: Ziellisten unter unit_groups anlegen, beim Schützen ammo_by_target.groups: {siege: regular} oder ammo_by_target.units: {Monk: cow} setzen. Einzelne Typen haben Vorrang; andere Ziele bleiben unverändert. Intervall nötig; native entfernt Regeln. Reconquista-Beispiel enthalten.
+## Was möglich ist
 
-Alle 77 Einheitentypen per YAML einstellen. Normale Munition und Kühe sind unabhängig. Intervalle beachten unterstützte Schussanimationen; inaccuracy nutzt native Einheiten: 1 = 1/8 Feld, 8 = 1 Feld, 0 = genaues Zielen.
+Diese Einstellungen in der Kopie bei der passenden Einheit hinzufügen.
 
-Die Mindestgröße von Zielgruppen gilt nur für die KI; menschliche Angriffsbefehle bleiben möglich. Bei automatischen Einheitenzielen bewertet target_bias_tiles: {Monk: 3} Mönche im nativen Wert um bis zu drei Felder näher; Reichweite und übrige Spielregeln gelten weiter.
+### Nachladen von Bogenschützen verlangsamen
 
-Die vollständige vanilla-projectiles.yml aus der ZIP kopieren, bearbeiten und auswählen. native erhält die Spielregeln; ein leerer Pfad ändert nichts. auto_targeting: false erlaubt nur manuelle Angriffsbefehle. strict_range: false stellt gerundete Reichweitenprüfungen wieder her; turn_before_shot: false deaktiviert die Drehkorrektur. Erforderlich/empfohlen gilt für die gesamte Dateiauswahl. Nach Änderungen neu starten.
+Europäischen Bogenschützen mehr Zeit zwischen den Schüssen geben.
 
-Eigene Grafik: unter projectiles einen Namen mit inherits und sprites anlegen (vollständige passende GM1-Datei). Dekorationen unter decorations und Einheitenregeln unter near_decorations definieren; über die Feuerkorb-Schaltfläche bauen. Formate: README.md und examples/custom-sprites-and-decorations.yml. Auf geeigneten Mauern oder Türmen bauen; Herrenhäuser unterstützen keine Feuerkörbe.
+```yaml
+units:
+  European archer:
+    interval: 600
+```
 
-Benötigt UCP 3.0.7+, Crusader/Extreme 1.41 und die Modulabhängigkeiten. Testversion; siehe VALIDATION.md.
+![Vergleich der Nachladezeit europäischer Bogenschützen](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/archer-reload.jpg)
+
+### Katapulten mehr Reichweite geben
+
+Katapulte auf Ziele in bis zu 40 Feldern Entfernung zielen lassen.
+
+```yaml
+units:
+  Catapult:
+    interval: 700
+    range: 40
+```
+
+![Katapult beim Beschuss eines entfernten Ziels](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/catapult-range.jpg)
+
+### Mehr Steine auf einmal abfeuern
+
+Jede Salve einer Mange zehn Steine abfeuern lassen.
+
+```yaml
+units:
+  Mangonel:
+    count: 10
+    spread: 48
+```
+
+![Salve einer Mange im Flug](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/mangonel-volley.jpg)
+
+### Munition nach Ziel wählen
+
+Katapulte automatisch Kühe auf feindliche Katapulte schleudern lassen.
+
+```yaml
+units:
+  Catapult:
+    interval: 700
+    ammo_by_target: {units: {Catapult: cow}}
+```
+
+![Eine Kuh im Flug auf ein feindliches Katapult](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/catapult-ammunition.jpg)
+
+*Hinweis: Dies ist eine maschinelle Übersetzung, die noch auf eine menschliche Prüfung wartet.*

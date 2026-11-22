@@ -101,7 +101,7 @@ class ProjectilePhysicsTests(unittest.TestCase):
     def test_schema_and_examples_and_complete_vanilla_reference(self):
         schema = Draft202012Validator(json.loads((ROOT/'projectile-config.schema.json').read_text(encoding='utf-8')))
         for name in ('vanilla-projectiles.yml', 'examples/long-range-replacements.yml',
-                     'examples/reconquista-monsterfish.yml'):
+                     'examples/custom-sprites-and-decorations.yml'):
             config = yaml.safe_load((ROOT/name).read_text(encoding='utf-8'))
             schema.validate(config)
             h = Harness()

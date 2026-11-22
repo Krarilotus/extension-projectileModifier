@@ -1,10 +1,6 @@
 balance_changes: Balance Changes
 config_file: Mermi yapılandırma dosyası (YAML)
-config_help: 'ZIP içindeki eksiksiz vanilla-projectiles.yml dosyasını kopyalayın, düzenleyin ve kopyayı seçin. native
-  oyunun kurallarını korur; boş yol hiçbir şeyi değiştirmez. auto_targeting: false yalnızca elle verilen saldırı
-  emirlerine izin verir. strict_range: false yuvarlanmış menzil denetimlerini geri getirir; turn_before_shot: false
-  dönüş düzeltmesini kapatır. Zorunlu/önerilen, dosya seçiminin tamamına uygulanır. Düzenledikten sonra oyunu yeniden
-  başlatın.'
+config_help: Normal oyun için boş bırakın. Mermileri değiştirmek için vanilla-projectiles.yml dosyasının bir kopyasını düzenleyin, seçin ve oyunu yeniden başlatın.
 tags.behavior: Davranış
 tags.textures: Dokular
 tags.tools: Araçlar

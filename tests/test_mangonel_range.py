@@ -1,8 +1,7 @@
 """Native manual range admission without replacing the Mangonel scheduler."""
 import unittest
 import struct
-import yaml
-from harness import ROOT, r
+from harness import r
 import test_projectiles as native_tests
 import test_manual_cluster as manual_tests
 import test_cadence as cadence_tests
@@ -68,8 +67,13 @@ class MangonelRangeTests(unittest.TestCase):
             self.assertIn(0,phases)
             self.assertNotIn('configuredAnimationHold',h.blobs)
 
-    def test_supplied_reconquista_boundary_and_actual_eight_pebble_flights(self):
-        cfg=yaml.safe_load((ROOT/'examples/reconquista-monsterfish.yml').read_text(encoding='utf-8'))['units']['Mangonel']
+    def test_configured_boundary_and_actual_eight_pebble_flights(self):
+        cfg = {
+            'interval': 100, 'targets': 'cluster', 'density_min': 5,
+            'density_radius': 20, 'range': 30, 'strict_range': True,
+            'count': 8, 'spread': 48, 'suppress_default': True,
+            'sync_to_animation': True, 'require_manned': 2, 'inaccuracy': 0,
+        }
         impacts=[]
         for extreme in (False,True):
             h,a,tick=cadence_tests.CadenceTests().integrated('Mangonel',41,0x56a3f0,cfg,extreme)

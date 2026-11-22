@@ -1,19 +1,66 @@
-# Custom Projectiles 1.8.16
+# Custom Projectiles
 
-range 以格为单位限制所选目标的距离，即使使用原生装填时间也有效。spread 和 inaccuracy 可能使落点超出该半径。strict_range: false 关闭手动瞄准的射程修正。
+自定义单位发射的弹药、射击频率与射程，以及它们优先攻击的目标。
 
-远程替换弹药：projectile_physics: {firethrower_pot: {mode: fixed_angle, angle: 30}} 让原游戏计算发射速度。需要启用 Rebalancer 1.1.3+ 并配置平衡文件。按类型全局生效，包括自定义贴图变体；native 保留原值。目标射程和碰撞规则仍有效。
+## 使用方法
 
-修改玩法设置后仍可读取存档；模块旧的射击队列和计时器会重置。自定义图形定义必须保持一致。allow_config_changes_on_load: false 要求使用原设置。strict_range: false 也会关闭新的手动射击射程检查。
+1. 如需正常游玩，请将 **弹射物配置文件（YAML）** 留空。
+2. 从扩展文件夹或 ZIP 压缩包中复制 `vanilla-projectiles.yml`，编辑副本，然后在 **自定义 > Balance Changes** 中选择该文件。
+3. 重启游戏。
 
-自动弹药：在 unit_groups 中定义目标列表，再为射手设置 ammo_by_target.groups: {siege: regular} 或 ammo_by_target.units: {Monk: cow}。单个兵种优先，其他目标保持原有行为。需要射击间隔；native 清除规则。附带 Reconquista 示例。
+## 可实现的效果
 
-通过 YAML 配置全部 77 种单位。普通弹药和牛弹可分别设置。射击间隔遵循受支持的射击动画；inaccuracy 使用游戏原生单位：1 = 1/8 格，8 = 1 格，0 = 精确瞄准。
+将以下设置添加到你副本中对应的单位下。
 
-集群数量限制仅用于 AI；玩家仍可手动指定攻击目标。自动选择单位目标时，target_bias_tiles: {Monk: 3} 会在原生评分中将僧侣视为最多近三格；射程及其他游戏规则仍然生效。
+### 减慢弓箭手装填速度
 
-从 ZIP 中复制完整的 vanilla-projectiles.yml，编辑后选择副本。native 保留游戏原有规则；路径留空则不作更改。auto_targeting: false 表示仅接受手动攻击命令。strict_range: false 恢复取整后的射程检查；turn_before_shot: false 关闭转向修正。必需/建议规则适用于整个文件的选择。编辑后请重启游戏。
+增加欧洲弓箭手两次射击之间的间隔。
 
-自定义图像：在 projectiles 下添加名称，并设置 inherits 和 sprites（完整且匹配的 GM1 文件）。定义 decorations 及单位的 near_decorations 规则，再通过火盆按钮放置。格式参见 README.md 和 examples/custom-sprites-and-decorations.yml。 只能放在符合条件的城墙或塔楼上；庄园不能放置火盆。
+```yaml
+units:
+  European archer:
+    interval: 600
+```
 
-需要 UCP 3.0.7+、Crusader/Extreme 1.41 及模块依赖项。测试版本；参见 VALIDATION.md。
+![欧洲弓箭手装填速度对比](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/archer-reload.jpg)
+
+### 增加投石车射程
+
+让投石车能够瞄准最远 40 格外的目标。
+
+```yaml
+units:
+  Catapult:
+    interval: 700
+    range: 40
+```
+
+![投石车向远处目标开火](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/catapult-range.jpg)
+
+### 一次发射更多石块
+
+让塔楼投石机每次齐射发射十块石头。
+
+```yaml
+units:
+  Mangonel:
+    count: 10
+    spread: 48
+```
+
+![飞行中的塔楼投石机齐射](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/mangonel-volley.jpg)
+
+### 按目标选择弹药
+
+让投石车在攻击敌方投石车时自动发射奶牛。
+
+```yaml
+units:
+  Catapult:
+    interval: 700
+    ammo_by_target: {units: {Catapult: cow}}
+```
+
+![飞向敌方投石车的奶牛](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/catapult-ammunition.jpg)
+
+*注：此为机器翻译，尚待人工审校。*

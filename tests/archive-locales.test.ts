@@ -77,7 +77,10 @@ for(const lang of languages) {
       expect(localized[0].display).toBe('FileInput');
       expect(localized[0].text).toBe(locales[lang].config_file);
       expect(localized[0].tooltip).toBe(locales[lang].config_help);
-      expect(await handle.getTextContents('locale/description-'+lang+'.md')).toContain(locales[lang].config_help);
+      const description = await handle.getTextContents('locale/description-'+lang+'.md');
+      expect(description).toContain('vanilla-projectiles.yml');
+      expect(description).toMatch(/^1\. .+\r?\n2\. .+\r?\n3\. .+$/m);
+      expect(description.match(/^```yaml$/gm)).toHaveLength(4);
       const legacyLocales=await readLocales(legacyHandle,'ucp2-legacy',languages);
       const legacyUI=(await readUISpec(legacyHandle)).options;
       const legacyLocalized=applyLocale({ui:legacyUI} as any,{...legacyLocales.en,...legacyLocales[lang]});

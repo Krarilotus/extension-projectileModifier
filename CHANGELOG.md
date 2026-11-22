@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.8.19 (provisional test candidate)
+
+- Keep the file picker empty by default and ship the full vanilla reference plus
+  standalone examples for individual features.
+  Reconquista settings will come as its own plugin.
+- Add a shorter setup guide and tooltip. Keep the full setting reference,
+  dependencies, and plugin file-selection examples in the README.
+
 ## 1.8.16 (provisional test candidate)
 
 - Enforce an explicit range on supported native shooters' manual acquisition

@@ -1,4 +1,5 @@
 # UCP plugin config.yml example. The user may select another projectile file.
+# Replace MyBalancePreset with your plugin name; put projectiles.yml in it.
 meta:
   version: 1.0.0
 config-sparse:
