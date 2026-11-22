@@ -22,8 +22,6 @@ units:
     interval: 600
 ```
 
-![Avrupalı okçuların yeniden doldurma karşılaştırması](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/archer-reload.jpg)
-
 ### Mancınıklara daha fazla menzil verme
 
 Mancınıkların 40 kareye kadar uzaklıktaki hedeflere nişan almasını sağlayın.
@@ -34,8 +32,6 @@ units:
     interval: 700
     range: 40
 ```
-
-![Uzaktaki bir hedefe ateş eden mancınık](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/catapult-range.jpg)
 
 ### Aynı anda daha fazla taş fırlatma
 
@@ -48,8 +44,6 @@ units:
     spread: 48
 ```
 
-![Havada uçan mangonel yaylım atışı](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/mangonel-volley.jpg)
-
 ### Hedefe göre mühimmat seçme
 
 Mancınıkların düşman mancınıklarına otomatik olarak inek fırlatmasını sağlayın.
@@ -60,7 +54,5 @@ units:
     interval: 700
     ammo_by_target: {units: {Catapult: cow}}
 ```
-
-![Düşman mancınığına doğru fırlatılan bir inek](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/catapult-ammunition.jpg)
 
 *Not: Bu metin makine çevirisidir ve insan incelemesi beklemektedir.*

@@ -22,8 +22,6 @@ units:
     interval: 600
 ```
 
-![Európai íjászok újratöltési idejének összehasonlítása](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/archer-reload.jpg)
-
 ### Nagyobb hatótáv a katapultoknak
 
 Engedd, hogy a katapultok akár 40 mezőre lévő célpontokra is lőhessenek.
@@ -34,8 +32,6 @@ units:
     interval: 700
     range: 40
 ```
-
-![Távoli célpontra tüzelő katapult](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/catapult-range.jpg)
 
 ### Több kő kilövése egyszerre
 
@@ -48,8 +44,6 @@ units:
     spread: 48
 ```
 
-![Repülő kővetőgép-sortűz](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/mangonel-volley.jpg)
-
 ### Lőszer kiválasztása célpont szerint
 
 Állítsd be, hogy a katapultok automatikusan teheneket lőjenek az ellenséges katapultokra.
@@ -60,7 +54,5 @@ units:
     interval: 700
     ammo_by_target: {units: {Catapult: cow}}
 ```
-
-![Ellenséges katapult felé kilőtt tehén](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/catapult-ammunition.jpg)
 
 *Megjegyzés: ez egy gépi fordítás, amely még emberi ellenőrzésre vár.*

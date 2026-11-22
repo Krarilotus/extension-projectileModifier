@@ -22,8 +22,6 @@ units:
     interval: 600
 ```
 
-![مقایسهٔ زمان بارگذاری کمانداران اروپایی](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/archer-reload.jpg)
-
 ### افزایش برد منجنیق‌ها
 
 به منجنیق‌ها اجازه دهید هدف‌هایی تا فاصلهٔ ۴۰ خانه را نشانه بگیرند.
@@ -34,8 +32,6 @@ units:
     interval: 700
     range: 40
 ```
-
-![شلیک منجنیق به یک هدف دوردست](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/catapult-range.jpg)
 
 ### پرتاب سنگ‌های بیشتر در هر نوبت
 
@@ -48,8 +44,6 @@ units:
     spread: 48
 ```
 
-![رگبار منجنیق برجی در حال پرواز](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/mangonel-volley.jpg)
-
 ### انتخاب مهمات بر اساس هدف
 
 کاری کنید منجنیق‌ها به‌طور خودکار به سمت منجنیق‌های دشمن گاو پرتاب کنند.
@@ -60,7 +54,5 @@ units:
     interval: 700
     ammo_by_target: {units: {Catapult: cow}}
 ```
-
-![گاوی که به سمت یک منجنیق دشمن پرتاب شده است](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/catapult-ammunition.jpg)
 
 *توجه: این یک ترجمهٔ ماشینی است و در انتظار بازبینی انسانی قرار دارد.*

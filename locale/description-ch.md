@@ -22,8 +22,6 @@ units:
     interval: 600
 ```
 
-![欧洲弓箭手装填速度对比](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/archer-reload.jpg)
-
 ### 增加投石车射程
 
 让投石车能够瞄准最远 40 格外的目标。
@@ -34,8 +32,6 @@ units:
     interval: 700
     range: 40
 ```
-
-![投石车向远处目标开火](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/catapult-range.jpg)
 
 ### 一次发射更多石块
 
@@ -48,8 +44,6 @@ units:
     spread: 48
 ```
 
-![飞行中的塔楼投石机齐射](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/mangonel-volley.jpg)
-
 ### 按目标选择弹药
 
 让投石车在攻击敌方投石车时自动发射奶牛。
@@ -60,7 +54,5 @@ units:
     interval: 700
     ammo_by_target: {units: {Catapult: cow}}
 ```
-
-![飞向敌方投石车的奶牛](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/catapult-ammunition.jpg)
 
 *注：此为机器翻译，尚待人工审校。*

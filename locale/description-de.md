@@ -22,8 +22,6 @@ units:
     interval: 600
 ```
 
-![Vergleich der Nachladezeit europäischer Bogenschützen](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/archer-reload.jpg)
-
 ### Katapulten mehr Reichweite geben
 
 Katapulte auf Ziele in bis zu 40 Feldern Entfernung zielen lassen.
@@ -34,8 +32,6 @@ units:
     interval: 700
     range: 40
 ```
-
-![Katapult beim Beschuss eines entfernten Ziels](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/catapult-range.jpg)
 
 ### Mehr Steine auf einmal abfeuern
 
@@ -48,8 +44,6 @@ units:
     spread: 48
 ```
 
-![Salve einer Mange im Flug](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/mangonel-volley.jpg)
-
 ### Munition nach Ziel wählen
 
 Katapulte automatisch Kühe auf feindliche Katapulte schleudern lassen.
@@ -60,7 +54,5 @@ units:
     interval: 700
     ammo_by_target: {units: {Catapult: cow}}
 ```
-
-![Eine Kuh im Flug auf ein feindliches Katapult](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/catapult-ammunition.jpg)
 
 *Hinweis: Dies ist eine maschinelle Übersetzung, die noch auf eine menschliche Prüfung wartet.*

@@ -22,8 +22,6 @@ units:
     interval: 600
 ```
 
-![European archer reload comparison](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/archer-reload.jpg)
-
 ### Give catapults more range
 
 Let catapults aim at targets up to 40 tiles away.
@@ -34,8 +32,6 @@ units:
     interval: 700
     range: 40
 ```
-
-![Catapult firing at a distant target](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/catapult-range.jpg)
 
 ### Fire more stones at once
 
@@ -48,8 +44,6 @@ units:
     spread: 48
 ```
 
-![Mangonel volley in flight](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/mangonel-volley.jpg)
-
 ### Choose ammunition by target
 
 Have catapults automatically launch cows at enemy catapults.
@@ -60,5 +54,3 @@ units:
     interval: 700
     ammo_by_target: {units: {Catapult: cow}}
 ```
-
-![A cow launched toward an enemy catapult](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/catapult-ammunition.jpg)

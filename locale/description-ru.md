@@ -22,8 +22,6 @@ units:
     interval: 600
 ```
 
-![Сравнение перезарядки европейских лучников](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/archer-reload.jpg)
-
 ### Увеличить дальность катапульт
 
 Позвольте катапультам наводиться на цели на расстоянии до 40 клеток.
@@ -34,8 +32,6 @@ units:
     interval: 700
     range: 40
 ```
-
-![Катапульта стреляет по дальней цели](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/catapult-range.jpg)
 
 ### Выпускать больше камней за раз
 
@@ -48,8 +44,6 @@ units:
     spread: 48
 ```
 
-![Залп мангонели в полёте](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/mangonel-volley.jpg)
-
 ### Выбирать боеприпасы в зависимости от цели
 
 Настройте катапульты так, чтобы они автоматически метали коров во вражеские катапульты.
@@ -60,7 +54,5 @@ units:
     interval: 700
     ammo_by_target: {units: {Catapult: cow}}
 ```
-
-![Корова летит во вражескую катапульту](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/catapult-ammunition.jpg)
 
 *Примечание: это машинный перевод, ожидающий проверки человеком.*

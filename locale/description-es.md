@@ -22,8 +22,6 @@ units:
     interval: 600
 ```
 
-![Comparación de recarga de los arqueros europeos](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/archer-reload.jpg)
-
 ### Dar más alcance a las catapultas
 
 Permite que las catapultas apunten a objetivos a una distancia de hasta 40 casillas.
@@ -34,8 +32,6 @@ units:
     interval: 700
     range: 40
 ```
-
-![Catapulta disparando a un objetivo lejano](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/catapult-range.jpg)
 
 ### Disparar más piedras a la vez
 
@@ -48,8 +44,6 @@ units:
     spread: 48
 ```
 
-![Descarga de mangonel en vuelo](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/mangonel-volley.jpg)
-
 ### Elegir la munición según el objetivo
 
 Haz que las catapultas lancen vacas automáticamente contra las catapultas enemigas.
@@ -60,7 +54,5 @@ units:
     interval: 700
     ammo_by_target: {units: {Catapult: cow}}
 ```
-
-![Una vaca lanzada hacia una catapulta enemiga](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/feature/target-ammunition/docs/screenshots/catapult-ammunition.jpg)
 
 *Nota: esta es una traducción automática pendiente de revisión humana.*
