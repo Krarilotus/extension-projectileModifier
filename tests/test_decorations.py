@@ -176,7 +176,7 @@ class DecorationTests(unittest.TestCase):
                 with self.assertRaises(RuntimeError):h.scan(pattern,address+1)
                 return address
             m=h.lua.execute(b"return (require('decorations'))")
-            resolved=m.resolve(locate)
+            resolved=m.resolve(locate,lambda displaced,size,tail,what=None:locate(displaced+b' '+tail))
             self.assertEqual(resolved[b'queue'],0x489100+(0x110 if extreme else 0))
             self.assertEqual(resolved[b'commandID'],69)
 

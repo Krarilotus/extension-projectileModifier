@@ -71,10 +71,12 @@ class FeedbackFixTests(unittest.TestCase):
             # their default look, while the edited gameplay still loads.
             handle.files[b'entity-variant.bin'] = b'\1\0\0\0' + handle.files[b'entity-variant.bin'][4:]
             self.assertTrue(state.validate(state, handle)[b'reset_visuals'])
-            new.put(new.v['ENTITYVARIANT'] + 4, 7)
+            # Units-only files assemble no graphics code; use the save block.
+            variants = next(b[2] for b in state[b'blocks'].values() if b[1] == b'entity-variant')
+            new.put(variants + 4, 7)
             state.deserialize(state, handle)
-            self.assertEqual(new.get(new.v['ENTITYVARIANT']), 0)
-            self.assertEqual(new.get(new.v['ENTITYVARIANT'] + 4), 0)
+            self.assertEqual(new.get(variants), 0)
+            self.assertEqual(new.get(variants + 4), 0)
             state[b'allow_config_changes'] = False
             with self.assertRaisesRegex(Exception, 'saved projectile settings differ'):
                 state.validate(state, handle)
