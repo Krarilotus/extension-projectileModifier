@@ -2,7 +2,7 @@
 -- state belongs here; configuration, code and temporary targeting scratch do not.
 --
 -- Saved formats (`format` entry):
---   1-4  test builds 1.3.2-1.7.x. Their block layouts differ from today's; the
+--   1-4  written by 1.3.2-1.7.x; block layouts differ from format 5, so the
 --        world keeps its units and this module's timers start fresh.
 --   5    1.8.x up to 1.8.19. No unit capacity entry; it is derived from the
 --        per-unit blocks, which must all agree.
@@ -19,7 +19,7 @@
 --     an ordinary brazier. In both cases the game's own entity record is set
 --     back to the native graphics ID it would have without this module.
 --     Format 5 has no names: its placed decorations must keep their
---     definitions (refused otherwise, as before);
+--     definitions, otherwise the save is refused;
 --   * a different unit capacity (Crusader 2500, Extreme 10000, e.g. a map made
 --     in the other edition): per-unit blocks are widened with empty slots, or
 --     narrowed only when the dropped slots are empty.
@@ -193,7 +193,7 @@ function M.new(blocks, config, profile_count, rebuild, capacity, looks)
             end
         end
         local capacity = self:saved_capacity(handle, format, saved)
-        -- Strict mode keeps the exact-match rules of earlier versions.
+        -- Strict mode: a different unit capacity is refused.
         assert(capacity == self.capacity or self.allow_config_changes,
             '[custom-projectiles] save was made with a different unit limit; enable allow_config_changes_on_load to load it')
         if capacity ~= self.capacity then
@@ -330,7 +330,7 @@ function M.new(blocks, config, profile_count, rebuild, capacity, looks)
     function state:deserialize(handle)
         local pending = self:validate(handle)
         if not pending then self:initialize(); return end
-        for _, note in ipairs(pending.notes) do log(WARNING, '[custom-projectiles] ' .. note) end
+        for _, note in ipairs(pending.notes) do log(WARNING, note) end
         if pending.fresh then self:initialize(); return end
         for i, block in ipairs(self.blocks) do
             if block[4] then

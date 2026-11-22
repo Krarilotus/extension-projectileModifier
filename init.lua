@@ -66,7 +66,7 @@ local function shared_site(displaced, size, tail, what)
     -- Extension code lies outside the whole game image and the null region.
     assert(chain >= 0x10000 and (chain < 0x400000 or chain >= game_image_end()),
         '[custom-projectiles] unsupported executable or conflicting module at signature: ' .. plain)
-    log(INFO, string.format('[custom-projectiles] %s is already redirected by another extension; continuing into its handler at 0x%X',
+    log(INFO, string.format('%s is already redirected by another extension; continuing into its handler at 0x%X',
         what, chain))
     return site, chain
 end

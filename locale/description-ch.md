@@ -57,10 +57,6 @@ units:
     ammo_by_target: {units: {Catapult: cow}}
 ```
 
-## 存档
-
-修改配置文件后，存档仍可加载：更改设置会重新开始射击计时；更改图像后，飞行中的投射物会失去自定义外观，类型已被删除的已放置装饰会变成普通火盆。关闭本模块时也可以加载存档。在文件开头加入 `allow_config_changes_on_load: false`，即可拒绝使用其他设置创建的存档。
-
 ## 其他扩展
 
 如果你同时使用 Smarter Walls、Improved Siegeengines 或 Improved Tunnelers，请在加载顺序中把它们放在 Custom Projectiles 之前。

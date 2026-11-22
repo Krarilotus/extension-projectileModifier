@@ -57,10 +57,6 @@ units:
     ammo_by_target: {units: {Catapult: cow}}
 ```
 
-## Spielstände
-
-Spielstände lassen sich nach einer Änderung der Datei weiter laden: Geänderte Einstellungen starten die Schuss-Timer neu; nach Grafikänderungen verlieren fliegende Geschosse ihr eigenes Aussehen, und platzierte Dekorationen, deren Art entfernt wurde, werden zu normalen Feuerschalen. Spielstände laden auch bei ausgeschaltetem Modul. Mit `allow_config_changes_on_load: false` am Anfang der Datei werden Spielstände mit anderen Einstellungen abgelehnt.
-
 ## Andere Erweiterungen
 
 Smarter Walls, Improved Siegeengines oder Improved Tunnelers in der Ladereihenfolge vor Custom Projectiles einordnen.

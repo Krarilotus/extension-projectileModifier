@@ -57,10 +57,6 @@ units:
     ammo_by_target: {units: {Catapult: cow}}
 ```
 
-## Saves
-
-Saves keep loading when you change your file: changed settings restart the firing timers; after graphics changes, projectiles in flight lose their custom look, and placed decorations whose kind you removed become ordinary braziers. Saves also load with the module turned off. Put `allow_config_changes_on_load: false` at the top of your file to refuse saves made with other settings.
-
 ## Other extensions
 
 If you use Smarter Walls, Improved Siegeengines or Improved Tunnelers, place them before Custom Projectiles in the load order.
