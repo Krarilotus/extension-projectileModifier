@@ -12,8 +12,9 @@ grew from, and contributed ideas and code to later versions, including:
   of refusing them (his 1.8.18).
 
 Monsterfish agreed on 22 November 2026 that Custom Projectiles is Krarilotus'
-module with his ideas and contributions, and that his contributions are part of
-it under the module's license.
+module with his ideas and contributions, and that his contributions are covered
+by the same license as the rest of the module. The repository has no license
+file yet; choosing the license is Krarilotus' decision.
 
 Original game: Firefly Studios. Framework, save, resource and protocol APIs:
 the Unofficial Crusader Patch contributors. OpenSHC reconstruction provides

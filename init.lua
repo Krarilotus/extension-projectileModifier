@@ -213,20 +213,29 @@ assert(core.readSmallInteger(unit_tick_addr + 0x3A2) % 65536 == 0xFA81
 local unit_capacity = core.readInteger(unit_tick_addr + 0x3A4)
 assert(unit_capacity == (data.version.isExtreme() and 10000 or 2500),
     '[custom-projectiles] unsupported unit-array capacity modification')
-local spawn_site, entity_site, entity_chain, entity_array
-if next(config.projectiles or {}) or next(config.decorations or {}) then
-    spawn_site = locate('83 EC 08 53 8B 5C 24 34 83 FB 2B 56 8B F1')
-    -- EntityState::update prologue: push ecx/ebx/ebp/esi, mov esi, ecx.
-    entity_site, entity_chain = shared_site('51 53 55 56 8B F1', 6,
-        '8B 0D ? ? ? ? B8 67 66 66 66 F7 E9')
-    -- The dispatcher loads EntityState as `this` immediately before calling
-    -- the resolved native spawner. Decode both operands from that call site.
+-- The dispatcher loads EntityState as `this` immediately before calling
+-- the resolved native spawner. Decode both operands from that call site.
+local function entity_records()
+    local spawn = locate('83 EC 08 53 8B 5C 24 34 83 FB 2B 56 8B F1')
     local call_site = locate('52 51 50 B9 ? ? ? ? E8 ? ? ? ? 0F BF 86 EC 08 00 00 85 C0 5F 5E 5B 74 0F 69')
     local target = (call_site + 13 + core.readInteger(call_site + 9)) % 4294967296
     local entity_state = core.readInteger(call_site + 4)
-    assert(target == spawn_site and entity_state >= 0x700000 and entity_state % 4 == 0,
+    assert(target == spawn and entity_state >= 0x700000 and entity_state % 4 == 0,
         '[custom-projectiles] unsupported native entity spawner context')
-    entity_array = entity_state + 20
+    return spawn, entity_state + 20
+end
+local spawn_site, entity_site, entity_chain, entity_array, entity_records_addr
+if next(config.projectiles or {}) or next(config.decorations or {}) then
+    spawn_site, entity_array = entity_records()
+    entity_records_addr = entity_array
+    -- EntityState::update prologue: push ecx/ebx/ebp/esi, mov esi, ecx.
+    entity_site, entity_chain = shared_site('51 53 55 56 8B F1', 6,
+        '8B 0D ? ? ? ? B8 67 66 66 66 F7 E9')
+else
+    -- Read-only: lets a save with custom graphics be loaded with a file that
+    -- has none. Without it those records keep their saved graphics IDs.
+    local ok, _, records = pcall(entity_records)
+    entity_records_addr = ok and records or nil
 end
 return {locate=locate, fire=fire_projectile_addr, acquire=acquire_target_addr, tick=unit_tick_addr, tickChain=unit_tick_chain, sharedSite=shared_site,
     prepareTarget=prepare_target_addr,
@@ -245,6 +254,7 @@ return {locate=locate, fire=fire_projectile_addr, acquire=acquire_target_addr, t
     teams=team_table_addr, buildings=building_base_addr, aic=aic_array_base,
     playerAic=player_aic_addr, cow=aic_cow_addr, units=unit_array_base,
     spawn=spawn_site, entityUpdate=entity_site, entityChain=entity_chain, entityArray=entity_array,
+    entityRecords=entity_records_addr,
     this=unit_state_this, current=current_unit_id_addr, capacity=unit_capacity}
 end
 
@@ -859,7 +869,20 @@ local function install(config)
         {'decoration-variant', data_addr + OFF_DECORVARIANT, 3000*4},
         {'decoration-uid', data_addr + OFF_DECORUID, 3000*4},
         {'decoration-gm', data_addr + OFF_DECORGM, 34*4, true},
-    }, config, MAX_PROFILES, rebuild, MAX_UNITS)
+    }, config, MAX_PROFILES, rebuild, MAX_UNITS, {
+        -- Native graphics ID of a projectile type, as spawned by the game.
+        projectile_gm = function(kind) return sprites.projectile_gm[kind] end,
+        -- Write a native graphics ID back into a game entity record (232
+        -- bytes; UID at +0x30, graphics ID at +0x06), only while it is still
+        -- the saved entity showing the saved custom slot.
+        restore = native.entityRecords and function(entity, uid, slot, gm)
+            local record = native.entityRecords + entity * 232
+            if core.readInteger(record + 0x30) % 4294967296 == uid
+                    and core.readSmallInteger(record + 0x06) % 65536 == slot then
+                core.writeSmallInteger(record + 0x06, gm)
+            end
+        end,
+    })
     sprites.install(resources,function(asset)
         for _, name in ipairs(asset.decorations or {}) do
             set_entry(OFF_DECORGM, config.decorations[name].id, asset.slot)

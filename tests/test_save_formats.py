@@ -6,7 +6,9 @@ module's timers fresh. Damaged data and unknown formats are refused, and
 `allow_config_changes_on_load: false` keeps the earlier exact-match rules.
 """
 import unittest
+import test_decorations as decoration_tests
 import test_feedback_fixes as feedback
+import test_sprite_resources as sprite_tests
 
 CONFIG = {'units': {'Catapult': {'interval': 700}}}
 STRICT = {'allow_config_changes_on_load': False, 'units': {'Catapult': {'interval': 700}}}
@@ -119,6 +121,122 @@ class SaveFormatTests(unittest.TestCase):
         state, handle = self.transfer(crusader, strict)
         with self.assertRaisesRegex(Exception, 'different unit limit'):
             state.validate(state, handle)
+
+
+class GraphicsMigrationTests(unittest.TestCase):
+    """Changed graphics must leave the game's own entity records consistent."""
+
+    def sprites(self):
+        tests = sprite_tests.SpriteResourcesTests()
+        tests.addCleanup = self.addCleanup
+        return tests.prepare(False)
+
+    def record(self, state, entity):
+        return state + 20 + entity * 232
+
+    def test_projectiles_in_flight_get_their_native_graphics_back(self):
+        for change in ('definition', 'layout'):
+            with self.subTest(change=change):
+                h, entities, _ = self.sprites()
+                self.assertEqual(h.get(h.v['VARIANTGM'] + 4), 207)
+                for entity, uid in ((25, 777), (26, 778)):
+                    h.put(h.v['ENTITYVARIANT'] + entity * 4, 1)
+                    h.put(h.v['ENTITYUID'] + entity * 4, uid)
+                    h.put(h.v['ENTITYTYPE'] + entity * 4, 1)  # arrow
+                    h.put(self.record(entities, entity) + 0x30, uid)
+                    h.put(self.record(entities, entity) + 0x06, 207, 2)
+                state = h.sections[b'projectileModifier']
+                handle = feedback.native_tests.NativeTests().state_handle(h)
+                state.serialize(state, handle)
+                # Entity 26 was recycled after the save: not the saved projectile.
+                h.put(self.record(entities, 26) + 0x30, 999)
+                if change == 'definition':
+                    handle.files[b'config'] = b'{edited}'
+                    handle.files[b'assets'] = b'{edited}'
+                else:
+                    h.put(h.v['VARIANTGM'] + 4, 208)
+                state.deserialize(state, handle)
+                self.assertEqual(h.get(h.v['ENTITYVARIANT'] + 25 * 4), 0)
+                self.assertEqual(h.get(self.record(entities, 25) + 0x06, 2), 34)  # native arrow sheet
+                self.assertEqual(h.get(self.record(entities, 26) + 0x06, 2), 207)
+
+    def decorations(self, names, extreme=False):
+        return decoration_tests.DecorationTests().prepare_module(
+            {'decorations': {name: {} for name in names}}, extreme)
+
+    def brazier(self, h, entity, uid):
+        """The game's own record of a live brazier (restored by the native load)."""
+        record = h.native_decor[b'entityState'] + 20 + entity * 232
+        for offset, value, size in ((0x30, uid, 4), (0x28, 2, 2), (0x2A, 14, 2), (0x44, 40, 2), (0x46, 40, 2)):
+            h.put(record + offset, value, size)
+
+    def place(self, h, entity, decoration, uid):
+        h.put(h.v['DECORVARIANT'] + entity * 4, decoration)
+        h.put(h.v['DECORUID'] + entity * 4, uid)
+        self.brazier(h, entity, uid)
+
+    def move(self, old, new, five=False):
+        for entity in range(1, 3000):
+            uid = old.get(old.v['DECORUID'] + entity * 4)
+            if uid: self.brazier(new, entity, uid)
+        saved = feedback.native_tests.NativeTests().state_handle(old)
+        original = old.sections[b'projectileModifier']
+        original.serialize(original, saved)
+        loaded = feedback.native_tests.NativeTests().state_handle(new)
+        for name, content in saved.files.items(): loaded.files[name] = content
+        if five:
+            for name in (b'capacity', b'decoration-names'): loaded.files[name] = None
+            loaded.files[b'format'] = b'5'
+        return new.sections[b'projectileModifier'], loaded
+
+    def test_placed_decorations_keep_their_kind_by_name(self):
+        for extreme in (False, True):
+            with self.subTest(extreme=extreme):
+                old = self.decorations(['frost', 'smoke'], extreme)
+                self.place(old, 40, 1, 4001)  # frost
+                self.place(old, 41, 2, 4002)  # smoke
+                new = self.decorations(['alpha', 'frost'], extreme)
+                state, handle = self.move(old, new)
+                pending = state.validate(state, handle)
+                self.assertTrue(any(b'ordinary braziers' in note for note in pending[b'notes'].values()))
+                state.deserialize(state, handle)
+                self.assertEqual(new.get(new.v['DECORVARIANT'] + 40 * 4), 2)  # frost is id 2 now
+                self.assertEqual(new.get(new.v['DECORUID'] + 40 * 4), 4001)
+                self.assertEqual(new.get(new.v['DECORVARIANT'] + 41 * 4), 0)  # smoke removed
+                self.assertEqual(new.get(new.v['DECORUID'] + 41 * 4), 0)
+
+    def test_unchanged_decorations_keep_their_ids(self):
+        old = self.decorations(['frost'])
+        self.place(old, 40, 1, 4001)
+        new = self.decorations(['frost'])
+        state, handle = self.move(old, new)
+        self.assertFalse(state.validate(state, handle)[b'reset_visuals'])
+        state.deserialize(state, handle)
+        self.assertEqual(new.get(new.v['DECORVARIANT'] + 40 * 4), 1)
+
+    def test_format_five_refuses_changed_definitions_of_placed_decorations(self):
+        old = self.decorations(['frost'])
+        self.place(old, 40, 1, 4001)
+        new = self.decorations(['alpha', 'frost'])
+        state, handle = self.move(old, new, five=True)
+        new.put(new.v['DECORVARIANT'] + 40 * 4, 9)
+        with self.assertRaisesRegex(Exception, 'placed custom decorations changed in a save from an older version'):
+            state.deserialize(state, handle)
+        self.assertEqual(new.get(new.v['DECORVARIANT'] + 40 * 4), 9)
+        # Without placed decorations the same edit loads.
+        old.put(old.v['DECORVARIANT'] + 40 * 4, 0)
+        state, handle = self.move(old, new, five=True)
+        state.deserialize(state, handle)
+
+    def test_damaged_decoration_names_are_refused(self):
+        old = self.decorations(['frost'])
+        self.place(old, 40, 1, 4001)
+        new = self.decorations(['alpha', 'frost'])
+        state, handle = self.move(old, new)
+        for value in (b'1=Frost;', b'1=frost', b'x=frost;'):
+            handle.files[b'decoration-names'] = value
+            with self.assertRaisesRegex(Exception, 'invalid saved graphics names'):
+                state.validate(state, handle)
 
 
 if __name__ == '__main__':

@@ -45,7 +45,7 @@ with `ai_only: true`), not one individually selected catapult.
 | Allow automatic attacks | `auto_targeting: true` or `false` per unit type; `false` keeps human manual attack orders |
 | Bias automatic unit targets | `target_bias_tiles: {Monk: 3}` on the shooting unit; each point subtracts one tile-equivalent from the game's distance-and-attention score before its remaining target rules |
 | Search distance | `range` in tiles for the selected target. Supported native shooters also enforce it on manual orders, independently of reload customization, when `strict_range` is true. Scatter can land beyond that radius. |
-| Retune an existing save | Gameplay edits load by default; old module firing queues/timers reset. Set root `allow_config_changes_on_load: false` for strict matching. Changed custom graphics take their default look. |
+| Retune an existing save | Gameplay edits load by default; old module firing queues/timers reset. Set root `allow_config_changes_on_load: false` for strict matching. See [Saves and compatibility](#saves-and-compatibility) for changed graphics. |
 | A replacement projectile falls short | Optional root `projectile_physics: {firethrower_pot: {mode: fixed_angle, angle: 30}}` uses the game's launch-speed solver. Requires active Rebalancer 1.1.3+; applies globally to that projectile type. |
 | Exact aim | `inaccuracy: 0` and `spread: 0`; moving targets can still move before impact |
 | An eighth-tile aim-error radius | `inaccuracy: 1`; **8 native coordinate units = 1 tile**; use whole numbers |
@@ -512,8 +512,9 @@ above the native 66,000-image capacity; it never overwrites another sheet.
 
 All peers need the same module versions, YAML and sprite bytes. Saves record
 variant identities and sheet hashes/slot bindings. After a change to a sheet,
-name or binding, a save still loads: projectiles in flight and placed
-decorations take their default look (see [Saves and compatibility](#saves-and-compatibility)).
+name or binding, a save still loads (see [Saves and compatibility](#saves-and-compatibility)):
+projectiles in flight take their default look and placed decorations keep
+their kind by name.
 Build selections travel in a lockstep command; remote execution
 does not depend on another player's currently selected menu item.
 
@@ -573,15 +574,23 @@ difference is a defined step, logged as a warning in `ucp3.log`:
 | Difference | What happens |
 |---|---|
 | Gameplay settings changed | New settings apply (including projectile physics). The module's firing queues and timers restart. The random seed and custom graphics identities are kept. |
-| Custom projectile/decoration graphics changed, or another extension uses different graphics slots | Gameplay as above. Projectiles in flight and placed decorations take their default look. |
+| Custom projectile/decoration graphics changed, or another extension uses different graphics slots | Projectiles in flight take their default look. Placed decorations keep their kind by name and show its current graphics; a decoration whose kind is no longer in the file becomes an ordinary brazier (it then supplies fire arrows and no longer triggers `near_decorations` rules). The game's own entity records get their native graphics ID back. Firing timers restart only if gameplay settings changed too. |
 | Save or map made in the other edition (Crusader 2500 unit slots, Extreme 10000) | Unit timers move to this game's limit. Narrowing is only allowed when the dropped slots are empty. |
 | Saved by a 1.3.2–1.7.x test build (state formats 1–4) | The world loads; this module's timers start fresh. |
 
 Damaged module data is refused rather than repaired: a missing or wrongly
 sized block, an out-of-range value, an invalid capacity or a state format this
 version does not know (for example one written by a newer version). Saves
-written by 1.8.20 use state format 6, which records the unit capacity;
-1.8.19 and older cannot read it. Format 5 saves from 1.8.x load unchanged.
+written by 1.8.20 use state format 6, which records the unit capacity and
+the names of the decoration kinds; 1.8.19 and older cannot read it. Format 5
+saves from 1.8.x load unchanged. A format 5 save has no decoration names, so
+if it contains placed custom decorations, their definitions must stay as they
+were: load it once, save it with this version, then edit them.
+
+Loading a save with the module turned off works. Projectiles that were in
+flight with custom graphics and placed custom decorations then keep the
+custom graphics ID in the game's own record, which no extension owns any
+more; how the game draws them is untested.
 
 Set root `allow_config_changes_on_load: false` to keep the earlier exact-match
 rules: any settings, graphics-slot or unit-capacity difference and the old test
@@ -607,6 +616,8 @@ instead of an extension's handler is refused before anything is written. Load
 these extensions **before** Custom Projectiles: Smarter Walls and Improved
 Siegeengines do not yet look for an existing handler, so loaded afterwards they
 stop at startup, and Improved Tunnelers then leaves out its tunnel button.
+The ghost-object fix already continues into an existing handler, so it works
+in either order.
 
 Multiplayer peers need identical versions and settings. Scheduling and random
 state are deterministic, but live multiplayer, recorder integration, visibility

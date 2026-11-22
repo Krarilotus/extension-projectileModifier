@@ -59,4 +59,4 @@ units:
 
 ## Saves
 
-Saves keep loading when you change your file: firing timers restart, and changed custom graphics take their default look. Saves also load with the module turned off. Put `allow_config_changes_on_load: false` at the top of your file to refuse saves made with other settings.
+Saves keep loading when you change your file: changed settings restart the firing timers, projectiles in flight lose changed custom graphics, and placed decorations whose kind you removed become ordinary braziers. Saves also load with the module turned off. Put `allow_config_changes_on_load: false` at the top of your file to refuse saves made with other settings.

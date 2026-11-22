@@ -59,6 +59,6 @@ units:
 
 ## Kayıt dosyaları
 
-Dosyanızı değiştirdiğinizde kayıt dosyaları yüklenmeye devam eder: atış zamanlayıcıları yeniden başlar ve değiştirilen özel grafikler varsayılan görünümlerini alır. Kayıt dosyaları modül kapalıyken de yüklenir. Farklı ayarlarla oluşturulmuş kayıt dosyalarını reddetmek için dosyanızın başına `allow_config_changes_on_load: false` ekleyin.
+Dosyanızı değiştirdiğinizde kayıt dosyaları yüklenmeye devam eder: değişen ayarlar atış zamanlayıcılarını yeniden başlatır, havadaki mermiler değiştirilen özel grafiklerini kaybeder ve türünü kaldırdığınız yerleştirilmiş süslemeler sıradan mangallara dönüşür. Kayıt dosyaları modül kapalıyken de yüklenir. Farklı ayarlarla oluşturulmuş kayıt dosyalarını reddetmek için dosyanızın başına `allow_config_changes_on_load: false` ekleyin.
 
 *Not: Bu metin makine çevirisidir ve insan incelemesi beklemektedir.*
