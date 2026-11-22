@@ -5,6 +5,9 @@
 - Keep the file picker empty by default and ship the full vanilla reference plus
   standalone examples for individual features.
   Reconquista settings will come as its own plugin.
+- If you selected one of the earlier tester's examples, copy that YAML into
+  your game's `ucp/resources/custom-projectiles/` folder and select the copy
+  before updating.
 - Add a shorter setup guide and tooltip. Keep the full setting reference,
   dependencies, and plugin file-selection examples in the README.
 

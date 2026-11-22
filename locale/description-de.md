@@ -5,7 +5,7 @@
 ## Verwendung
 
 1. **Geschosskonfigurationsdatei (YAML)** für das normale Spiel leer lassen.
-2. `vanilla-projectiles.yml` aus dem Erweiterungsordner oder der ZIP-Datei kopieren, die Kopie bearbeiten und unter **Anpassungen > Balance Changes** auswählen.
+2. `vanilla-projectiles.yml` aus dem Erweiterungsordner oder der ZIP-Datei nach `ucp/resources/custom-projectiles/` im Spielordner kopieren. Den Ordner bei Bedarf anlegen, die Kopie bearbeiten und unter **Anpassungen > Balance Changes** auswählen.
 3. Das Spiel neu starten.
 
 ## Was möglich ist

@@ -5,7 +5,7 @@ Change what units fire, how often and how far they shoot, and which targets they
 ## How to use it
 
 1. Leave **Projectile configuration file (YAML)** blank for the normal game.
-2. Copy `vanilla-projectiles.yml` from the extension folder or ZIP, edit the copy, and select it in **Customizations > Balance Changes**.
+2. Copy `vanilla-projectiles.yml` from the extension folder or ZIP to your game’s `ucp/resources/custom-projectiles/` folder. Create that folder if needed, then edit the copy and select it in **Customizations > Balance Changes**.
 3. Restart the game.
 
 ## What you can do

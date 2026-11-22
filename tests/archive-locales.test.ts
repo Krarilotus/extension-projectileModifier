@@ -79,6 +79,7 @@ for(const lang of languages) {
       expect(localized[0].tooltip).toBe(locales[lang].config_help);
       const description = await handle.getTextContents('locale/description-'+lang+'.md');
       expect(description).toContain('vanilla-projectiles.yml');
+      expect(description).toContain('ucp/resources/custom-projectiles/');
       expect(description).toMatch(/^1\. .+\r?\n2\. .+\r?\n3\. .+$/m);
       expect(description.match(/^```yaml$/gm)).toHaveLength(4);
       const legacyLocales=await readLocales(legacyHandle,'ucp2-legacy',languages);

@@ -5,7 +5,7 @@ Szabd testre, mit lőnek ki az egységek, milyen gyakran és milyen messzire tü
 ## Használat
 
 1. Normál játékhoz hagyd üresen a **Lövedékbeállítások fájlja (YAML)** mezőt.
-2. Másold ki a `vanilla-projectiles.yml` fájlt a bővítmény mappájából vagy a ZIP-fájlból, szerkeszd a másolatot, majd válaszd ki itt: **Testreszabások > Balance Changes**.
+2. Másold a `vanilla-projectiles.yml` fájlt a bővítmény mappájából vagy a ZIP-fájlból a játék `ucp/resources/custom-projectiles/` mappájába. Ha kell, hozd létre a mappát, majd szerkeszd a másolatot, és válaszd ki a **Testreszabások > Balance Changes** menüben.
 3. Indítsd újra a játékot.
 
 ## Mire képes

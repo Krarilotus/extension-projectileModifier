@@ -5,7 +5,7 @@ Cambia lo que disparan las unidades, con qué frecuencia y a qué distancia atac
 ## Cómo usarlo
 
 1. Deja **Archivo de configuración de proyectiles (YAML)** en blanco para el juego normal.
-2. Copia `vanilla-projectiles.yml` desde la carpeta de la extensión o el archivo ZIP, edita la copia y selecciónala en **Personalizaciones > Balance Changes**.
+2. Copia `vanilla-projectiles.yml` desde la carpeta de la extensión o el archivo ZIP a `ucp/resources/custom-projectiles/` dentro de la carpeta del juego. Crea esa carpeta si hace falta, edita la copia y selecciónala en **Personalizaciones > Balance Changes**.
 3. Reinicia el juego.
 
 ## Qué puedes hacer

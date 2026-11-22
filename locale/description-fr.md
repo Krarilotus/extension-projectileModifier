@@ -5,7 +5,7 @@ Modifiez ce que tirent les unités, leur cadence, leur portée et les cibles qu'
 ## Comment l'utiliser
 
 1. Laissez **Fichier de configuration des projectiles (YAML)** vide pour le jeu normal.
-2. Copiez `vanilla-projectiles.yml` depuis le dossier de l'extension ou l'archive ZIP, modifiez la copie et sélectionnez-la dans **Personnalisations > Balance Changes**.
+2. Copiez `vanilla-projectiles.yml` depuis le dossier de l’extension ou l’archive ZIP vers `ucp/resources/custom-projectiles/` dans le dossier du jeu. Créez ce dossier si nécessaire, puis modifiez la copie et sélectionnez-la dans **Personnalisations > Balance Changes**.
 3. Redémarrez le jeu.
 
 ## Ce que vous pouvez faire

@@ -5,7 +5,7 @@ Birimlerin ne ateşlediğini, ne sıklıkla ve ne kadar uzağa atış yaptığı
 ## Nasıl kullanılır
 
 1. Normal oyun için **Mermi yapılandırma dosyası (YAML)** alanını boş bırakın.
-2. Eklenti klasöründen veya ZIP dosyasından `vanilla-projectiles.yml` dosyasını kopyalayın, kopyayı düzenleyin ve **Özelleştirmeler > Balance Changes** altından seçin.
+2. `vanilla-projectiles.yml` dosyasını eklenti klasöründen veya ZIP dosyasından oyunun `ucp/resources/custom-projectiles/` klasörüne kopyalayın. Gerekirse klasörü oluşturun, kopyayı düzenleyin ve **Özelleştirmeler > Balance Changes** altında seçin.
 3. Oyunu yeniden başlatın.
 
 ## Neler yapabilirsiniz

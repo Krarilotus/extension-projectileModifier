@@ -5,7 +5,7 @@
 ## 使用方法
 
 1. 如需正常游玩，请将 **弹射物配置文件（YAML）** 留空。
-2. 从扩展文件夹或 ZIP 压缩包中复制 `vanilla-projectiles.yml`，编辑副本，然后在 **自定义 > Balance Changes** 中选择该文件。
+2. 将扩展文件夹或 ZIP 压缩包中的 `vanilla-projectiles.yml` 复制到游戏目录下的 `ucp/resources/custom-projectiles/`。如果该文件夹不存在，请先创建它，然后编辑副本并在 **自定义 > Balance Changes** 中选择该文件。
 3. 重启游戏。
 
 ## 可实现的效果
