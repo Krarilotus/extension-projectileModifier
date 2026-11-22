@@ -172,10 +172,11 @@ class CadenceTests(unittest.TestCase):
         self.assertGreater(release,0)
         rest=lib.resolve_trebuchet_rest(h.scan,release if kind==40 else None)
         cat=lib.resolve_catapult_rest(h.scan,release if kind==39 else None)
+        no_rest=h.lua.execute(b"return (require('constants')).NO_REST_CYCLE")
         values=dict(h.v, RELEASECYCLE=release, ANIMATIONDONE=end,
-                    CATRESTCYCLE=cat[b'cycle'] if cat else -1,
+                    CATRESTCYCLE=cat[b'cycle'] if cat else no_rest,
                     CATRELEASELEAD=cat[b'lead'] if cat else 0,
-                    TREBRESTCYCLE=rest[b'cycle'] if rest else -1,
+                    TREBRESTCYCLE=rest[b'cycle'] if rest else no_rest,
                     TREBRELEASELEAD=rest[b'lead'] if rest else 0,
                     RESUME=animation+18, BLOCKEDT=h.allocate(h.v['MAXUNITS']*4))
         def assemble(code):

@@ -2,6 +2,12 @@
 
 ## 1.8.19 (provisional test candidate)
 
+- Fix the game stopping at startup with `error in script: -121` when the
+  selected projectile file changes units, for example with any of the guide's
+  examples. An unused siege-engine rest check was passed
+  to the assembler as -1, which the framework writes as a 64-bit number. Every assembler constant is
+  now passed as an unsigned 32-bit value, and the tests format constants and
+  assemble twice exactly like framework 3.0.7 and 3.0.8.
 - Keep the file picker empty by default and ship the full vanilla reference plus
   standalone examples for individual features.
   Reconquista settings will come as its own plugin.

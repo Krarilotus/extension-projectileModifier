@@ -357,6 +357,20 @@ end
 -- the assembler inside that budget.
 local NEWLINE = string.char(10)
 
+-- The framework writes each constant above the script as
+-- string.format("0x%X", value) (core.assemble, framework 3.0.7 and 3.0.8).
+-- A negative Lua integer becomes a 64-bit literal there, which no 32-bit
+-- operand accepts (FASM error -121, "value out of range"), and a fraction
+-- stops the format call. Every constant here is a 32-bit operand, so pass its
+-- unsigned 32-bit encoding and name any value that has none.
+local function dword_constant(name, value)
+    local integer = type(value) == 'number' and math.tointeger(value)
+    assert(integer and integer >= -0x80000000 and integer <= 0xFFFFFFFF,
+        '[custom-projectiles] assembler constant ' .. tostring(name)
+        .. ' is not a 32-bit integer: ' .. tostring(value))
+    return integer & 0xFFFFFFFF
+end
+
 local function assemble_blob(script, values)
     local lines = {}
     for raw in (script .. NEWLINE):gmatch("([^" .. NEWLINE .. "]*)" .. NEWLINE) do
@@ -370,7 +384,7 @@ local function assemble_blob(script, values)
     local used = {}
     for name, value in pairs(values) do
         if body:find("%f[%w_]" .. name .. "%f[^%w_]") then
-            used[name] = value
+            used[name] = dword_constant(name, value)
         end
     end
     return core.allocateAssembly(body, used)
@@ -487,9 +501,11 @@ local function install(config)
         NATIVEBLOCKT  = data_addr + OFF_NATIVEBLOCK,
         NATIVEATTACKT = data_addr + OFF_NATIVEATTACK,
         NATIVESTARTT  = data_addr + OFF_NATIVESTART,
-        CATRESTCYCLE = native.catapultRest and native.catapultRest.cycle or -1,
+        -- No native reload pose has this cycle, so an inactive siege engine
+        -- never matches its rest check.
+        CATRESTCYCLE = native.catapultRest and native.catapultRest.cycle or constants.NO_REST_CYCLE,
         CATRELEASELEAD = native.catapultRest and native.catapultRest.lead or 0,
-        TREBRESTCYCLE = native.trebuchetRest and native.trebuchetRest.cycle or -1,
+        TREBRESTCYCLE = native.trebuchetRest and native.trebuchetRest.cycle or constants.NO_REST_CYCLE,
         TREBRELEASELEAD = native.trebuchetRest and native.trebuchetRest.lead or 0,
         FACEPOINT     = native.facePoint or 0,
         FACEUNIT      = native.faceUnit or 0,
