@@ -385,11 +385,16 @@ class CadenceTests(unittest.TestCase):
         self.assertEqual(first,second)
         self.assertTrue(any(queued or shots for queued,shots in first))
         self.assertEqual(h.get(a+0x362,2),stones)
-        handle[b'files'][b'format']=b'3'
+        handle[b'files'][b'format']=b'9'
         before=h.get(h.v['COOLDOWNT']+4)
         with self.assertRaisesRegex(Exception,'unsupported saved state format'):
             state.deserialize(state,handle)
         self.assertEqual(h.get(h.v['COOLDOWNT']+4),before)
+        # Test-build formats 1-4 keep the world and start these timers fresh.
+        handle[b'files'][b'format']=b'3'
+        state.deserialize(state,handle)
+        self.assertEqual(h.get(h.v['COOLDOWNT']+4),0)
+        self.assertEqual(h.get(h.v['SEED']),0x1d872b41)
 
     def test_no_target_polling_is_bounded_and_preload_changes_poll_rate(self):
         for preload,period in [(False,20),(True,5)]:

@@ -811,18 +811,18 @@ local function install(config)
     end
     persistent = require('state').new({
         {'seed', data_addr + OFF_SEED, 4},
-        {'cooldown', data_addr + OFF_COOLDOWN, MAX_UNITS * 4},
-        {'lastpos', data_addr + OFF_LASTPOS, MAX_UNITS * 4},
-        {'movement', data_addr + OFF_MOVECD, MAX_UNITS * 4},
-        {'pending', data_addr + OFF_PENDING, MAX_UNITS * 4},
-        {'pending-cooldown', data_addr + OFF_PENDCD, MAX_UNITS * 4},
-        {'sync-wait', data_addr + OFF_SYNCWAIT, MAX_UNITS * 4},
-        {'uid', data_addr + OFF_UID, MAX_UNITS * 4},
-        {'identity', data_addr + OFF_IDENTITY, MAX_UNITS * 4},
-        {'profile', data_addr + OFF_PROFILESTATE, MAX_UNITS * 4},
-        {'weapon-cycle', data_addr + OFF_WEAPONCYCLE, MAX_UNITS * 4},
-        {'weapon-tick', data_addr + OFF_WEAPONTICK, MAX_UNITS * 4},
-        {'weapon-phase', data_addr + OFF_WEAPONPHASE, MAX_UNITS * 4},
+        {'cooldown', data_addr + OFF_COOLDOWN, MAX_UNITS * 4, units=true},
+        {'lastpos', data_addr + OFF_LASTPOS, MAX_UNITS * 4, units=true},
+        {'movement', data_addr + OFF_MOVECD, MAX_UNITS * 4, units=true},
+        {'pending', data_addr + OFF_PENDING, MAX_UNITS * 4, units=true},
+        {'pending-cooldown', data_addr + OFF_PENDCD, MAX_UNITS * 4, units=true},
+        {'sync-wait', data_addr + OFF_SYNCWAIT, MAX_UNITS * 4, units=true},
+        {'uid', data_addr + OFF_UID, MAX_UNITS * 4, units=true},
+        {'identity', data_addr + OFF_IDENTITY, MAX_UNITS * 4, units=true},
+        {'profile', data_addr + OFF_PROFILESTATE, MAX_UNITS * 4, units=true},
+        {'weapon-cycle', data_addr + OFF_WEAPONCYCLE, MAX_UNITS * 4, units=true},
+        {'weapon-tick', data_addr + OFF_WEAPONTICK, MAX_UNITS * 4, units=true},
+        {'weapon-phase', data_addr + OFF_WEAPONPHASE, MAX_UNITS * 4, units=true},
         {'entity-variant', data_addr + OFF_ENTITYVARIANT, 3000*4},
         {'entity-uid', data_addr + OFF_ENTITYUID, 3000*4},
         {'entity-type', data_addr + OFF_ENTITYTYPE, 3000*4},
@@ -1156,7 +1156,7 @@ namespace.disable = function(self, config)
     return true
 end
 
-namespace.simulationStateFormat = 5
+namespace.simulationStateFormat = 6  -- the saved state format written by state.lua
 namespace.serializeSimulationState = function(self, handle)
     if persistent then persistent:serialize(handle) end
 end

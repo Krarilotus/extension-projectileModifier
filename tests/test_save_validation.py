@@ -26,14 +26,15 @@ class SaveValidationTests(unittest.TestCase):
     def blocks(self, h, state):
         return [bytes(h.uc.mem_read(b[2], b[3])) for b in state.blocks.values()]
 
-    def test_validation_is_read_only_and_preserves_format_five(self):
+    def test_validation_is_read_only_and_preserves_format_six(self):
         for extreme in (False, True):
             h, state, handle = self.state(extreme)
             before, allocations = self.blocks(h, state), list(h.allocations)
             state.validate(state, handle)
             self.assertEqual(self.blocks(h, state), before)
             self.assertEqual(h.allocations, allocations)
-            self.assertEqual(handle.files[b'format'], b'5')
+            self.assertEqual(handle.files[b'format'], b'6')
+            self.assertEqual(handle.files[b'capacity'], b'10000' if extreme else b'2500')
             saved = dict(handle.files.items())
             h.put(h.v['COOLDOWNT'] + 4, 123)
             state.deserialize(state, handle)
@@ -110,8 +111,11 @@ class SaveValidationTests(unittest.TestCase):
             b'pending.bin': b'bad',
             b'cooldown.bin': (60001).to_bytes(4, 'little') + handle.files[b'cooldown.bin'][4:],
             b'config': b'changed',
-            b'variant-gm.bin': b'\1' + handle.files[b'variant-gm.bin'][1:],
-            b'format': b'4',
+            # A wrong-sized layout block is damage, not a layout change.
+            b'variant-gm.bin': b'\1',
+            # Unknown (e.g. newer) formats are never guessed at.
+            b'format': b'9',
+            b'capacity': b'3000',
             b'decoration-uid.bin': None,
         }
         for name, invalid in cases.items():

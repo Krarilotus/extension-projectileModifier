@@ -60,12 +60,23 @@ class FeedbackFixTests(unittest.TestCase):
             old = self.prepare({'units': {'Catapult': {'interval': 700}}}, extreme)
             new = self.prepare({'units': {'Catapult': {'interval': 300}}}, extreme)
             state, handle = self.transfer(old, new)
-            handle.files[b'assets'] = None  # Exact legacy format 5 payload.
+            # Exact legacy format 5 payload: no asset identity, no capacity.
+            handle.files[b'format'] = b'5'
+            handle.files[b'assets'] = None
+            handle.files[b'capacity'] = None
+            self.assertFalse(state.validate(state, handle)[b'reset_visuals'])
             state.deserialize(state, handle)
             self.assertEqual(new.get(new.v['COOLDOWNT'] + 4), 0)
-            # Unknown legacy visual IDs must not be silently reinterpreted.
+            # Unknown legacy visual IDs are never reinterpreted: they take
+            # their default look, while the edited gameplay still loads.
             handle.files[b'entity-variant.bin'] = b'\1\0\0\0' + handle.files[b'entity-variant.bin'][4:]
-            with self.assertRaisesRegex(Exception, 'legacy save contains custom graphics'):
+            self.assertTrue(state.validate(state, handle)[b'reset_visuals'])
+            new.put(new.v['ENTITYVARIANT'] + 4, 7)
+            state.deserialize(state, handle)
+            self.assertEqual(new.get(new.v['ENTITYVARIANT']), 0)
+            self.assertEqual(new.get(new.v['ENTITYVARIANT'] + 4), 0)
+            state[b'allow_config_changes'] = False
+            with self.assertRaisesRegex(Exception, 'saved projectile settings differ'):
                 state.validate(state, handle)
 
     def test_strict_load_control_retains_old_rejection_and_is_not_gameplay_identity(self):
@@ -87,7 +98,7 @@ class FeedbackFixTests(unittest.TestCase):
                 h.module.apply(h.config({'allow_config_changes_on_load': invalid}))
             self.assertEqual(h.allocations, [])
 
-    def test_unchanged_graphics_survive_retuning_but_changed_definitions_are_rejected(self):
+    def test_unchanged_graphics_survive_retuning_and_changed_definitions_take_default_look(self):
         for extreme in (False, True):
             assets = {'custom_arrow': {'inherits': 'arrow', 'sprites': 'gm/custom.gm1'}}
             old = self.prepare({'projectiles': assets, 'units': {'Catapult': {'interval': 700}}}, extreme, True)
@@ -102,11 +113,21 @@ class FeedbackFixTests(unittest.TestCase):
             altered = self.prepare({'projectiles': {'custom_arrow': {'inherits': 'crossbow_bolt',
                 'sprites': 'gm/custom.gm1'}}, 'units': {'Catapult': {'interval': 300}}}, extreme, True)
             incompatible, saved = self.transfer(old, altered)
-            with self.assertRaisesRegex(Exception, 'custom projectile/decorations changed'):
+            self.assertTrue(incompatible.validate(incompatible, saved)[b'reset_visuals'])
+            altered.put(altered.v['SEED'], 0)
+            incompatible.deserialize(incompatible, saved)
+            for symbol in ('ENTITYVARIANT', 'ENTITYUID', 'ENTITYTYPE', 'COOLDOWNT'):
+                self.assertEqual(altered.get(altered.v[symbol] + 4), 0)
+            self.assertEqual(altered.get(altered.v['SEED']), old.get(old.v['SEED']))
+            incompatible[b'allow_config_changes'] = False
+            with self.assertRaisesRegex(Exception, 'saved projectile settings differ'):
                 incompatible.validate(incompatible, saved)
+            # A format-5 save without an asset identity: its non-empty visual
+            # IDs cannot be trusted after an edit, so they are reset.
+            handle.files[b'format'] = b'5'
             handle.files[b'assets'] = None
-            with self.assertRaisesRegex(Exception, 'legacy save has no asset identity'):
-                state.validate(state, handle)
+            handle.files[b'capacity'] = None
+            self.assertTrue(state.validate(state, handle)[b'reset_visuals'])
 
     def test_manual_native_acquisition_rejects_out_of_range_before_windup_and_respects_off(self):
         for extreme in (False, True):

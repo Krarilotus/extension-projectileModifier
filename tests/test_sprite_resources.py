@@ -200,11 +200,19 @@ class SpriteResourcesTests(unittest.TestCase):
                 custom.call(address,registers={r.UC_X86_REG_ECX:state})
                 self.assertEqual(bytes(custom.uc.mem_read(state+20+25*232,232)),expected)
 
-    def test_saved_sprite_layout_rejects_conflicts(self):
+    def test_saved_sprite_layout_conflict_resets_look_or_refuses_in_strict_mode(self):
         h,state,config=self.prepare()
         observer=projectile_tests.NativeTests();handle=observer.state_handle(h)
+        h.put(h.v['ENTITYVARIANT']+4,1)
         saved=h.sections[b'projectileModifier'];saved.serialize(saved,handle)
         saved.initialize(saved)
         self.assertEqual(h.get(h.v['VARIANTGM']+4),207)
         h.put(h.v['VARIANTGM']+4,208)
+        saved[b'allow_config_changes']=False
         with self.assertRaisesRegex(LuaError,'graphics-slot layout'):saved.deserialize(saved,handle)
+        # Default mode: the layout is rebuilt and saved graphics IDs take
+        # their default look instead of pointing at another extension's slot.
+        saved[b'allow_config_changes']=True
+        self.assertTrue(saved.validate(saved,handle)[b'reset_visuals'])
+        saved.deserialize(saved,handle)
+        self.assertEqual(h.get(h.v['ENTITYVARIANT']+4),0)
