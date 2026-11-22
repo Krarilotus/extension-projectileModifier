@@ -42,12 +42,29 @@ end
 -- continues into it instead of replaying the instructions itself, so they
 -- still run exactly once. The jump must lead into extension code, never into
 -- the game image. Nothing is written here; install() redirects the sites.
+local image_end
+-- End of the game image, from its own PE header at the image base 0x400000
+-- that every binding in this module assumes (see locate).
+local function game_image_end()
+    if not image_end then
+        assert(core.readSmallInteger(0x400000) % 65536 == 0x5A4D,
+            '[custom-projectiles] unsupported executable image header')
+        local header = 0x400000 + core.readInteger(0x40003C)
+        assert(core.readInteger(header) == 0x4550, '[custom-projectiles] unsupported executable image header')
+        image_end = 0x400000 + core.readInteger(header + 0x50)
+    end
+    return image_end
+end
 local function shared_site(displaced, size, tail, what)
     local plain = displaced .. ' ' .. tail
-    if pcall(core.AOBScan, plain) then return locate(plain) end
+    local found, address = pcall(core.AOBScan, plain)
+    if found and type(address) == 'number' and address >= 0x400000 and address < 0x700000 then
+        return locate(plain)
+    end
     local site = locate('E9 ? ? ? ?' .. string.rep(' 90', size - 5) .. ' ' .. tail)
     local chain = (site + 5 + core.readInteger(site + 1)) % 4294967296
-    assert(chain < 0x400000 or chain >= 0x700000,
+    -- Extension code lies outside the whole game image and the null region.
+    assert(chain >= 0x10000 and (chain < 0x400000 or chain >= game_image_end()),
         '[custom-projectiles] unsupported executable or conflicting module at signature: ' .. plain)
     log(INFO, string.format('[custom-projectiles] %s is already redirected by another extension; continuing into its handler at 0x%X',
         what, chain))
@@ -427,6 +444,8 @@ local function assemble_blob(script, values)
 end
 
 local function install(config)
+    -- Checked before any binding, allocation or write.
+    assert(modules['map-extensions'], '[custom-projectiles] map-extensions is required')
     local has_decorations = next(config.decorations or {}) ~= nil
     local profile_count = MAX_TYPES * 2
     for _, cfg in pairs(config.units) do profile_count = profile_count + 2 * #(cfg.near_decorations or {}) end
@@ -879,9 +898,13 @@ local function install(config)
         -- Write a native graphics ID back into a game entity record (232
         -- bytes; UID at +0x30, graphics ID at +0x06), only while it is still
         -- the saved entity showing the saved custom slot.
-        restore = native.entityRecords and function(entity, uid, slot, gm)
+        restore = native.entityRecords and function(entity, uid, slot, gm, kind)
+            if entity < 1 or entity >= 3000 then return end
             local record = native.entityRecords + entity * 232
-            if core.readInteger(record + 0x30) % 4294967296 == uid
+            local alive = core.readSmallInteger(record + 0x28) % 65536
+            if (alive == 1 or alive == 2)
+                    and core.readSmallInteger(record + 0x2A) % 65536 == kind
+                    and core.readInteger(record + 0x30) % 4294967296 == uid
                     and core.readSmallInteger(record + 0x06) % 65536 == slot then
                 core.writeSmallInteger(record + 0x06, gm)
             end
@@ -905,7 +928,6 @@ local function install(config)
         core.writeCode(native_decorations.filter, {0xE9,
             core.itob(core.getRelativeAddress(native_decorations.filter,decoration_filter,-5)),0x90})
     end
-    assert(modules['map-extensions'], '[custom-projectiles] map-extensions is required')
     modules['map-extensions']:registerSection('projectileModifier', persistent)
     core.writeCode(fire_projectile_addr, {
         0xE9, core.itob(core.getRelativeAddress(fire_projectile_addr, fire_hook, -5)), 0x90, 0x90

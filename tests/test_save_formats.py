@@ -135,6 +135,10 @@ class GraphicsMigrationTests(unittest.TestCase):
     def record(self, state, entity):
         return state + 20 + entity * 232
 
+    def live_arrow(self, h, record, uid, gm=207):
+        for offset, value, size in ((0x30, uid, 4), (0x28, 2, 2), (0x2A, 1, 2), (0x06, gm, 2)):
+            h.put(record + offset, value, size)
+
     def transfer(self, old, new):
         return feedback.FeedbackFixTests().transfer(old, new)
 
@@ -147,8 +151,7 @@ class GraphicsMigrationTests(unittest.TestCase):
                     h.put(h.v['ENTITYVARIANT'] + entity * 4, 1)
                     h.put(h.v['ENTITYUID'] + entity * 4, uid)
                     h.put(h.v['ENTITYTYPE'] + entity * 4, 1)  # arrow
-                    h.put(self.record(entities, entity) + 0x30, uid)
-                    h.put(self.record(entities, entity) + 0x06, 207, 2)
+                    self.live_arrow(h, self.record(entities, entity), uid)
                 state = h.sections[b'projectileModifier']
                 handle = feedback.native_tests.NativeTests().state_handle(h)
                 state.serialize(state, handle)
@@ -277,8 +280,7 @@ class GraphicsMigrationTests(unittest.TestCase):
         h.put(h.v['ENTITYVARIANT'] + 25 * 4, 1)
         h.put(h.v['ENTITYUID'] + 25 * 4, 777)
         h.put(h.v['ENTITYTYPE'] + 25 * 4, 1)
-        h.put(self.record(entities, 25) + 0x30, 777)
-        h.put(self.record(entities, 25) + 0x06, 207, 2)
+        self.live_arrow(h, self.record(entities, 25), 777)
         self.assertEqual(h.get(h.v['VARIANTBASEGM'] + 4), 34)
         return h
 
@@ -294,10 +296,12 @@ class GraphicsMigrationTests(unittest.TestCase):
         new = self.units_only()
         state, handle = self.transfer(old, new)
         entities = new.get(new.v['FIREPROJ'] + 0x416)
-        new.put(self.record(entities, 25) + 0x30, 777)
-        new.put(self.record(entities, 25) + 0x06, 207, 2)
+        self.live_arrow(new, self.record(entities, 25), 777)
+        self.live_arrow(new, self.record(entities, 27), 777)  # same UID, wrong slot owner below
+        new.put(self.record(entities, 27) + 0x2A, 14, 2)    # a brazier, not the saved arrow
         state.deserialize(state, handle)
         self.assertEqual(new.get(self.record(entities, 25) + 0x06, 2), 34)
+        self.assertEqual(new.get(self.record(entities, 27) + 0x06, 2), 207)
 
     def test_save_is_refused_when_game_records_cannot_be_found(self):
         old = self.projectile_in_flight()
@@ -310,6 +314,76 @@ class GraphicsMigrationTests(unittest.TestCase):
         with self.assertRaisesRegex(Exception, 'cannot be reset here'):
             state.deserialize(state, handle)
         self.assertEqual(new.get(new.v['COOLDOWNT'] + 4), 55)
+
+
+class DamagedSaveTests(unittest.TestCase):
+    """Save data is untrusted: damage is refused before anything is written."""
+
+    def setUp(self):
+        self.graphics = GraphicsMigrationTests()
+        self.graphics.addCleanup = self.addCleanup
+
+    def changed_handle(self):
+        old = self.graphics.projectile_in_flight()
+        new = self.graphics.units_only()
+        state, handle = self.graphics.transfer(old, new)
+        return new, state, handle
+
+    def assert_refused(self, state, handle, message):
+        with self.assertRaisesRegex(Exception, message):
+            state.validate(state, handle)
+
+    def test_graphics_ids_outside_native_sheets_or_16_bits_are_refused(self):
+        new, state, handle = self.changed_handle()
+        bases = bytearray(handle.files[b'variant-base-gm.bin'])
+        bases[4:8] = (9999).to_bytes(4, 'little')
+        handle.files[b'variant-base-gm.bin'] = bytes(bases)
+        self.assert_refused(state, handle, 'variant-base-gm.bin')
+        bases[4:8] = (0).to_bytes(4, 'little')
+        handle.files[b'variant-base-gm.bin'] = bytes(bases)
+        self.assert_refused(state, handle, 'variant-base-gm.bin')
+        new, state, handle = self.changed_handle()
+        slots = bytearray(handle.files[b'variant-gm.bin'])
+        slots[4:8] = (0x100CF).to_bytes(4, 'little')
+        handle.files[b'variant-gm.bin'] = bytes(slots)
+        self.assert_refused(state, handle, 'out-of-range saved state: variant-gm.bin')
+
+    def test_entity_zero_is_refused(self):
+        new, state, handle = self.changed_handle()
+        handle.files[b'entity-variant.bin'] = (1).to_bytes(4, 'little') + handle.files[b'entity-variant.bin'][4:]
+        self.assert_refused(state, handle, 'entity-variant.bin')
+
+    def test_undefined_variant_with_unchanged_settings_is_refused(self):
+        old = self.graphics.units_only()
+        new = self.graphics.units_only()
+        state, handle = self.graphics.transfer(old, new)
+        variants = bytearray(handle.files[b'entity-variant.bin'])
+        variants[4:8] = (5).to_bytes(4, 'little')
+        handle.files[b'entity-variant.bin'] = bytes(variants)
+        self.assert_refused(state, handle, 'entity-variant.bin')
+        strict = self.graphics.units_only()
+        strict_state, strict_handle = self.graphics.transfer(old, strict)
+        strict_state[b'allow_config_changes'] = False
+        strict_handle.files[b'entity-variant.bin'] = bytes(variants)
+        self.assert_refused(strict_state, strict_handle, 'entity-variant.bin')
+
+    def test_format_six_metadata_must_be_complete_and_canonical(self):
+        old = self.graphics.units_only()
+        for name, value, message in (
+                (b'decoration-names', None, 'invalid saved graphics names'),
+                (b'decoration-names', b'1=frost;1=smoke;', 'invalid saved graphics names'),
+                (b'decoration-names', b'1=frost;2=frost;', 'invalid saved graphics names'),
+                (b'decoration-names', b'0=frost;', 'invalid saved graphics names'),
+                (b'decoration-names', b'34=frost;', 'invalid saved graphics names'),
+                (b'assets', None, 'invalid saved state: assets'),
+                (b'capacity', b'0x9C4', 'invalid saved unit capacity'),
+                (b'capacity', b'2500.0', 'invalid saved unit capacity'),
+                (b'capacity', b' 2500', 'invalid saved unit capacity')):
+            with self.subTest(entry=name, value=value):
+                new = self.graphics.units_only()
+                state, handle = self.graphics.transfer(old, new)
+                handle.files[name] = value
+                self.assert_refused(state, handle, message)
 
 
 if __name__ == '__main__':

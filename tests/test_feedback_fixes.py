@@ -69,13 +69,13 @@ class FeedbackFixTests(unittest.TestCase):
             self.assertEqual(new.get(new.v['COOLDOWNT'] + 4), 0)
             # Unknown legacy visual IDs are never reinterpreted: they take
             # their default look, while the edited gameplay still loads.
-            handle.files[b'entity-variant.bin'] = b'\1\0\0\0' + handle.files[b'entity-variant.bin'][4:]
+            saved_variants = handle.files[b'entity-variant.bin']
+            handle.files[b'entity-variant.bin'] = saved_variants[:4] + b'\1\0\0\0' + saved_variants[8:]
             self.assertTrue(state.validate(state, handle)[b'reset_visuals'])
             # Units-only files assemble no graphics code; use the save block.
             variants = next(b[2] for b in state[b'blocks'].values() if b[1] == b'entity-variant')
             new.put(variants + 4, 7)
             state.deserialize(state, handle)
-            self.assertEqual(new.get(variants), 0)
             self.assertEqual(new.get(variants + 4), 0)
             state[b'allow_config_changes'] = False
             with self.assertRaisesRegex(Exception, 'saved projectile settings differ'):

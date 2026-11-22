@@ -61,4 +61,8 @@ units:
 
 Las partidas guardadas siguen cargándose cuando cambias tu archivo: los ajustes cambiados reinician los temporizadores de disparo; tras cambiar los gráficos, los proyectiles en vuelo pierden su aspecto personalizado y las decoraciones colocadas cuyo tipo eliminaste se convierten en braseros normales. También se cargan con el módulo desactivado. Pon `allow_config_changes_on_load: false` al principio de tu archivo para rechazar partidas guardadas con otros ajustes.
 
+## Otras extensiones
+
+Si usas Smarter Walls, Improved Siegeengines o Improved Tunnelers, colócalas antes de Custom Projectiles en el orden de carga.
+
 *Nota: esta es una traducción automática pendiente de revisión humana.*

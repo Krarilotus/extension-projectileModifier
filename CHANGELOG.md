@@ -10,7 +10,9 @@ as strict as before for damaged data.
   loop, the entity update or the toolbar handler: this module's handler runs
   first and continues into theirs, so the original instructions still run
   once. A redirect that leads back into the game is refused before anything
-  is written. Load those extensions before Custom Projectiles.
+  is written. Load those extensions before Custom Projectiles (Improved
+  Siegeengines also when you use range, interval or accuracy settings
+  without custom graphics).
 - Changing the projectile file no longer stops saves from loading. After a
   graphics change, projectiles in flight take their default look, and placed
   decorations keep their kind by name; a decoration whose kind was removed
@@ -24,7 +26,10 @@ as strict as before for damaged data.
   and each custom projectile's native graphics ID. Format 5 saves load unchanged; with placed custom decorations their
   definitions must stay as they were. 1.8.19 and older cannot read format 6.
 - Damaged data is still refused: missing or wrongly sized blocks, out-of-range
-  values, invalid capacities and unknown formats.
+  values (including graphics IDs outside the native sheets), invalid or
+  non-canonical capacities, incomplete format 6 metadata, duplicate or
+  out-of-range decoration names, undefined variant IDs and unknown formats.
+  Graphics IDs are only written back into live entities of the saved kind.
   `allow_config_changes_on_load: false` keeps all earlier exact-match rules.
 - Custom Projectiles is Krarilotus' module. Monsterfish's original module,
   ideas and code contributions are credited in CREDITS.md and are covered by

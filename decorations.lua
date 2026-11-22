@@ -182,12 +182,12 @@ function M.install(definitions, native, values, open_menu)
     local action=native.action
     if native.actionChain then
         -- hookCode relocates nine plain bytes. Give it nine nops that continue
-        -- into the other extension's handler, and send the site there, so that
-        -- handler still runs once after this one.
+        -- into the other extension's handler; the site is sent there only
+        -- after the hook is in place, so that handler still runs once after
+        -- this one and a failed hook leaves the site untouched.
         action=core.allocateCode(14)
         core.writeCode(action,{0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,
             0xE9,core.itob(core.getRelativeAddress(action+9,native.actionChain,-5))})
-        core.writeCode(native.action,{0xE9,core.itob(core.getRelativeAddress(native.action,action,-5))})
     end
     local original_action
     original_action=core.hookCode(function(parameter)
@@ -195,6 +195,9 @@ function M.install(definitions, native, values, open_menu)
         if parameter==148 then open_menu();return 0 end
         return original_action(parameter)
     end,action,1,0,9)
+    if native.actionChain then
+        core.writeCode(native.action,{0xE9,core.itob(core.getRelativeAddress(native.action,action,-5))})
+    end
     return function(variant)
         check(variant==0 or by_id[variant],'unknown decoration choice')
         original_action(148)

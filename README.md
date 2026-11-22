@@ -251,9 +251,10 @@ balance plugin; identical path strings alone are insufficient.
 Enable only `custom-projectiles`, disabling the old `projectileModifier` module.
 Move its file-selector settings and plugin dependency to the new module ID.
 Existing YAML preset paths may stay where they are; the new resource folder is
-a suggested location. Start a new match: saved simulation state uses format 5
-and deliberately rejects older states with different timing semantics. The internal save-section key
-remains `projectileModifier` so old state is detected instead of silently reset.
+a suggested location. Saves from the old module load with this module's
+timers starting fresh (see [Saves and compatibility](#saves-and-compatibility)).
+The internal save-section key remains `projectileModifier` so old state is
+detected instead of silently reset.
 
 For profiles from 1.3.x:
 
@@ -584,7 +585,11 @@ version does not know (for example one written by a newer version). Saves
 written by 1.8.20 use state format 6, which records the unit capacity, the
 names of the decoration kinds and the native graphics ID each custom
 projectile replaces; 1.8.19 and older cannot read it. Format 5
-saves from 1.8.x load unchanged. A format 5 save has no decoration names, so
+saves from 1.8.x load unchanged. A format 5 save does not record the native
+graphics ID of its custom projectiles; after a graphics change, projectiles in
+flight get the sheet of their native type back, which for custom fire-arrow
+variants is the plain arrow sheet until they land. A format 5 save has no
+decoration names, so
 if it contains placed custom decorations, their definitions must stay as they
 were: load it once, save it with this version, then edit them.
 
@@ -621,6 +626,12 @@ Siegeengines do not yet look for an existing handler, so loaded afterwards they
 stop at startup, and Improved Tunnelers then leaves out its tunnel button.
 The ghost-object fix already continues into an existing handler, so it works
 in either order.
+
+Improved Siegeengines also reads the start of the native targeting function and
+patches inside the siege aim function, both of which this module redirects at
+their start when a native shooter has `range`/`interval` settings or any unit
+has accuracy settings. Its scan then fails if it loads after this module, even
+without custom graphics; loaded first, it works.
 
 Multiplayer peers need identical versions and settings. Scheduling and random
 state are deterministic, but live multiplayer, recorder integration, visibility

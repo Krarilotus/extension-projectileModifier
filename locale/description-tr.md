@@ -61,4 +61,8 @@ units:
 
 Dosyanızı değiştirdiğinizde kayıt dosyaları yüklenmeye devam eder: değişen ayarlar atış zamanlayıcılarını yeniden başlatır; grafik değişikliklerinden sonra havadaki mermiler özel görünümlerini kaybeder ve türünü kaldırdığınız yerleştirilmiş süslemeler sıradan mangallara dönüşür. Kayıt dosyaları modül kapalıyken de yüklenir. Farklı ayarlarla oluşturulmuş kayıt dosyalarını reddetmek için dosyanızın başına `allow_config_changes_on_load: false` ekleyin.
 
+## Diğer eklentiler
+
+Smarter Walls, Improved Siegeengines veya Improved Tunnelers kullanıyorsanız, yükleme sırasında bunları Custom Projectiles'tan önceye koyun.
+
 *Not: Bu metin makine çevirisidir ve insan incelemesi beklemektedir.*

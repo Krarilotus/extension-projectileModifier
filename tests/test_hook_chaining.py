@@ -73,11 +73,14 @@ class HookChainingTests(unittest.TestCase):
             with self.subTest(extreme=extreme):
                 h = Harness(extreme)
                 site = h.scan(TICK[0] + b' ' + TICK[2])
-                redirect(h, site, 5, site + 0x200)
-                with self.assertRaisesRegex(Exception, 'conflicting module'):
-                    h.enable({'Catapult': {'count': 3}})
-                self.assertEqual(h.writes, [])
-                self.assertEqual(h.allocations, [])
+                # Game code, a game data section past 0x700000, and the null region.
+                for target in (site + 0x200, 0x800000, 0):
+                    with self.subTest(target=hex(target)):
+                        redirect(h, site, 5, target)
+                        with self.assertRaisesRegex(Exception, 'conflicting module'):
+                            h.enable({'Catapult': {'count': 3}})
+                        self.assertEqual(h.writes, [])
+                        self.assertEqual(h.allocations, [])
 
     def test_entity_update_calls_the_other_handler_as_the_original(self):
         for extreme in (False, True):

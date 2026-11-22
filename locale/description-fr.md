@@ -61,4 +61,8 @@ units:
 
 Les sauvegardes se chargent toujours après une modification de votre fichier : des paramètres modifiés redémarrent les minuteries de tir ; après une modification des graphismes, les projectiles en vol perdent leur apparence personnalisée et les décorations placées dont vous avez supprimé le type deviennent des braseros ordinaires. Les sauvegardes se chargent aussi avec le module désactivé. Placez `allow_config_changes_on_load: false` en haut de votre fichier pour refuser les sauvegardes créées avec d'autres paramètres.
 
+## Autres extensions
+
+Si vous utilisez Smarter Walls, Improved Siegeengines ou Improved Tunnelers, placez-les avant Custom Projectiles dans l'ordre de chargement.
+
 *Remarque : cette traduction automatique attend encore une relecture humaine.*
