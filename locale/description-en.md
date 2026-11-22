@@ -56,3 +56,7 @@ units:
     interval: 700
     ammo_by_target: {units: {Catapult: cow}}
 ```
+
+## Saves
+
+Saves keep loading when you change your file: firing timers restart, and changed custom graphics take their default look. Saves also load with the module turned off. Put `allow_config_changes_on_load: false` at the top of your file to refuse saves made with other settings.

@@ -19,7 +19,7 @@ files=['definition.yml','options.yml','init.lua','constants.lua',
        'templates.lua','cadence.lua','mounted.lua','hunter.lua','configuration.lua','state.lua','example-projectiles.yml',
        'sprite_resources.lua','sprite_runtime.lua',
        'decorations.lua','decoration_runtime.lua','decoration_ui.lua','ui/decorations.lua',
-       'all-settings-reference.yml','README.md','CHANGELOG.md','VALIDATION.md','IMPLEMENTATION-TODO.md',
+       'all-settings-reference.yml','README.md','CHANGELOG.md','CREDITS.md','VALIDATION.md','IMPLEMENTATION-TODO.md',
        'projectile-config.schema.json','GUI-AUDIT.md','vanilla-projectiles.yml',
        'examples/ucp-plugin-required.yml','examples/ucp-plugin-suggested.yml',
        'examples/ucp-plugin-unspecified.yml']

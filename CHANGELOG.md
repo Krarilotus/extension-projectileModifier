@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.8.20 (provisional test candidate)
+
+Brings in Monsterfish's 1.8.17 and 1.8.18 changes with save checks that stay
+as strict as before for damaged data.
+
+- Start alongside Smarter Walls, Improved Siegeengines, the ghost-object fix
+  and Improved Tunnelers when one of them already redirects the unit update
+  loop, the entity update or the toolbar handler: this module's handler runs
+  first and continues into theirs, so the original instructions still run
+  once. A redirect that leads back into the game is refused before anything
+  is written. Load those extensions before Custom Projectiles.
+- Changing the projectile file no longer stops saves from loading. Changed
+  custom graphics or a different graphics-slot layout give flying projectiles
+  and placed decorations their default look. Saves and maps from the other
+  edition (2500 vs 10000 unit slots) move their unit timers to this game's
+  limit. Saves from the 1.3.2–1.7.x test builds start this module's timers
+  fresh. Each step is logged as a warning.
+- New saved state format 6 records the unit capacity. Format 5 saves load
+  unchanged; 1.8.19 and older cannot read format 6.
+- Damaged data is still refused: missing or wrongly sized blocks, out-of-range
+  values, invalid capacities and unknown formats.
+  `allow_config_changes_on_load: false` keeps all earlier exact-match rules.
+- Custom Projectiles is Krarilotus' module. Monsterfish's original module,
+  ideas and code contributions are credited in CREDITS.md and are covered by
+  the module's license.
+
 ## 1.8.19 (provisional test candidate)
 
 - Fix the game stopping at startup with `error in script: -121` when the

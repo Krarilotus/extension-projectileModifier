@@ -1,8 +1,8 @@
 name: custom-projectiles
 display-name: Custom Projectiles
 type: module
-version: 1.8.19
-author: Monsterfish
+version: 1.8.20
+author: Krarilotus
 game: [SHC==1.41, SHCE==1.41]
 dependencies:
   framework: '>=3.0.7'

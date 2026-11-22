@@ -57,4 +57,8 @@ units:
     ammo_by_target: {units: {Catapult: cow}}
 ```
 
+## Mentések
+
+A mentések a fájl módosítása után is betölthetők: a lövési időzítők újraindulnak, a módosított egyéni grafikák pedig az alapértelmezett megjelenést kapják. A mentések kikapcsolt modullal is betölthetők. Írd a fájl elejére: `allow_config_changes_on_load: false`, ha a más beállításokkal készült mentéseket el akarod utasítani.
+
 *Megjegyzés: ez egy gépi fordítás, amely még emberi ellenőrzésre vár.*

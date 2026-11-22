@@ -57,4 +57,8 @@ units:
     ammo_by_target: {units: {Catapult: cow}}
 ```
 
+## Spielstände
+
+Spielstände lassen sich nach einer Änderung der Datei weiter laden: Die Schuss-Timer starten neu, und geänderte eigene Grafiken erhalten ihr Standardaussehen. Spielstände laden auch bei ausgeschaltetem Modul. Mit `allow_config_changes_on_load: false` am Anfang der Datei werden Spielstände mit anderen Einstellungen abgelehnt.
+
 *Hinweis: Dies ist eine maschinelle Übersetzung, die noch auf eine menschliche Prüfung wartet.*

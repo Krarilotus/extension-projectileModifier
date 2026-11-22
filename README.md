@@ -1,7 +1,8 @@
-# Custom Projectiles 1.8.19 (test candidate)
+# Custom Projectiles 1.8.20 (test candidate)
 
 Configure projectile types, volley sizes and automatic firing for all 77 unit
-types using one readable YAML file. Based on Monsterfish's supplied 1.2.0 module.
+types using one readable YAML file. A module by Krarilotus, built on Monsterfish's
+original 1.2.0 module and his later ideas and code; see [CREDITS.md](CREDITS.md).
 Requires UCP 3.0.7+, Crusader/Extreme 1.41 and the declared map-extensions,
 gmResourceModifier, protocol and ui dependencies. The 0.3.1 GM owner build is
 currently a draft dependency; the public Store does not resolve it yet.
@@ -44,7 +45,7 @@ with `ai_only: true`), not one individually selected catapult.
 | Allow automatic attacks | `auto_targeting: true` or `false` per unit type; `false` keeps human manual attack orders |
 | Bias automatic unit targets | `target_bias_tiles: {Monk: 3}` on the shooting unit; each point subtracts one tile-equivalent from the game's distance-and-attention score before its remaining target rules |
 | Search distance | `range` in tiles for the selected target. Supported native shooters also enforce it on manual orders, independently of reload customization, when `strict_range` is true. Scatter can land beyond that radius. |
-| Retune an existing save | Gameplay edits load by default; old module firing queues/timers reset. Set root `allow_config_changes_on_load: false` for strict matching. Custom graphics definitions must remain unchanged. |
+| Retune an existing save | Gameplay edits load by default; old module firing queues/timers reset. Set root `allow_config_changes_on_load: false` for strict matching. Changed custom graphics take their default look. |
 | A replacement projectile falls short | Optional root `projectile_physics: {firethrower_pot: {mode: fixed_angle, angle: 30}}` uses the game's launch-speed solver. Requires active Rebalancer 1.1.3+; applies globally to that projectile type. |
 | Exact aim | `inaccuracy: 0` and `spread: 0`; moving targets can still move before impact |
 | An eighth-tile aim-error radius | `inaccuracy: 1`; **8 native coordinate units = 1 tile**; use whole numbers |
@@ -137,7 +138,7 @@ for Catapults that fire cows at enemy siege engines and archers that favor Monks
 
 ## Installation and use
 
-Import `custom-projectiles-1.8.19.zip` and the matching
+Import `custom-projectiles-1.8.20.zip` and the matching
 `gmResourceModifier-0.3.1.zip` draft dependency into a developer launcher, then
 enable them with map-extensions, protocol and ui. For the direct enemy-click
 catapult check, also enable the separate Fixed Engineers 0.2.0 tester. This
@@ -510,9 +511,10 @@ base-sheet/path pairs share one slot. Loading refuses occupied slots or a total
 above the native 66,000-image capacity; it never overwrites another sheet.
 
 All peers need the same module versions, YAML and sprite bytes. Saves record
-variant identities and sheet hashes/slot bindings. Changing a sheet, name or
-binding requires restoring the original files to load that save, or starting
-a new match. Build selections travel in a lockstep command; remote execution
+variant identities and sheet hashes/slot bindings. After a change to a sheet,
+name or binding, a save still loads: projectiles in flight and placed
+decorations take their default look (see [Saves and compatibility](#saves-and-compatibility)).
+Build selections travel in a lockstep command; remote execution
 does not depend on another player's currently selected menu item.
 
 ## Projectile flight and long-range replacements
@@ -562,24 +564,49 @@ separate. See [the opt-in example](examples/long-range-replacements.yml).
 The `map-extensions` section saves the random generator, identities, cooldowns,
 movement tracking, pending volleys, mounted bow clocks and custom projectile/decoration identities. New maps and saves without this section
 initialize fresh state. With the same gameplay settings, all simulation state
-resumes as before. By default, changing gameplay settings also allows loading:
-the new settings (including active projectile physics) apply, old module firing queues/timers reset, and the saved
-random seed and custom visual identities remain intact. This deliberately changes
-the continuation; all multiplayer peers must use the same edited file.
+resumes as before. Loading with this module disabled works and plays on with
+normal projectile behavior.
 
-Set root `allow_config_changes_on_load: false` to require the original settings.
-Custom projectile/decorations definitions, sprite bytes and graphics slots must
-still match: changing those can reinterpret existing entities. Older format-5
-saves without custom graphics support gameplay retuning directly. For an older
-save with custom graphics, load and resave once using its original configuration
-on 1.8.14 before editing gameplay settings. Earlier save formats still require a
-new match. Loading with this module disabled does not retain its gameplay changes.
+**Changing the projectile file never stops a save from loading.** Each accepted
+difference is a defined step, logged as a warning in `ucp3.log`:
+
+| Difference | What happens |
+|---|---|
+| Gameplay settings changed | New settings apply (including projectile physics). The module's firing queues and timers restart. The random seed and custom graphics identities are kept. |
+| Custom projectile/decoration graphics changed, or another extension uses different graphics slots | Gameplay as above. Projectiles in flight and placed decorations take their default look. |
+| Save or map made in the other edition (Crusader 2500 unit slots, Extreme 10000) | Unit timers move to this game's limit. Narrowing is only allowed when the dropped slots are empty. |
+| Saved by a 1.3.2–1.7.x test build (state formats 1–4) | The world loads; this module's timers start fresh. |
+
+Damaged module data is refused rather than repaired: a missing or wrongly
+sized block, an out-of-range value, an invalid capacity or a state format this
+version does not know (for example one written by a newer version). Saves
+written by 1.8.20 use state format 6, which records the unit capacity;
+1.8.19 and older cannot read it. Format 5 saves from 1.8.x load unchanged.
+
+Set root `allow_config_changes_on_load: false` to keep the earlier exact-match
+rules: any settings, graphics-slot or unit-capacity difference and the old test
+formats are refused. Changing settings deliberately changes how a match
+continues; all multiplayer peers must use the same file, and a replay recorded
+with other settings can play differently.
 
 Rebalancer damage, speed and projectile physics tables remain owned by Rebalancer.
 This module hooks native firing, timing and aim-error stages. When configured,
-it also hooks entity rendering selection, GM loading and brazier placement/menu entry points. A module replacing these sites conflicts; startup
+it also hooks entity rendering selection, GM loading and brazier placement/menu entry points. Startup
 rejects missing or ambiguous signatures. Read-only
 reference comparison does not prove compatibility with every mod combination.
+
+Three of these sites are shared with other extensions that redirect the same
+instructions to their own handler: the unit update loop (Smarter Walls), the
+entity update (Improved Siegeengines and the ghost-object fix) and the toolbar
+button handler (Improved Tunnelers). The unit loop is used whenever units are
+configured; the other two only with custom graphics or decorations. When one of
+those extensions is already installed,
+this module runs its handler first and then continues into theirs, which
+replays the original instructions once. A jump that leads back into the game
+instead of an extension's handler is refused before anything is written. Load
+these extensions **before** Custom Projectiles: Smarter Walls and Improved
+Siegeengines do not yet look for an existing handler, so loaded afterwards they
+stop at startup, and Improved Tunnelers then leaves out its tunnel button.
 
 Multiplayer peers need identical versions and settings. Scheduling and random
 state are deterministic, but live multiplayer, recorder integration, visibility

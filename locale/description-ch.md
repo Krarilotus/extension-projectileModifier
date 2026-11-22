@@ -57,4 +57,8 @@ units:
     ammo_by_target: {units: {Catapult: cow}}
 ```
 
+## 存档
+
+修改配置文件后，存档仍可加载：射击计时器会重新开始，已更改的自定义图像会恢复默认外观。关闭本模块时也可以加载存档。在文件开头加入 `allow_config_changes_on_load: false`，即可拒绝使用其他设置创建的存档。
+
 *注：此为机器翻译，尚待人工审校。*

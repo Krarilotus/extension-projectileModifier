@@ -57,4 +57,8 @@ units:
     ammo_by_target: {units: {Catapult: cow}}
 ```
 
+## Kayıt dosyaları
+
+Dosyanızı değiştirdiğinizde kayıt dosyaları yüklenmeye devam eder: atış zamanlayıcıları yeniden başlar ve değiştirilen özel grafikler varsayılan görünümlerini alır. Kayıt dosyaları modül kapalıyken de yüklenir. Farklı ayarlarla oluşturulmuş kayıt dosyalarını reddetmek için dosyanızın başına `allow_config_changes_on_load: false` ekleyin.
+
 *Not: Bu metin makine çevirisidir ve insan incelemesi beklemektedir.*
