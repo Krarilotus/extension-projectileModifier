@@ -1,5 +1,24 @@
 # Native integration audit, 12 September 2026
 
+## 1.8.20: shared code sites and versioned save migrations (22 November 2026)
+
+| Capability | Existing owner reused / precise gap |
+|---|---|
+| Site discovery | The module's `locate` over framework `core.AOBScan` (3.0.7 `77c6acc`, `data/cache.lua` re-checks cached hits). `shared_site` tries the plain signature, and only when it is absent the same tail after `E9 rel32` plus nop padding; both go through `locate`'s ambiguity checks. No new scanner, cache or fixed address. |
+| Hook installation | Unchanged owners: `core.writeCode` jumps at install time, `core.hookCode` for the toolbar (needs nine relocatable bytes, hence a nine-nop stub that continues into the other handler), `core.allocateAssembly` for blobs. Resolution writes nothing. |
+| Chain target check | The decoded jump must lead outside `0x400000..0x700000`, the same bounds `locate` uses for game code. **Open:** these are fixed literals; framework image/section bounds would be the proper owner API. It does not prove the target is an extension handler, only that it is not game code. |
+| Save admission | Map Extensions' existing validate/deserialize callbacks and `state.new`. Format 6 adds `capacity` and `decoration-names` entries; all migrations are computed in `validate` from checked data, writes happen only in `deserialize`. |
+| Native graphics restore | The game entity record (232 bytes, UID `+0x30`, graphics ID `+0x06`, type `+0x2A`), already used by `sprite_runtime`/`decoration_runtime`. Native IDs come from the existing `sprite_resources.projectile_gm` and brazier sheet 138. Written only while the record is still the saved entity showing the saved custom slot. |
+
+**Overlapping extensions (released or in review), decision and tested combination:**
+
+| Extension | Shared site | Decision | Tested |
+|---|---|---|---|
+| Smarter Walls (Monsterfish) | unit update loop, 5 bytes | Continue into its handler when it loaded first. Reverse order: its `scan` raises "could not find the unit update loop". Needs a change in Smarter Walls (accept an existing handler, as the ghost-object fix does). | Emulator, both editions, fake handler of its exact shape. No live combination yet. |
+| Improved Siegeengines (Monsterfish) | entity update prologue, 6 bytes (only with custom graphics/decorations) | As above; reverse order stops at startup ("could not find the entity update"). | Emulator only. |
+| Ghost-object fix (Interface & Visual Fixes) | entity update prologue | Works in both orders; it already continues into an existing handler. | Code reading; emulator for the order "ghost first". |
+| Improved Tunnelers (Monsterfish) | toolbar handler, 9 bytes (only with decorations) | Continue into its handler through the stub. Reverse order: its `scanOptional` turns its tunnel button off with a warning. | Emulator only. |
+
 ## 1.8.16 manual range without reload customization
 
 Inspected the existing consumer at d1bbe93: `install` only enabled the native
