@@ -10,7 +10,7 @@ Birimlerin ne ateşlediğini, ne sıklıkla ve ne kadar uzağa atış yaptığı
 
 ## Neler yapabilirsiniz
 
-Bu ayarları kopyanızdaki ilgili birimin altına ekleyin.
+Kopyanızda ilgili birimi bulun ve `native` değerlerini gösterilen değerlerle değiştirin.
 
 ### Okçuların yeniden doldurmasını yavaşlatma
 

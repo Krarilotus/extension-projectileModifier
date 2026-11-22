@@ -10,7 +10,7 @@ Cambia lo que disparan las unidades, con qué frecuencia y a qué distancia atac
 
 ## Qué puedes hacer
 
-Añade estos ajustes a la unidad correspondiente en tu copia.
+En tu copia, busca la unidad correspondiente y sustituye sus valores `native` por los que se muestran.
 
 ### Ralentizar la recarga de los arqueros
 

@@ -10,7 +10,7 @@ Modifiez ce que tirent les unités, leur cadence, leur portée et les cibles qu'
 
 ## Ce que vous pouvez faire
 
-Ajoutez ces paramètres à l'unité correspondante dans votre copie.
+Dans votre copie, trouvez l'unité correspondante et remplacez ses valeurs `native` par celles indiquées.
 
 ### Ralentir le rechargement des archers
 

@@ -10,7 +10,7 @@ Szabd testre, mit lőnek ki az egységek, milyen gyakran és milyen messzire tü
 
 ## Mire képes
 
-Add hozzá ezeket a beállításokat a megfelelő egységhez a másolatodban.
+A másolatodban keresd meg a megfelelő egységet, és cseréld le a `native` értékeit a megadottakra.
 
 ### Az íjászok újratöltésének lassítása
 

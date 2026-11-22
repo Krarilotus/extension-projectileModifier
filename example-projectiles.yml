@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=./projectile-config.schema.json
-# Active example preset. All projectile changes come from this selected file.
+# Example file. Select your own copy in the launcher; the default selection is empty.
 # Intervals are simulation ticks, not milliseconds.
 units:
   Catapult:

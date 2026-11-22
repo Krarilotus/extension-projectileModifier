@@ -10,7 +10,7 @@
 
 ## Was möglich ist
 
-Diese Einstellungen in der Kopie bei der passenden Einheit hinzufügen.
+In der Kopie bei der passenden Einheit die Werte `native` durch die gezeigten Werte ersetzen.
 
 ### Nachladen von Bogenschützen verlangsamen
 

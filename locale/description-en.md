@@ -10,7 +10,7 @@ Change what units fire, how often and how far they shoot, and which targets they
 
 ## What you can do
 
-Add these settings to the matching unit in your copy.
+In your copy, find the matching unit and replace its `native` values with the ones shown.
 
 ### Slow down archer reloads
 
