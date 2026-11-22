@@ -44,6 +44,8 @@ units:
     spread: 48
 ```
 
+![Una andanada de mangonel en vuelo](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/534bfdd4d0c01dfdefece636841d2fc336bc0ddb/docs/screenshots/mangonel-volley.jpg)
+
 ### Elegir la munición según el objetivo
 
 Haz que las catapultas lancen vacas automáticamente contra las catapultas enemigas.

@@ -44,6 +44,8 @@ units:
     spread: 48
 ```
 
+![Eine Salve einer Mange im Flug](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/534bfdd4d0c01dfdefece636841d2fc336bc0ddb/docs/screenshots/mangonel-volley.jpg)
+
 ### Munition nach Ziel wählen
 
 Katapulte automatisch Kühe auf feindliche Katapulte schleudern lassen.

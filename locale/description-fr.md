@@ -44,6 +44,8 @@ units:
     spread: 48
 ```
 
+![Une salve de mangonneau en vol](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/534bfdd4d0c01dfdefece636841d2fc336bc0ddb/docs/screenshots/mangonel-volley.jpg)
+
 ### Choisir les munitions selon la cible
 
 Faites lancer automatiquement des vaches par les catapultes sur les catapultes ennemies.

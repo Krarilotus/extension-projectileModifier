@@ -44,6 +44,8 @@ units:
     spread: 48
 ```
 
+![Havadaki bir Mangonel salvosu](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/534bfdd4d0c01dfdefece636841d2fc336bc0ddb/docs/screenshots/mangonel-volley.jpg)
+
 ### Hedefe göre mühimmat seçme
 
 Mancınıkların düşman mancınıklarına otomatik olarak inek fırlatmasını sağlayın.

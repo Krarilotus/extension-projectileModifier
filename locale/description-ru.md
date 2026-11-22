@@ -44,6 +44,8 @@ units:
     spread: 48
 ```
 
+![Залп мангонели в полёте](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/534bfdd4d0c01dfdefece636841d2fc336bc0ddb/docs/screenshots/mangonel-volley.jpg)
+
 ### Выбирать боеприпасы в зависимости от цели
 
 Настройте катапульты так, чтобы они автоматически метали коров во вражеские катапульты.

@@ -44,6 +44,8 @@ units:
     spread: 48
 ```
 
+![رگبار منجنیق برجی در حال پرواز](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/534bfdd4d0c01dfdefece636841d2fc336bc0ddb/docs/screenshots/mangonel-volley.jpg)
+
 ### انتخاب مهمات بر اساس هدف
 
 کاری کنید منجنیق‌ها به‌طور خودکار به سمت منجنیق‌های دشمن گاو پرتاب کنند.

@@ -44,6 +44,8 @@ units:
     spread: 48
 ```
 
+![Egy kővetőgép sortüze repülés közben](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/534bfdd4d0c01dfdefece636841d2fc336bc0ddb/docs/screenshots/mangonel-volley.jpg)
+
 ### Lőszer kiválasztása célpont szerint
 
 Állítsd be, hogy a katapultok automatikusan teheneket lőjenek az ellenséges katapultokra.

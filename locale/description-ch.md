@@ -44,6 +44,8 @@ units:
     spread: 48
 ```
 
+![塔楼投石机的齐射](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/534bfdd4d0c01dfdefece636841d2fc336bc0ddb/docs/screenshots/mangonel-volley.jpg)
+
 ### 按目标选择弹药
 
 让投石车在攻击敌方投石车时自动发射奶牛。

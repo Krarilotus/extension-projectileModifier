@@ -44,6 +44,8 @@ units:
     spread: 48
 ```
 
+![A Mangonel volley in flight](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/534bfdd4d0c01dfdefece636841d2fc336bc0ddb/docs/screenshots/mangonel-volley.jpg)
+
 ### Choose ammunition by target
 
 Have catapults automatically launch cows at enemy catapults.
