@@ -33,7 +33,7 @@ class NativeTests(unittest.TestCase):
         shots=[]
         entry=h.blobs['tickHook'][0]
         # Resume address is different for the two hooks; read it from this blob.
-        stop=h.blobs['tickHook'][2]['RESUME']
+        stop=h.blobs['tickOriginal'][2]['RESUME']
         h.call(entry,registers={r.UC_X86_REG_EDX:id,r.UC_X86_REG_ESI:h.v['UNITSTATE']},
             stop=stop,callbacks={h.spawner:self.spawn_callback(shots)})
         self.assertEqual(h.uc.reg_read(r.UC_X86_REG_ESP),0x53f0000)

@@ -32,6 +32,26 @@ local function locate(pattern)
     return address
 end
 
+-- Some sites are also redirected by other extensions: Smarter Walls at the
+-- unit update loop, Improved Siegeengines and the ghost-object fix at the
+-- entity update, Improved Tunnelers at the toolbar button handler. Each one
+-- replaces the first instructions with a jump (padded with nops) to its own
+-- handler, which replays those instructions once and returns after them.
+-- Find the site by the unchanged code that follows. When another extension
+-- got there first, return its handler as `chain`: this module's handler then
+-- continues into it instead of replaying the instructions itself, so they
+-- still run exactly once. The jump must lead into extension code, never into
+-- the game image. Nothing is written here; install() redirects the sites.
+local function shared_site(displaced, size, tail)
+    local plain = displaced .. ' ' .. tail
+    if pcall(core.AOBScan, plain) then return locate(plain) end
+    local site = locate('E9 ? ? ? ?' .. string.rep(' 90', size - 5) .. ' ' .. tail)
+    local chain = (site + 5 + core.readInteger(site + 1)) % 4294967296
+    assert(chain < 0x400000 or chain >= 0x700000,
+        '[custom-projectiles] unsupported executable or conflicting module at signature: ' .. plain)
+    return site, chain
+end
+
 -- UnitsState::fireUnitProjectile(unitID, entityType, targetX, targetY, targetZ)
 -- thiscall, ecx = unit array base - 0x614. Every shooting unit in the game
 -- funnels through here before EntityState::spawnProjectileEntity is reached.
@@ -101,7 +121,9 @@ for _, cfg in pairs(config.units) do
 end
 
 -- Inside UnitsState::updateUnits, reached once per tick for every living unit.
-local unit_tick_addr = locate("83 C2 01 89 16 8B 15 ? ? ? ? 69 D2 90 04 00 00 33 C9 66 89 8C 32 AE 09 00 00")
+-- Its first 5 bytes are `add edx,1` + `mov [esi],edx`.
+local unit_tick_addr, unit_tick_chain = shared_site('83 C2 01 89 16', 5,
+    '8B 15 ? ? ? ? 69 D2 90 04 00 00 33 C9 66 89 8C 32 AE 09 00 00')
 local animation_addr, release_cycles, catapult_rest, trebuchet_rest, horse_addr, hunter_addr, hunter_script, hunter_sound, sound_this, hunter_end, face_point, face_unit
 if native_cadence then
     animation_addr = locate('A1 ? ? ? ? 69 C0 90 04 00 00 01 9C 30 54 06 00 00')
@@ -191,10 +213,12 @@ assert(core.readSmallInteger(unit_tick_addr + 0x3A2) % 65536 == 0xFA81
 local unit_capacity = core.readInteger(unit_tick_addr + 0x3A4)
 assert(unit_capacity == (data.version.isExtreme() and 10000 or 2500),
     '[custom-projectiles] unsupported unit-array capacity modification')
-local spawn_site, entity_site, entity_array
+local spawn_site, entity_site, entity_chain, entity_array
 if next(config.projectiles or {}) or next(config.decorations or {}) then
     spawn_site = locate('83 EC 08 53 8B 5C 24 34 83 FB 2B 56 8B F1')
-    entity_site = locate('51 53 55 56 8B F1 8B 0D ? ? ? ? B8 67 66 66 66 F7 E9')
+    -- EntityState::update prologue: push ecx/ebx/ebp/esi, mov esi, ecx.
+    entity_site, entity_chain = shared_site('51 53 55 56 8B F1', 6,
+        '8B 0D ? ? ? ? B8 67 66 66 66 F7 E9')
     -- The dispatcher loads EntityState as `this` immediately before calling
     -- the resolved native spawner. Decode both operands from that call site.
     local call_site = locate('52 51 50 B9 ? ? ? ? E8 ? ? ? ? 0F BF 86 EC 08 00 00 85 C0 5F 5E 5B 74 0F 69')
@@ -204,7 +228,7 @@ if next(config.projectiles or {}) or next(config.decorations or {}) then
         '[custom-projectiles] unsupported native entity spawner context')
     entity_array = entity_state + 20
 end
-return {locate=locate, fire=fire_projectile_addr, acquire=acquire_target_addr, tick=unit_tick_addr,
+return {locate=locate, fire=fire_projectile_addr, acquire=acquire_target_addr, tick=unit_tick_addr, tickChain=unit_tick_chain, sharedSite=shared_site,
     prepareTarget=prepare_target_addr,
     priorityGate=priority_gate, priorityGateContinue=priority_gate_continue,
     priorityReject=priority_reject, priorityScore=priority_score,
@@ -220,7 +244,7 @@ return {locate=locate, fire=fire_projectile_addr, acquire=acquire_target_addr, t
     rows=tile_rows_addr, flags=tile_flags_addr, terrain=terrain_height_addr,
     teams=team_table_addr, buildings=building_base_addr, aic=aic_array_base,
     playerAic=player_aic_addr, cow=aic_cow_addr, units=unit_array_base,
-    spawn=spawn_site, entityUpdate=entity_site, entityArray=entity_array,
+    spawn=spawn_site, entityUpdate=entity_site, entityChain=entity_chain, entityArray=entity_array,
     this=unit_state_this, current=current_unit_id_addr, capacity=unit_capacity}
 end
 
@@ -418,7 +442,7 @@ local function install(config)
     local native = resolve(cadence.required(config), config, has_priorities)
     MAX_UNITS = native.capacity
     layout(profile_count, next(config.projectiles or {})~=nil or has_decorations, has_decorations, has_priorities, has_ammo_rules)
-    local native_decorations = has_decorations and decorations.resolve(native.locate)
+    local native_decorations = has_decorations and decorations.resolve(native.locate, native.sharedSite)
     if native_decorations then
         assert(native_decorations.entityState == native.entityArray - 20,
             '[custom-projectiles] conflicting native entity-state bindings')
@@ -753,8 +777,11 @@ local function install(config)
     values.RESUME = fire_projectile_addr + 7
     local fire_hook = assemble_blob(templates.fire_hook_code, values)
 
-    -- Tick hook: exactly 5 bytes (`add edx,1` + `mov [esi],edx`), replayed at the end.
+    -- Tick hook: exactly 5 bytes (`add edx,1` + `mov [esi],edx`). It ends in
+    -- TICKCONTINUE: the replay of those instructions, or the handler of an
+    -- extension that redirected the site first and replays them itself.
     values.RESUME = unit_tick_addr + 5
+    values.TICKCONTINUE = native.tickChain or assemble_blob(templates.tick_original_code, values)
     local tick_hook = assemble_blob(templates.tick_hook_code, values)
 
     local ground_hook, accuracy_hook
@@ -798,7 +825,9 @@ local function install(config)
         values.SPAWNORIGINAL=assemble_blob(runtime.spawn_original,values)
         spawn_hook=assemble_blob(runtime.spawn,values)
         values.ENTITYRESUME=entity_site+6
-        values.ENTITYORIGINAL=assemble_blob(runtime.update_original,values)
+        -- An extension that redirected the prologue first replays it in its
+        -- own handler; calling that handler is calling the original.
+        values.ENTITYORIGINAL=native.entityChain or assemble_blob(runtime.update_original,values)
         entity_hook=assemble_blob(runtime.update,values)
     end
 
@@ -830,7 +859,7 @@ local function install(config)
         {'decoration-variant', data_addr + OFF_DECORVARIANT, 3000*4},
         {'decoration-uid', data_addr + OFF_DECORUID, 3000*4},
         {'decoration-gm', data_addr + OFF_DECORGM, 34*4, true},
-    }, config, MAX_PROFILES, rebuild)
+    }, config, MAX_PROFILES, rebuild, MAX_UNITS)
     sprites.install(resources,function(asset)
         for _, name in ipairs(asset.decorations or {}) do
             set_entry(OFF_DECORGM, config.decorations[name].id, asset.slot)

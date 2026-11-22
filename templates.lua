@@ -2286,6 +2286,12 @@ t_search:
 
 t_done:
     popad
+    jmp TICKCONTINUE
+]],
+
+-- The instructions the tick hook's jump replaced, then back into the loop.
+tick_original_code = [[
+tickOriginal:
     add edx, 1
     mov [esi], edx
     jmp RESUME

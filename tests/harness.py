@@ -68,6 +68,7 @@ class Harness:
         c.readString = lambda a,n: bytes(self.uc.mem_read(a,n))
         c.readBytes = lambda a,n: self.lua.table_from(list(self.uc.mem_read(a,n)))
         c.allocate = self.allocate
+        c.allocateCode = lambda size: self.allocate(size)
         c.allocateAssembly = self.assemble
         c.exposeCode = lambda address, count, convention: lambda *args: self.call(address, args=args)
         c.writeInteger = lambda a,v: self.put(a,v)

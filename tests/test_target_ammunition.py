@@ -136,7 +136,7 @@ class TargetAmmunitionTests(unittest.TestCase):
                 native_tests.NativeTests().spawn_callback([])(observed)
             h.put(h.v['CURUNIT'], 1)
             h.call(h.blobs['tickHook'][0], registers={r.UC_X86_REG_EDX: 1, r.UC_X86_REG_ESI: h.v['UNITSTATE']},
-                   stop=h.blobs['tickHook'][2]['RESUME'], callbacks={h.spawner: spawn})
+                   stop=h.blobs['tickOriginal'][2]['RESUME'], callbacks={h.spawner: spawn})
             self.assertEqual(len(emitted), 16)
             self.assertEqual({shot[0] for shot in emitted}, {2, 3})
             self.assertTrue(all((projectile, flag) == ((23, 1) if target == 2 else (4, 0))
@@ -191,7 +191,7 @@ class TargetAmmunitionTests(unittest.TestCase):
                 native_tests.NativeTests().spawn_callback([])(observed)
             h.put(h.v['CURUNIT'], 1)
             h.call(h.blobs['tickHook'][0], registers={r.UC_X86_REG_EDX: 1, r.UC_X86_REG_ESI: h.v['UNITSTATE']},
-                   stop=h.blobs['tickHook'][2]['RESUME'], callbacks={h.spawner: spawn})
+                   stop=h.blobs['tickOriginal'][2]['RESUME'], callbacks={h.spawner: spawn})
             self.assertEqual(emitted, [1, 1, 1])
 
     def test_saved_staggered_mixed_volley_replays_deterministically_without_allocations(self):
