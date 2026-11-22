@@ -42,13 +42,15 @@ end
 -- continues into it instead of replaying the instructions itself, so they
 -- still run exactly once. The jump must lead into extension code, never into
 -- the game image. Nothing is written here; install() redirects the sites.
-local function shared_site(displaced, size, tail)
+local function shared_site(displaced, size, tail, what)
     local plain = displaced .. ' ' .. tail
     if pcall(core.AOBScan, plain) then return locate(plain) end
     local site = locate('E9 ? ? ? ?' .. string.rep(' 90', size - 5) .. ' ' .. tail)
     local chain = (site + 5 + core.readInteger(site + 1)) % 4294967296
     assert(chain < 0x400000 or chain >= 0x700000,
         '[custom-projectiles] unsupported executable or conflicting module at signature: ' .. plain)
+    log(INFO, string.format('[custom-projectiles] %s is already redirected by another extension; continuing into its handler at 0x%X',
+        what, chain))
     return site, chain
 end
 
@@ -123,7 +125,7 @@ end
 -- Inside UnitsState::updateUnits, reached once per tick for every living unit.
 -- Its first 5 bytes are `add edx,1` + `mov [esi],edx`.
 local unit_tick_addr, unit_tick_chain = shared_site('83 C2 01 89 16', 5,
-    '8B 15 ? ? ? ? 69 D2 90 04 00 00 33 C9 66 89 8C 32 AE 09 00 00')
+    '8B 15 ? ? ? ? 69 D2 90 04 00 00 33 C9 66 89 8C 32 AE 09 00 00', 'the unit update loop')
 local animation_addr, release_cycles, catapult_rest, trebuchet_rest, horse_addr, hunter_addr, hunter_script, hunter_sound, sound_this, hunter_end, face_point, face_unit
 if native_cadence then
     animation_addr = locate('A1 ? ? ? ? 69 C0 90 04 00 00 01 9C 30 54 06 00 00')
@@ -230,7 +232,7 @@ if next(config.projectiles or {}) or next(config.decorations or {}) then
     entity_records_addr = entity_array
     -- EntityState::update prologue: push ecx/ebx/ebp/esi, mov esi, ecx.
     entity_site, entity_chain = shared_site('51 53 55 56 8B F1', 6,
-        '8B 0D ? ? ? ? B8 67 66 66 66 F7 E9')
+        '8B 0D ? ? ? ? B8 67 66 66 66 F7 E9', 'the entity update')
 else
     -- Read-only: lets a save with custom graphics be loaded with a file that
     -- has none. Without it those records keep their saved graphics IDs.
@@ -866,6 +868,8 @@ local function install(config)
         {'entity-uid', data_addr + OFF_ENTITYUID, 3000*4},
         {'entity-type', data_addr + OFF_ENTITYTYPE, 3000*4},
         {'variant-gm', data_addr + OFF_VARIANTGM, 34*4, true},
+        -- Native graphics ID each variant replaces; format 6 and later.
+        {'variant-base-gm', data_addr + OFF_VARIANTBASEGM, 34*4, true, since=6},
         {'decoration-variant', data_addr + OFF_DECORVARIANT, 3000*4},
         {'decoration-uid', data_addr + OFF_DECORUID, 3000*4},
         {'decoration-gm', data_addr + OFF_DECORGM, 34*4, true},

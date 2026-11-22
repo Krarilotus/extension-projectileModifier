@@ -7,7 +7,7 @@ import test_projectiles as projectile_tests
 
 def plain_site(h):
     # init.lua's shared_site for an unredirected site (see test_hook_chaining).
-    return lambda displaced, size, tail: h.scan(displaced + b' ' + tail)
+    return lambda displaced, size, tail, what=None: h.scan(displaced + b' ' + tail)
 
 
 class DecorationTests(unittest.TestCase):

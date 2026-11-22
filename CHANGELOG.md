@@ -15,12 +15,13 @@ as strict as before for damaged data.
   graphics change, projectiles in flight take their default look, and placed
   decorations keep their kind by name; a decoration whose kind was removed
   becomes an ordinary brazier. The game's own entity records get their
-  native graphics ID back. Saves and maps from the other
+  native graphics ID back; if they cannot be found, the save is refused.
+  Saves and maps from the other
   edition (2500 vs 10000 unit slots) move their unit timers to this game's
   limit. Saves from the 1.3.2–1.7.x test builds start this module's timers
   fresh. Each step is logged as a warning.
-- New saved state format 6 records the unit capacity and the decoration
-  names. Format 5 saves load unchanged; with placed custom decorations their
+- New saved state format 6 records the unit capacity, the decoration names
+  and each custom projectile's native graphics ID. Format 5 saves load unchanged; with placed custom decorations their
   definitions must stay as they were. 1.8.19 and older cannot read format 6.
 - Damaged data is still refused: missing or wrongly sized blocks, out-of-range
   values, invalid capacities and unknown formats.

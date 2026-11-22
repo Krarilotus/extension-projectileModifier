@@ -574,15 +574,16 @@ difference is a defined step, logged as a warning in `ucp3.log`:
 | Difference | What happens |
 |---|---|
 | Gameplay settings changed | New settings apply (including projectile physics). The module's firing queues and timers restart. The random seed and custom graphics identities are kept. |
-| Custom projectile/decoration graphics changed, or another extension uses different graphics slots | Projectiles in flight take their default look. Placed decorations keep their kind by name and show its current graphics; a decoration whose kind is no longer in the file becomes an ordinary brazier (it then supplies fire arrows and no longer triggers `near_decorations` rules). The game's own entity records get their native graphics ID back. Firing timers restart only if gameplay settings changed too. |
+| Custom projectile/decoration graphics changed, or another extension uses different graphics slots | Projectiles in flight take their default look. Placed decorations keep their kind by name and show its current graphics; a decoration whose kind is no longer in the file becomes an ordinary brazier (it then supplies fire arrows and no longer triggers `near_decorations` rules). The game's own entity records get their native graphics ID back; if they cannot be found, the save is refused rather than left with graphics IDs nobody owns. A changed definition or sprite file also counts as a settings change and restarts the firing timers; a slot-layout change caused by another extension alone keeps them. |
 | Save or map made in the other edition (Crusader 2500 unit slots, Extreme 10000) | Unit timers move to this game's limit. Narrowing is only allowed when the dropped slots are empty. |
 | Saved by a 1.3.2–1.7.x test build (state formats 1–4) | The world loads; this module's timers start fresh. |
 
 Damaged module data is refused rather than repaired: a missing or wrongly
 sized block, an out-of-range value, an invalid capacity or a state format this
 version does not know (for example one written by a newer version). Saves
-written by 1.8.20 use state format 6, which records the unit capacity and
-the names of the decoration kinds; 1.8.19 and older cannot read it. Format 5
+written by 1.8.20 use state format 6, which records the unit capacity, the
+names of the decoration kinds and the native graphics ID each custom
+projectile replaces; 1.8.19 and older cannot read it. Format 5
 saves from 1.8.x load unchanged. A format 5 save has no decoration names, so
 if it contains placed custom decorations, their definitions must stay as they
 were: load it once, save it with this version, then edit them.
@@ -590,7 +591,9 @@ were: load it once, save it with this version, then edit them.
 Loading a save with the module turned off works. Projectiles that were in
 flight with custom graphics and placed custom decorations then keep the
 custom graphics ID in the game's own record, which no extension owns any
-more; how the game draws them is untested.
+more; how the game draws them is untested. The same applies to a file
+without units or decorations (the module then registers no save section)
+and to saves from the 1.3.2–1.7.x test builds.
 
 Set root `allow_config_changes_on_load: false` to keep the earlier exact-match
 rules: any settings, graphics-slot or unit-capacity difference and the old test

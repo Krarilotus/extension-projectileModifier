@@ -59,6 +59,6 @@ units:
 
 ## Spielstände
 
-Spielstände lassen sich nach einer Änderung der Datei weiter laden: Geänderte Einstellungen starten die Schuss-Timer neu, fliegende Geschosse verlieren geänderte eigene Grafiken, und platzierte Dekorationen, deren Art entfernt wurde, werden zu normalen Feuerschalen. Spielstände laden auch bei ausgeschaltetem Modul. Mit `allow_config_changes_on_load: false` am Anfang der Datei werden Spielstände mit anderen Einstellungen abgelehnt.
+Spielstände lassen sich nach einer Änderung der Datei weiter laden: Geänderte Einstellungen starten die Schuss-Timer neu; nach Grafikänderungen verlieren fliegende Geschosse ihr eigenes Aussehen, und platzierte Dekorationen, deren Art entfernt wurde, werden zu normalen Feuerschalen. Spielstände laden auch bei ausgeschaltetem Modul. Mit `allow_config_changes_on_load: false` am Anfang der Datei werden Spielstände mit anderen Einstellungen abgelehnt.
 
 *Hinweis: Dies ist eine maschinelle Übersetzung, die noch auf eine menschliche Prüfung wartet.*

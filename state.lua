@@ -6,7 +6,8 @@
 --        world keeps its units and this module's timers start fresh.
 --   5    1.8.x up to 1.8.19. No unit capacity entry; it is derived from the
 --        per-unit blocks, which must all agree.
---   6    1.8.20+. Records the unit capacity it was saved with.
+--   6    1.8.20+. Records the unit capacity, the decoration names and the
+--        native graphics ID each custom projectile replaces.
 -- Any other value is refused, so a newer or damaged save is never guessed at.
 -- Within formats 5 and 6 every block must be present, have the size its
 -- format defines and stay inside its value range; damaged data is refused.
@@ -75,8 +76,8 @@ local ENTITIES = 3000  -- native entity array length, both editions
 local BRAZIER_GM = 138
 
 -- blocks: {name, address, size, layout} with `units=true` on per-unit blocks
--- (size = capacity * 4). Layout blocks are rebuilt from the current
--- configuration and never restored.
+-- (size = capacity * 4) and `since=N` on blocks first written by format N.
+-- Layout blocks are rebuilt from the current configuration and never restored.
 -- looks: {projectile_gm(type) -> native GM, restore(entity, uid, slot, gm)}
 -- from init.lua. restore writes `gm` into the game's entity record only if it
 -- is still the same entity and still shows the old custom slot.
@@ -163,9 +164,14 @@ function M.new(blocks, config, profile_count, rebuild, capacity, looks)
         local saved = {}
         for i, block in ipairs(self.blocks) do
             local name = block[1] .. '.bin'
-            assert(handle:exists(name), '[custom-projectiles] missing saved state: ' .. name)
-            saved[i] = handle:get(name)
-            assert(type(saved[i]) == 'string', '[custom-projectiles] invalid saved state: ' .. name)
+            if block.since and tonumber(format) < block.since then
+                -- Written only by later formats; this save cannot have it.
+                saved[i] = false
+            else
+                assert(handle:exists(name), '[custom-projectiles] missing saved state: ' .. name)
+                saved[i] = handle:get(name)
+                assert(type(saved[i]) == 'string', '[custom-projectiles] invalid saved state: ' .. name)
+            end
         end
         local capacity = self:saved_capacity(handle, format, saved)
         -- Strict mode keeps the exact-match rules of earlier versions.
@@ -179,6 +185,7 @@ function M.new(blocks, config, profile_count, rebuild, capacity, looks)
         for i, block in ipairs(self.blocks) do
             local name = block[1] .. '.bin'
             local bytes = saved[i]
+            if bytes == false then goto next_block end
             local size = block.units and capacity * UNIT_BYTES or block[3]
             assert(#bytes == size, '[custom-projectiles] invalid saved state: ' .. name)
             if block[4] then
@@ -201,8 +208,10 @@ function M.new(blocks, config, profile_count, rebuild, capacity, looks)
                 bytes = bytes .. string.rep('\0', block[3] - #bytes)
             end
             pending[i] = bytes
+            ::next_block::
         end
         self:plan_looks(handle, format, assets_changed, pending)
+        self:require_restore(pending.looks)
         return pending
     end
     -- Decide what custom graphics in the saved world become, using only
@@ -222,14 +231,18 @@ function M.new(blocks, config, profile_count, rebuild, capacity, looks)
         -- their saved variant may now be another sprite. They last seconds,
         -- so they take their default look.
         local variants, uids, types = saved('entity-variant'), saved('entity-uid'), saved('entity-type')
-        local old_slots = saved('variant-gm')
+        local old_slots, bases = saved('variant-gm'), saved('variant-base-gm')
         if not empty(variants) and (assets_changed or old_slots ~= current('variant-gm')) then
             for entity = 0, ENTITIES - 1 do
                 local variant = dword(variants, entity)
-                if variant ~= 0 then
-                    local gm = looks and looks.projectile_gm(dword(types, entity))
-                    local slot = dword(old_slots, variant)
-                    if gm and slot ~= 0 then fixes[#fixes+1] = {entity, dword(uids, entity), slot, gm} end
+                local slot = variant ~= 0 and dword(old_slots, variant) or 0
+                if slot ~= 0 then
+                    -- The ID the runtime itself checks: format 6 saves it per
+                    -- variant; format 5 falls back to the native type's sheet.
+                    local gm = bases and dword(bases, variant)
+                    if not gm or gm == 0 then gm = looks and looks.projectile_gm(dword(types, entity)) end
+                    assert(gm, '[custom-projectiles] invalid saved state: entity-type.bin')
+                    fixes[#fixes+1] = {entity, dword(uids, entity), slot, gm}
                 end
             end
             local zero = string.rep('\0', ENTITIES * 4)
@@ -249,13 +262,15 @@ function M.new(blocks, config, profile_count, rebuild, capacity, looks)
                 '[custom-projectiles] placed custom decorations changed in a save from an older version; restore their definitions, or load and save once with this version before editing them')
             for id, name in pairs(decode_names(handle:get('decoration-names'))) do map[id] = decoration_ids[name] or 0 end
         else
-            for id = 1, 33 do map[id] = id end
+            -- Same definitions: every placed ID must still be defined.
+            for _, id in pairs(decoration_ids) do map[id] = id end
         end
         local variants_out, owners_out, removed = {}, {}, 0
         for entity = 0, ENTITIES - 1 do
             local variant = dword(placed, entity)
             if variant ~= 0 then
-                local uid, new = dword(owners, entity), map[variant] or 0
+                assert(map[variant], '[custom-projectiles] invalid saved state: decoration-variant.bin')
+                local uid, new = dword(owners, entity), map[variant]
                 local slot = dword(old_decor, variant)
                 if slot ~= 0 and slot ~= BRAZIER_GM then fixes[#fixes+1] = {entity, uid, slot, BRAZIER_GM} end
                 if new == 0 then removed = removed + 1 else variants_out[entity], owners_out[entity] = new, uid end
@@ -268,6 +283,11 @@ function M.new(blocks, config, profile_count, rebuild, capacity, looks)
             pending.notes[#pending.notes+1] = removed .. ' placed decoration(s) no longer defined; they are ordinary braziers now'
         end
         pending.reset_visuals = true
+    end
+    -- Called after both migrations are planned.
+    function state:require_restore(fixes)
+        assert(#fixes == 0 or (looks and looks.restore),
+            '[custom-projectiles] this save shows custom graphics that cannot be reset here (game entity records not found); load it with the projectile file it was saved with')
     end
     function state:deserialize(handle)
         local pending = self:validate(handle)
@@ -285,14 +305,7 @@ function M.new(blocks, config, profile_count, rebuild, capacity, looks)
                 core.writeBytes(block[2], bytes)
             end
         end
-        if #pending.looks > 0 then
-            if looks and looks.restore then
-                for _, fix in ipairs(pending.looks) do looks.restore(fix[1], fix[2], fix[3], fix[4]) end
-            else
-                log(WARNING, '[custom-projectiles] entity records not available; ' .. #pending.looks
-                    .. ' saved custom graphics IDs left unchanged')
-            end
-        end
+        for _, fix in ipairs(pending.looks) do looks.restore(fix[1], fix[2], fix[3], fix[4]) end
         if rebuild then rebuild() end
     end
     return state

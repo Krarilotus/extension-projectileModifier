@@ -59,6 +59,6 @@ units:
 
 ## Mentések
 
-A mentések a fájl módosítása után is betölthetők: a módosított beállítások újraindítják a lövési időzítőket, a repülő lövedékek elveszítik a módosított egyéni grafikát, a lerakott díszek pedig, amelyek típusát törölted, egyszerű tűztartókká válnak. A mentések kikapcsolt modullal is betölthetők. Írd a fájl elejére: `allow_config_changes_on_load: false`, ha a más beállításokkal készült mentéseket el akarod utasítani.
+A mentések a fájl módosítása után is betölthetők: a módosított beállítások újraindítják a lövési időzítőket; grafikamódosítás után a repülő lövedékek elveszítik egyéni megjelenésüket, a lerakott díszek pedig, amelyek típusát törölted, egyszerű tűztartókká válnak. A mentések kikapcsolt modullal is betölthetők. Írd a fájl elejére: `allow_config_changes_on_load: false`, ha a más beállításokkal készült mentéseket el akarod utasítani.
 
 *Megjegyzés: ez egy gépi fordítás, amely még emberi ellenőrzésre vár.*

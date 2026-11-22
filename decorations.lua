@@ -119,7 +119,7 @@ function M.resolve(locate, shared_site)
     -- Toolbar button handler: push ebx; xor ebx, ebx; cmp [sync], ebx (9 bytes).
     -- Improved Tunnelers may already redirect it; see shared_site in init.lua.
     local action,action_chain=shared_site('53 33 DB 39 1D ? ? ? ?',9,
-        '0F 85 ? ? ? ? 39 1D ? ? ? ? 0F 85 ? ? ? ? A1 ? ? ? ? 8B C8')
+        '0F 85 ? ? ? ? 39 1D ? ? ? ? 0F 85 ? ? ? ? A1 ? ? ? ? 8B C8','the toolbar button handler')
     return {
         command=command, commandID=69, spawn=relative(0x190), cost=relative(0x1BD), debit=relative(0x1D7),
         entityState=core.readInteger(command+0x18C), buildings=core.readInteger(command+0x1B9),

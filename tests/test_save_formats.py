@@ -6,6 +6,7 @@ module's timers fresh. Damaged data and unknown formats are refused, and
 `allow_config_changes_on_load: false` keeps the earlier exact-match rules.
 """
 import unittest
+from harness import Harness
 import test_decorations as decoration_tests
 import test_feedback_fixes as feedback
 import test_sprite_resources as sprite_tests
@@ -134,6 +135,9 @@ class GraphicsMigrationTests(unittest.TestCase):
     def record(self, state, entity):
         return state + 20 + entity * 232
 
+    def transfer(self, old, new):
+        return feedback.FeedbackFixTests().transfer(old, new)
+
     def test_projectiles_in_flight_get_their_native_graphics_back(self):
         for change in ('definition', 'layout'):
             with self.subTest(change=change):
@@ -237,6 +241,75 @@ class GraphicsMigrationTests(unittest.TestCase):
             handle.files[b'decoration-names'] = value
             with self.assertRaisesRegex(Exception, 'invalid saved graphics names'):
                 state.validate(state, handle)
+
+    def test_removed_decoration_with_its_own_graphics_gets_the_brazier_look(self):
+        old = self.decorations(['frost', 'smoke'])
+        old.put(old.v['DECORGM'] + 2 * 4, 207)  # smoke had its own sheet slot
+        self.place(old, 41, 2, 4002)
+        record = old.native_decor[b'entityState'] + 20 + 41 * 232
+        old.put(record + 0x06, 207, 2)
+        new = self.decorations(['frost'])
+        state, handle = self.move(old, new)
+        new_record = new.native_decor[b'entityState'] + 20 + 41 * 232
+        new.put(new_record + 0x06, 207, 2)
+        state.deserialize(state, handle)
+        self.assertEqual(new.get(new.v['DECORVARIANT'] + 41 * 4), 0)
+        self.assertEqual(new.get(new_record + 0x06, 2), 138)
+
+    def test_undefined_saved_decoration_ids_are_refused(self):
+        old = self.decorations(['frost'])
+        self.place(old, 40, 1, 4001)
+        new = self.decorations(['alpha', 'frost'])
+        state, handle = self.move(old, new)
+        handle.files[b'decoration-variant.bin'] = (bytes(40 * 4) + (5).to_bytes(4, 'little')
+                                                   + bytes((3000 - 41) * 4))
+        with self.assertRaisesRegex(Exception, 'invalid saved state: decoration-variant.bin'):
+            state.validate(state, handle)
+        same = self.decorations(['frost'])
+        same_state, same_handle = self.move(old, same)
+        same_handle.files[b'decoration-variant.bin'] = handle.files[b'decoration-variant.bin']
+        same.put(same.v['DECORGM'] + 4, 300)  # layout-only change
+        with self.assertRaisesRegex(Exception, 'invalid saved state: decoration-variant.bin'):
+            same_state.validate(same_state, same_handle)
+
+    def projectile_in_flight(self):
+        h, entities, _ = self.sprites()
+        h.put(h.v['ENTITYVARIANT'] + 25 * 4, 1)
+        h.put(h.v['ENTITYUID'] + 25 * 4, 777)
+        h.put(h.v['ENTITYTYPE'] + 25 * 4, 1)
+        h.put(self.record(entities, 25) + 0x30, 777)
+        h.put(self.record(entities, 25) + 0x06, 207, 2)
+        self.assertEqual(h.get(h.v['VARIANTBASEGM'] + 4), 34)
+        return h
+
+    def units_only(self, before=None):
+        h = Harness()
+        if before: before(h)
+        h.module.apply(h.config(CONFIG))
+        h.v = {k: v for _, _, values in h.blobs.values() for k, v in values.items()}
+        return h
+
+    def test_a_file_without_graphics_still_restores_saved_projectile_records(self):
+        old = self.projectile_in_flight()
+        new = self.units_only()
+        state, handle = self.transfer(old, new)
+        entities = new.get(new.v['FIREPROJ'] + 0x416)
+        new.put(self.record(entities, 25) + 0x30, 777)
+        new.put(self.record(entities, 25) + 0x06, 207, 2)
+        state.deserialize(state, handle)
+        self.assertEqual(new.get(self.record(entities, 25) + 0x06, 2), 34)
+
+    def test_save_is_refused_when_game_records_cannot_be_found(self):
+        old = self.projectile_in_flight()
+        def hide_records(h):
+            spawn = h.scan(b'83 EC 08 53 8B 5C 24 34 83 FB 2B 56 8B F1')
+            h.put(spawn, 0x90, 1)
+        new = self.units_only(hide_records)
+        new.put(new.v['COOLDOWNT'] + 4, 55)
+        state, handle = self.transfer(old, new)
+        with self.assertRaisesRegex(Exception, 'cannot be reset here'):
+            state.deserialize(state, handle)
+        self.assertEqual(new.get(new.v['COOLDOWNT'] + 4), 55)
 
 
 if __name__ == '__main__':

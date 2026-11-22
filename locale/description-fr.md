@@ -59,6 +59,6 @@ units:
 
 ## Sauvegardes
 
-Les sauvegardes se chargent toujours après une modification de votre fichier : des paramètres modifiés redémarrent les minuteries de tir, les projectiles en vol perdent les graphismes personnalisés modifiés et les décorations placées dont vous avez supprimé le type deviennent des braseros ordinaires. Les sauvegardes se chargent aussi avec le module désactivé. Placez `allow_config_changes_on_load: false` en haut de votre fichier pour refuser les sauvegardes créées avec d'autres paramètres.
+Les sauvegardes se chargent toujours après une modification de votre fichier : des paramètres modifiés redémarrent les minuteries de tir ; après une modification des graphismes, les projectiles en vol perdent leur apparence personnalisée et les décorations placées dont vous avez supprimé le type deviennent des braseros ordinaires. Les sauvegardes se chargent aussi avec le module désactivé. Placez `allow_config_changes_on_load: false` en haut de votre fichier pour refuser les sauvegardes créées avec d'autres paramètres.
 
 *Remarque : cette traduction automatique attend encore une relecture humaine.*

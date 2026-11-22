@@ -59,6 +59,6 @@ units:
 
 ## Partidas guardadas
 
-Las partidas guardadas siguen cargándose cuando cambias tu archivo: los ajustes cambiados reinician los temporizadores de disparo, los proyectiles en vuelo pierden los gráficos personalizados modificados y las decoraciones colocadas cuyo tipo eliminaste se convierten en braseros normales. También se cargan con el módulo desactivado. Pon `allow_config_changes_on_load: false` al principio de tu archivo para rechazar partidas guardadas con otros ajustes.
+Las partidas guardadas siguen cargándose cuando cambias tu archivo: los ajustes cambiados reinician los temporizadores de disparo; tras cambiar los gráficos, los proyectiles en vuelo pierden su aspecto personalizado y las decoraciones colocadas cuyo tipo eliminaste se convierten en braseros normales. También se cargan con el módulo desactivado. Pon `allow_config_changes_on_load: false` al principio de tu archivo para rechazar partidas guardadas con otros ajustes.
 
 *Nota: esta es una traducción automática pendiente de revisión humana.*
