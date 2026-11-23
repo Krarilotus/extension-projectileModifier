@@ -1,4 +1,4 @@
-# Custom Projectiles 1.8.20 (test candidate)
+# Custom Projectiles 1.8.21 (test candidate)
 
 Configure projectile types, volley sizes and automatic firing for all 77 unit
 types using one readable YAML file. A module by Krarilotus, built on Monsterfish's
@@ -10,7 +10,6 @@ The ui dependency requires version 1.0.1 or later and launcher 1.0.12 or later.
 UI 1.0.0 has a native menu-array overrun that can crash startup.
 UI 1.0.1 is available in the 3.0.7 store.
 
-The [native integration audit](NATIVE-AUDIT.md) records the remaining work.
 This is a provisional test build; it does not replace an accepted store release.
 
 ## Quick configuration guide
@@ -78,8 +77,7 @@ search priorities. `cluster` adds a density threshold for AI owners.
 
 **Build distinction:** `native` for dynamic rules, `auto_targeting: false` for
 manual-only attack, and `strict_range` require 1.8.7 and its matching schema.
-The old 1.8.6 tester does not understand these fields. See [VALIDATION.md](VALIDATION.md)
-for acceptance limits.
+The old 1.8.6 tester does not understand these fields.
 
 Only `units`, `projectiles`, `projectile_physics`, `decorations`, `unit_groups` and the boolean
 `allow_config_changes_on_load` belong at the top of a projectile
@@ -138,17 +136,16 @@ for Catapults that fire cows at enemy siege engines and archers that favor Monks
 
 ## Installation and use
 
-Import `custom-projectiles-1.8.20.zip` and the matching
+Import `custom-projectiles-1.8.21.zip` and the matching
 `gmResourceModifier-0.3.1.zip` draft dependency into a developer launcher, then
 enable them with map-extensions, protocol and ui. For the direct enemy-click
 catapult check, also enable the separate Fixed Engineers 0.2.0 tester. This
 unsigned test candidate requires development module loading. It is not a
-signed store release; see VALIDATION.md for test limits.
+signed store release.
 
 Native reload timing covers catapults, trebuchets, mangonels, both ballistas,
 European/Arabian foot archers, crossbowmen, slingers, firethrowers, horse archers
 and hunters. Named GM1 variants and placeable decoration triggers are implemented.
-See VALIDATION.md for the distinction between automated and live acceptance.
 
 There is **one file picker** under **Customizations → Balance Changes**. There
 are no per-unit sliders, dropdowns, checkboxes or hidden override controls.
@@ -635,7 +632,7 @@ without custom graphics; loaded first, it works.
 
 Multiplayer peers need identical versions and settings. Scheduling and random
 state are deterministic, but live multiplayer, recorder integration, visibility
-edge cases and long sessions still need the tests listed in VALIDATION.md.
+edge cases and long sessions are not tested yet.
 
 ## Development
 

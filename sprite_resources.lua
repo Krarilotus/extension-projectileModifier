@@ -71,19 +71,16 @@ function M.prepare(definitions, decorations)
     table.sort(resources,function(a,b) return a.gm==b.gm and a.path<b.path or a.gm<b.gm end)
     if #resources==0 then return resources end
     local modifier=assert(modules.gmResourceModifier, '[custom-projectiles] gmResourceModifier is required for custom sprites')
-    check(modifier.LoadCompleteGm1Resource and modifier.ReserveGm and modifier.GetReservedGm and modifier.FreeGm1Resource,
-        'gmResourceModifier 0.3.1 is required for complete inherited sprite sheets')
+    check(modifier.LoadGm1Resource and modifier.ReserveGm and modifier.GetReservedGm and modifier.FreeGm1Resource,
+        'gmResourceModifier 0.3.1 is required for inherited sprite sheets')
     local loaded={}
     local ok, err=pcall(function()
         for _,asset in ipairs(resources) do
-            local sheet=assert(M.sheets[asset.gm], 'unsupported base sheet')
-            local resource, hash=modifier:LoadCompleteGm1Resource(asset.path,sheet.count,sheet.kind)
+            assert(M.sheets[asset.gm], 'unsupported base sheet')
+            local resource=modifier:LoadGm1Resource(asset.path)
             if type(resource)=='number' and resource>=0 then loaded[#loaded+1]=resource end
-            check(type(resource)=='number' and resource>=0 and type(hash)=='string' and
-                #hash==64 and hash:match('^[0-9a-f]+$'), 'failed to load or validate '..asset.path)
-            asset.resource, asset.hash=resource,hash
-            for _,name in ipairs(asset.names) do definitions[name].sha256=hash end
-            for _,name in ipairs(asset.decorations) do decorations[name].sha256=hash end
+            check(type(resource)=='number' and resource>=0, 'failed to load '..asset.path)
+            asset.resource=resource
         end
     end)
     if not ok then
