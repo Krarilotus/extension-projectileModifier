@@ -1,7 +1,8 @@
-# Custom Projectiles 1.8.12 (test candidate)
+# Custom Projectiles 1.8.20 (test candidate)
 
 Configure projectile types, volley sizes and automatic firing for all 77 unit
-types using one readable YAML file. Based on Monsterfish's supplied 1.2.0 module.
+types using one readable YAML file. A module by Krarilotus, built on Monsterfish's
+original 1.2.0 module and his later ideas and code; see [CREDITS.md](CREDITS.md).
 Requires UCP 3.0.7+, Crusader/Extreme 1.41 and the declared map-extensions,
 gmResourceModifier, protocol and ui dependencies. The 0.3.1 GM owner build is
 currently a draft dependency; the public Store does not resolve it yet.
@@ -35,6 +36,7 @@ with `ai_only: true`), not one individually selected catapult.
 |---|---|
 | Change ordinary ammunition | `projectile`; omit `cow_projectile` to leave cows alone |
 | Change cow ammunition separately | `cow_projectile` and `cow_count` |
+| Choose automatic ammunition by victim | `ammo_by_target.units` for exact target types; `ammo_by_target.groups` for names defined in top-level `unit_groups` |
 | More shots in one volley | `count`; `spread` offsets additional simultaneous shots |
 | Longer time between volleys | `interval`, measured in simulation ticks, not milliseconds; game speed changes real elapsed time |
 | Fire only while standing | `interval_standing: 700`, `interval_moving: 0` |
@@ -42,7 +44,9 @@ with `ai_only: true`), not one individually selected catapult.
 | Automatically search for buildings | `targets: [buildings, units]`; first kind that finds a target wins; boulders alone do not enable building searches |
 | Allow automatic attacks | `auto_targeting: true` or `false` per unit type; `false` keeps human manual attack orders |
 | Bias automatic unit targets | `target_bias_tiles: {Monk: 3}` on the shooting unit; each point subtracts one tile-equivalent from the game's distance-and-attention score before its remaining target rules |
-| Search distance | `range` in tiles for automatic search, including opt-in native candidate selection; native manual-order range remains separate |
+| Search distance | `range` in tiles for the selected target. Supported native shooters also enforce it on manual orders, independently of reload customization, when `strict_range` is true. Scatter can land beyond that radius. |
+| Retune an existing save | Gameplay edits load by default; old module firing queues/timers reset. Set root `allow_config_changes_on_load: false` for strict matching. See [Saves and compatibility](#saves-and-compatibility) for changed graphics. |
+| A replacement projectile falls short | Optional root `projectile_physics: {firethrower_pot: {mode: fixed_angle, angle: 30}}` uses the game's launch-speed solver. Requires active Rebalancer 1.1.3+; applies globally to that projectile type. |
 | Exact aim | `inaccuracy: 0` and `spread: 0`; moving targets can still move before impact |
 | An eighth-tile aim-error radius | `inaccuracy: 1`; **8 native coordinate units = 1 tile**; use whole numbers |
 | Restrict changes to AI owners | `ai_only: true`; this controls whose settings change, not an autonomous-fire toggle |
@@ -77,13 +81,64 @@ manual-only attack, and `strict_range` require 1.8.7 and its matching schema.
 The old 1.8.6 tester does not understand these fields. See [VALIDATION.md](VALIDATION.md)
 for acceptance limits.
 
-Only `units`, `projectiles` and `decorations` belong at the top of a projectile
+Only `units`, `projectiles`, `projectile_physics`, `decorations`, `unit_groups` and the boolean
+`allow_config_changes_on_load` belong at the top of a projectile
 file. Do not paste GitHub workflow keys (`name`, `on`) or UCP `config-sparse`
 wrappers into it. Use spaces for indentation and restart the game after edits.
 
+## Ammunition by target unit or group (1.8.13+)
+
+Define reusable **target** groups at the top of the file, then add optional rules
+to each **shooting** unit. This example keeps automatic AIC cow shots against
+troops, uses the catapult's configured regular ammunition against siege engines,
+and explicitly selects fire arrows against monks:
+
+```yaml
+unit_groups:
+  siege: [Catapult, Trebuchet, Mangonel, Siege tower, Battering ram]
+units:
+  Catapult:
+    interval: 700
+    projectile: mangonel_pebble
+    count: 3
+    ai_cow_vs_units: true
+    targets: [cluster, units]
+    ammo_by_target:
+      groups:
+        siege: regular
+      units:
+        Monk: fire_arrow
+```
+
+| Rule value | Effect |
+|---|---|
+| `regular` | This shooter's configured `projectile` and `count` |
+| `cow` | Its `cow_projectile` and `cow_count`, defaulting to native cows and one shot; an explicit rule does not require AIC cow permission |
+| A projectile name/ID or custom variant | That projectile, using the regular `count` and the variant's inherited native behavior |
+| Omitted map, empty map, or `ammo_by_target: native` | Existing ammunition behavior; `native` also clears an inherited wall/decoration map |
+
+Exact `units` rules override `groups`. Overlapping groups with different choices
+need an explicit unit rule for their shared members. Group names are lowercase
+identifiers; members use the exact unit names from the schema. Groups are flat
+lists, not new native classifications. Unmatched targets retain existing regular
+or AIC cow behavior. A wall/decoration map replaces the whole inherited map.
+
+Rules require a configured automatic-fire interval and work with every supported
+shooter type, including added ranged weapons. They apply to automatic unit shots;
+native human attack orders, native cow orders and building/ground shots retain
+their existing ammunition behavior. With `random_targets`, each shot uses its
+actual victim's rule, while the initial target admits the volley count. Changing
+victims does not resize an ongoing volley or change its reload timing.
+
+These rules do not add a targeting preference, infer plague immunity, extend
+range, or alter damage/impact behavior. `targets: [cluster, units]` searches a
+cluster first, then individual units; the fallback also allows isolated troops.
+See [Targeted ammunition and preferences](examples/targeted-ammunition.yml)
+for Catapults that fire cows at enemy siege engines and archers that favor Monks.
+
 ## Installation and use
 
-Import `custom-projectiles-1.8.12.zip` and the matching
+Import `custom-projectiles-1.8.20.zip` and the matching
 `gmResourceModifier-0.3.1.zip` draft dependency into a developer launcher, then
 enable them with map-extensions, protocol and ui. For the direct enemy-click
 catapult check, also enable the separate Fixed Engineers 0.2.0 tester. This
@@ -126,6 +181,16 @@ units:
 `example-projectiles.yml` also arms a siege tower. `all-settings-reference.yml`
 is an active advanced example. The vanilla template is the no-change starting
 point; it preserves other modules rather than reverting their balance changes.
+
+For independent examples, see [Long-range replacements](examples/long-range-replacements.yml),
+[Custom sprites and decorations](examples/custom-sprites-and-decorations.yml),
+and [Targeted ammunition and preferences](examples/targeted-ammunition.yml).
+
+The selected target may be within range while scattered shots land outside it.
+For example, a 30-tile Mangonel profile with `inaccuracy: 0` and `spread: 48`
+aims the first shot precisely and offsets extra shots by up to six tiles in
+either axis. Native pebbles already compute their launch speed for each aim.
+Set `spread: 0` for all shots to share the aim.
 
 Missing units and missing fields are allowed. Empty unit mappings are ignored.
 `native` explicitly leaves a field unmodified, like omission. In a conditional
@@ -186,9 +251,10 @@ balance plugin; identical path strings alone are insufficient.
 Enable only `custom-projectiles`, disabling the old `projectileModifier` module.
 Move its file-selector settings and plugin dependency to the new module ID.
 Existing YAML preset paths may stay where they are; the new resource folder is
-a suggested location. Start a new match: saved simulation state uses format 5
-and deliberately rejects older states with different timing semantics. The internal save-section key
-remains `projectileModifier` so old state is detected instead of silently reset.
+a suggested location. Saves from the old module load with this module's
+timers starting fresh (see [Saves and compatibility](#saves-and-compatibility)).
+The internal save-section key remains `projectileModifier` so old state is
+detected instead of silently reset.
 
 For profiles from 1.3.x:
 
@@ -259,6 +325,7 @@ completion and validation; Lua also checks cross-field comparisons.
 | Setting | Values and defaults |
 |---|---|
 | `projectile`, `cow_projectile` | Native names/IDs below, or a name defined in `projectiles`; cow ammunition is independent |
+| `ammo_by_target` | Optional `{units: {...}, groups: {...}}` map selecting ammunition by target type; requires an automatic-fire interval. See the ammunition table and example above. Omission/`native` preserves existing behavior. |
 | `count` | 1–64; unset preserves native volley size |
 | `cow_count` | 1–64; unset preserves one native cow |
 | `near_decorations` | Ordered list of sparse rules, each with a `decoration` name; first nearby match wins; cannot nest triggers |
@@ -266,8 +333,8 @@ completion and validation; Lua also checks cross-field comparisons.
 | `interval` | 1–60000 ticks; optional fallback automatic-fire interval |
 | `interval_moving`, `interval_standing` | 0–60000; independently enable firing; inherit fallback or hold fire if omitted |
 | `targets` | One to four distinct target kinds in priority order; default `units` |
-| `range` | 1–100 tiles, default 20; automatic targeting only  Projectile choice does not change this limit. |
-| `strict_range` | Default true; exact automatic range checks using unit positions, building centres and wall aim points. False restores rounded tile checks. |
+| `range` | 1–100 tiles, default 20 for configured automatic fire; selected-target radius. An explicit value also limits supported native shooters' manual orders, even with native reload timing or independent timer mode (1.8.16+). Projectile choice does not change this limit. Native eligibility still applies. |
+| `strict_range` | Default true; exact automatic range checks using unit positions, building centres and wall aim points. Supported native shooters obey an explicit manual range before wind-up; native-timed shots also obey their scheduler range. An already rejected native-timed swing finishes without firing. False restores rounded automatic checks and previous manual behavior. Scatter is not clamped. |
 | `auto_targeting` | False requires human attack orders, including without an interval. True permits native acquisition and configured automatic searches. Native preserves the game when no interval is set. |
 | `target_bias_tiles` | Optional unit-type score biases 0–255 for native automatic unit acquisition and configured non-random `targets: units` searches. One point subtracts eight native score units (one tile-equivalent) from the game's distance-and-attention score, floored at zero. The game's eligibility, range, type, line-of-sight and engaged-target rules still decide; a larger bias does not guarantee selection or extend range. Unlisted types get zero. Omit or use `native` to keep the native score. Wall/decoration mappings replace the inherited map; `native` clears it. Manual orders, cluster and random volleys keep their existing policies. The old `threat_priority` name remains valid for existing presets; use only one name in each unit or override. |
 | `spread`, `inaccuracy` | 0–800 whole native coordinate units: **1 = ⅛ tile, 8 = 1 tile** |
@@ -445,24 +512,126 @@ base-sheet/path pairs share one slot. Loading refuses occupied slots or a total
 above the native 66,000-image capacity; it never overwrites another sheet.
 
 All peers need the same module versions, YAML and sprite bytes. Saves record
-variant identities and sheet hashes/slot bindings. Changing a sheet, name or
-binding requires restoring the original files to load that save, or starting
-a new match. Build selections travel in a lockstep command; remote execution
+variant identities and sheet hashes/slot bindings. After a change to a sheet,
+name or binding, a save still loads (see [Saves and compatibility](#saves-and-compatibility)):
+projectiles in flight take their default look and placed decorations keep
+their kind by name.
+Build selections travel in a lockstep command; remote execution
 does not depend on another player's currently selected menu item.
+
+## Projectile flight and long-range replacements
+
+Target `range` and physical flight are separate native rules. Increasing range
+does not increase a fixed-speed projectile's ballistic reach. An arrow, sling
+stone or firethrower pot can therefore fall short when used by a siege engine.
+
+Optional `projectile_physics` delegates global flight changes to the existing
+Rebalancer API. **Activate Rebalancer 1.1.3+ with your existing balance file or
+balance plugin first.** The module does not automatically activate it: doing so
+would also install its unrelated balance hooks. Settings apply at the framework's
+`afterInit` event, after balance presets have enabled, regardless of load order.
+The module adds no projectile solver, movement hook or physics-table binding.
+
+```yaml
+projectile_physics:
+  firethrower_pot: {mode: fixed_angle, angle: 30}
+units:
+  Catapult:
+    projectile: firethrower_pot
+    interval: 700
+    range: 40
+```
+
+| Mode | Required parameter | Native behavior |
+|---|---|---|
+| `fixed_speed` | `speed: 1..1000` | Fixed native launch-speed parameter; the game solves the angle. Not tiles per tick. An unreachable distance can still fall short. Native arrow speed is 125, sling stone 100 and firethrower pot 80. |
+| `fixed_angle` | `angle: 1..89` | Angle in degrees; the game computes speed for its prepared target. Use `angle: 30` as the long-range example, not a guarantee through obstacles. |
+| `adaptive_angle` | `angle: 1..89` | Catapult-style native height and fallback angle rules, then native speed computation. The game may replace the supplied starting angle. |
+
+Specify only the parameter belonging to the mode. Omit a type or use `native`
+to leave existing game/Rebalancer values unchanged. Supported canonical types:
+`arrow`, `catapult_rock`, `trebuchet_rock`, `mangonel_pebble`, `crossbow_bolt`,
+`ballista_bolt`, `cow`, `slinger_stone`, `firethrower_pot`.
+
+**Global per native type:** every shooter and every custom sprite variant
+inheriting that type shares the setting. Untargeted/fire arrow forms use their
+native arrow base; fire-ballista bolts share `ballista_bolt` flight. No per-unit
+flight copy is created. Native allocation, ownership, damage, collision, fire
+effects and cleanup remain unchanged. Terrain, walls, height and extreme angle
+choices can still obstruct a shot. Targeting limits and reload timing remain
+separate. See [the opt-in example](examples/long-range-replacements.yml).
 
 ## Saves and compatibility
 
 The `map-extensions` section saves the random generator, identities, cooldowns,
 movement tracking, pending volleys, mounted bow clocks and custom projectile/decoration identities. New maps and saves without this section
-initialize fresh state. Saved state with different settings is rejected: restore
-the settings used to make the save. Loading with this module disabled does not
-retain its gameplay changes.
+initialize fresh state. With the same gameplay settings, all simulation state
+resumes as before. Loading with this module disabled works and plays on with
+normal projectile behavior.
+
+**Changing the projectile file never stops a save from loading.** Each accepted
+difference is a defined step, logged as a warning in `ucp3.log`:
+
+| Difference | What happens |
+|---|---|
+| Gameplay settings changed | New settings apply (including projectile physics). The module's firing queues and timers restart. The random seed and custom graphics identities are kept. |
+| Custom projectile/decoration graphics changed, or another extension uses different graphics slots | Projectiles in flight take their default look. Placed decorations keep their kind by name and show its current graphics; a decoration whose kind is no longer in the file becomes an ordinary brazier (it then supplies fire arrows and no longer triggers `near_decorations` rules). The game's own entity records get their native graphics ID back; if they cannot be found, the save is refused rather than left with graphics IDs nobody owns. A changed definition or sprite file also counts as a settings change and restarts the firing timers; a slot-layout change caused by another extension alone keeps them. |
+| Save or map made in the other edition (Crusader 2500 unit slots, Extreme 10000) | Unit timers move to this game's limit. Narrowing is only allowed when the dropped slots are empty. |
+| Saved by a 1.3.2–1.7.x test build (state formats 1–4) | The world loads; this module's timers start fresh. |
+
+Damaged module data is refused rather than repaired: a missing or wrongly
+sized block, an out-of-range value, an invalid capacity or a state format this
+version does not know (for example one written by a newer version). Saves
+written by 1.8.20 use state format 6, which records the unit capacity, the
+names of the decoration kinds and the native graphics ID each custom
+projectile replaces; 1.8.19 and older cannot read it. Format 5
+saves from 1.8.x load unchanged. A format 5 save does not record the native
+graphics ID of its custom projectiles; after a graphics change, projectiles in
+flight get the sheet of their native type back, which for custom fire-arrow
+variants is the plain arrow sheet until they land. A format 5 save has no
+decoration names, so
+if it contains placed custom decorations, their definitions must stay as they
+were: load it once, save it with this version, then edit them.
+
+Loading a save with the module turned off works. Projectiles that were in
+flight with custom graphics and placed custom decorations then keep the
+custom graphics ID in the game's own record, which no extension owns any
+more; how the game draws them is untested. The same applies to a file
+without units or decorations (the module then registers no save section)
+and to saves from the 1.3.2–1.7.x test builds.
+
+Set root `allow_config_changes_on_load: false` to keep the earlier exact-match
+rules: any settings, graphics-slot or unit-capacity difference and the old test
+formats are refused. Changing settings deliberately changes how a match
+continues; all multiplayer peers must use the same file, and a replay recorded
+with other settings can play differently.
 
 Rebalancer damage, speed and projectile physics tables remain owned by Rebalancer.
 This module hooks native firing, timing and aim-error stages. When configured,
-it also hooks entity rendering selection, GM loading and brazier placement/menu entry points. A module replacing these sites conflicts; startup
+it also hooks entity rendering selection, GM loading and brazier placement/menu entry points. Startup
 rejects missing or ambiguous signatures. Read-only
 reference comparison does not prove compatibility with every mod combination.
+
+Three of these sites are shared with other extensions that redirect the same
+instructions to their own handler: the unit update loop (Smarter Walls), the
+entity update (Improved Siegeengines and the ghost-object fix) and the toolbar
+button handler (Improved Tunnelers). The unit loop is used whenever units are
+configured; the other two only with custom graphics or decorations. When one of
+those extensions is already installed,
+this module runs its handler first and then continues into theirs, which
+replays the original instructions once. A jump that leads back into the game
+instead of an extension's handler is refused before anything is written. Load
+these extensions **before** Custom Projectiles: Smarter Walls and Improved
+Siegeengines do not yet look for an existing handler, so loaded afterwards they
+stop at startup, and Improved Tunnelers then leaves out its tunnel button.
+The ghost-object fix already continues into an existing handler, so it works
+in either order.
+
+Improved Siegeengines also reads the start of the native targeting function and
+patches inside the siege aim function, both of which this module redirects at
+their start when a native shooter has `range`/`interval` settings or any unit
+has accuracy settings. Its scan then fails if it loads after this module, even
+without custom graphics; loaded first, it works.
 
 Multiplayer peers need identical versions and settings. Scheduling and random
 state are deterministic, but live multiplayer, recorder integration, visibility

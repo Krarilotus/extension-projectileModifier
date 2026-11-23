@@ -10,6 +10,9 @@ HEADER='''# yaml-language-server: $schema=./projectile-config.schema.json
 # It preserves the game and other modules; it does not undo their balance changes.
 # Copy this file and the schema into ucp/resources/custom-projectiles/ and select
 # your edited copy in the launcher. Restart the game after changing a file.
+# Gameplay edits can load existing saves; old module firing queues/timers reset.
+# Set allow_config_changes_on_load: false to require the original settings.
+# Custom projectile/decorations definitions must stay unchanged for that save.
 #
 # Replace native only for settings you want to override, for example:
 #   Catapult:
@@ -27,7 +30,8 @@ HEADER='''# yaml-language-server: $schema=./projectile-config.schema.json
 #   suppress_default: false      # Add native shots only in independent timer mode.
 # Automatic attacks:
 #   auto_targeting: false        # Manual orders only; true permits automatic acquisition.
-#   strict_range: true           # Exact automatic range checks; false restores old tile checks.
+#   strict_range: true           # Exact automatic/manual target range; independent of reload.
+#                               # false restores old automatic/manual range behavior.
 #   interval: 100                # Optional fallback; 1..60000 ticks, not ms.
 #                                # Applies only without a matching state rate.
 #   interval_moving: 200          # 0..60000; 0 holds fire while moving.
@@ -36,7 +40,7 @@ HEADER='''# yaml-language-server: $schema=./projectile-config.schema.json
 #   target_bias_tiles:             # Optional native automatic target-score bias.
 #     Monk: 3                     # Treat Monk as up to 3 tiles closer in the native score.
 #                                # Eligibility, range, LOS and other native rules still apply.
-#   range: 20                    # 1..100 tiles; automatic targeting only.
+#   range: 20                    # 1..100 tiles; explicit manual cap even with native reload.
 #   require_manned: 1            # 0..4 engineers aboard; true=1, false=0.
 #   random_targets: false        # Pick per projectile; targets can repeat.
 #   shoot_height: 0              # 0..500 extra native height units.
@@ -90,6 +94,20 @@ HEADER='''# yaml-language-server: $schema=./projectile-config.schema.json
 #       count: 2
 #
 # Optional top-level definitions (alongside units, not inside a unit):
+# projectile_physics:           # Global per native type; Rebalancer owns the tables.
+#                               # Requires active Rebalancer 1.1.3+ with a balance config.
+#   firethrower_pot: {mode: fixed_angle, angle: 30} # Native speed solver reaches the aim point.
+#   arrow: {mode: fixed_speed, speed: 125} # Native speed units, not tiles/tick.
+#                               # native/omission preserves existing balance values.
+#                               # Sprite variants share their base type's physics.
+# unit_groups:
+#   siege: [Catapult, Trebuchet, Mangonel, Siege tower, Battering ram]
+# Per shooting unit (requires an automatic-fire interval):
+#   ammo_by_target: {groups: {siege: regular}, units: {Monk: cow}}
+#                               # Exact unit rules win; unmatched victims keep native/configured ammo.
+#                               # regular/cow use their configured slots and counts.
+#                               # Projectile/variant names use the regular count.
+#                               # Native manual and cow orders remain unchanged.
 # projectiles:
 #   training_arrow:
 #     inherits: arrow           # Native damage/flight behavior; only sprites change.
@@ -119,7 +137,7 @@ HEADER='''# yaml-language-server: $schema=./projectile-config.schema.json
 '''
 
 def generate():
-    fields=set(cfg.numbers.keys())|set(cfg.booleans.keys())|{'projectile','cow_projectile','targets','target_bias_tiles'}
+    fields=set(cfg.numbers.keys())|set(cfg.booleans.keys())|{'projectile','cow_projectile','targets','target_bias_tiles','ammo_by_target'}
     assert all(f'#   {name}:' in HEADER for name in fields)
     text=HEADER+'# Projectile names: '+', '.join(sorted(constants.projectile_names.keys()))+'\n'
     text+='# Target kinds: '+', '.join(sorted(constants.target_kinds.keys()))+'\n\n'
@@ -128,10 +146,12 @@ def generate():
     text+='# to 20 tiles. Set range explicitly if you want a different limit.\n'
     text+='# auto_targeting: native preserves native autonomy; false requires manual orders.\n'
     text+='# The *_tiles compatibility aliases are documented above; canonical fields use eighth-tiles.\n\n'
-    text+='projectiles: {}\ndecorations: {}\nunits:\n'
+    text+='allow_config_changes_on_load: true\nprojectile_physics:\n'
+    for name in sorted(cfg.flight_projectiles.keys()): text+='  '+name+': native\n'
+    text+='projectiles: {}\ndecorations: {}\nunit_groups: {}\nunits:\n'
     canonical=[key for key in cfg.numbers.keys() if not key.endswith('_tiles')]
     # Use reference order, not Lua table iteration order.
-    canonical=sorted(set(canonical)|set(cfg.booleans.keys())|{'projectile','cow_projectile','targets','target_bias_tiles'},
+    canonical=sorted(set(canonical)|set(cfg.booleans.keys())|{'projectile','cow_projectile','targets','target_bias_tiles','ammo_by_target'},
                      key=lambda key: HEADER.index('#   '+key+':'))
     names={value:key for key,value in constants.projectile_names.items()}
     for _, name in sorted(constants.unit_names.items()):

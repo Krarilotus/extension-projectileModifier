@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../projectile-config.schema.json
+# Automatic-fire examples. Rules apply to enemy units inside the shooter's range.
+unit_groups:
+  siege: [Catapult, Trebuchet]
+units:
+  Catapult:
+    interval: 700
+    targets: [units]
+    ammo_by_target: {groups: {siege: cow}}
+  European archer:
+    interval: 200
+    target_bias_tiles: {Monk: 3}

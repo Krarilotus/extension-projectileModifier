@@ -5,18 +5,23 @@ from lupa.lua54 import LuaError
 import test_projectiles as projectile_tests
 
 
+def plain_site(h):
+    # init.lua's shared_site for an unredirected site (see test_hook_chaining).
+    return lambda displaced, size, tail, what=None: h.scan(displaced + b' ' + tail)
+
+
 class DecorationTests(unittest.TestCase):
     def test_native_signature_with_signed_framework_reads(self):
         for extreme in [False, True]:
             h = Harness(extreme)
             h.lua.globals().core.readInteger = lambda a: int.from_bytes(h.uc.mem_read(a, 4), 'little', signed=True)
             h.lua.globals().core.readSmallInteger = lambda a: int.from_bytes(h.uc.mem_read(a, 2), 'little', signed=True)
-            resolved = h.lua.execute(b"return require('decorations')").resolve(h.scan)
+            resolved = h.lua.execute(b"return require('decorations')").resolve(h.scan, plain_site(h))
             self.assertEqual(resolved[b'queue'], 0x489100 + (0x110 if extreme else 0))
             # Preserve the guard: a genuinely changed instruction must fail.
             h.put(resolved[b'queue'], 0x90, 1)
             with self.assertRaises(LuaError):
-                h.lua.execute(b"return require('decorations')").resolve(h.scan)
+                h.lua.execute(b"return require('decorations')").resolve(h.scan, plain_site(h))
 
     def test_native_menu_group_pagination_selection_and_reopening(self):
         h=Harness()
@@ -76,7 +81,7 @@ class DecorationTests(unittest.TestCase):
             self.assertTrue(all(native.get(mouse+o)==0 for o in range(0x28,0x58,4)))
             self.assertEqual((native.get(mouse+0x10),native.get(mouse+0x14)),(512,256))
 
-    def prepare_module(self, config, extreme=False):
+    def prepare_module(self, config, extreme=False, before=None):
         h=Harness(extreme)
         h.hooks=[];h.actions=[];h.protocols=[];h.opened=[];h.selected=[]
         def hook(callback,address,count,abi,size):
@@ -97,7 +102,8 @@ class DecorationTests(unittest.TestCase):
             invokeProtocol=function(self,...) return invoke_protocol(...) end}
             package.loaded.decoration_ui={prepare=function()
                 return open_menu,function(callback) choose_decoration=callback end end}''')
-        h.native_decor=h.lua.execute(b"return (require('decorations'))").resolve(h.scan)
+        if before: before(h)  # e.g. another extension's handler already installed
+        else: h.native_decor=h.lua.execute(b"return (require('decorations'))").resolve(h.scan, plain_site(h))
         h.module.apply(h.config(config))
         h.v={k:v for _,_,values in h.blobs.values() for k,v in values.items()}
         for owner in range(9):h.put(h.v['TEAMTBL']+owner*4,owner)
@@ -170,7 +176,7 @@ class DecorationTests(unittest.TestCase):
                 with self.assertRaises(RuntimeError):h.scan(pattern,address+1)
                 return address
             m=h.lua.execute(b"return (require('decorations'))")
-            resolved=m.resolve(locate)
+            resolved=m.resolve(locate,lambda displaced,size,tail,what=None:locate(displaced+b' '+tail))
             self.assertEqual(resolved[b'queue'],0x489100+(0x110 if extreme else 0))
             self.assertEqual(resolved[b'commandID'],69)
 

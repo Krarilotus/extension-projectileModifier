@@ -1,11 +1,64 @@
-# Custom Projectiles 1.8.12
+# Custom Projectiles
 
-Mind a 77 egységtípus YAML-ban állítható. A normál lövedékek és a tehenek külön kezelhetők. Az időközök igazodnak a támogatott tüzelési animációkhoz; az inaccuracy játékbeli egységei: 1 = 1/8 mező, 8 = 1 mező, 0 = pontos célzás.
+Szabd testre, mit lőnek ki az egységek, milyen gyakran és milyen messzire tüzelnek, és mely célpontokat részesítik előnyben.
 
-A csoportméret-korlát csak az MI célzására vonatkozik; a játékos támadási parancsait nem tiltja. Automatikus egységcélzásnál a target_bias_tiles: {Monk: 3} a szerzeteseket legfeljebb három mezővel közelebbinek értékeli a natív pontszámban; a hatótáv és a többi szabály továbbra is érvényes.
+## Használat
 
-Másold ki a teljes vanilla-projectiles.yml fájlt a ZIP-ből, szerkeszd, majd válaszd ki a másolatot. A native megőrzi a játék szabályait; az üres útvonal nem változtat semmin. Az auto_targeting: false csak kézi támadási parancsokat enged. A strict_range: false visszaállítja a kerekített hatótáv-ellenőrzést; a turn_before_shot: false kikapcsolja a fordulás javítását. A kötelező/javasolt jelölés a teljes fájl kiválasztására vonatkozik. Módosítás után indítsd újra a játékot.
+1. Normál játékhoz hagyd üresen a **Lövedékbeállítások fájlja (YAML)** mezőt.
+2. Másold a `vanilla-projectiles.yml` fájlt a bővítmény mappájából vagy a ZIP-fájlból a játék `ucp/resources/custom-projectiles/` mappájába. Ha kell, hozd létre a mappát, majd szerkeszd a másolatot, és válaszd ki a **Testreszabások > Balance Changes** menüben.
+3. Indítsd újra a játékot.
 
-Saját grafika: a projectiles alatt adj meg egy nevet inherits és sprites mezőkkel (teljes, megfelelő GM1-fájl). A decorations és az egységek near_decorations szabályai után a parázstartó gombbal helyezhetők el a díszítések. Formátumok: README.md és examples/custom-sprites-and-decorations.yml. Csak megfelelő falra vagy toronyra építhető; az udvarházra nem.
+## Mire képes
 
-UCP 3.0.7+, Crusader/Extreme 1.41 és a modul függőségei szükségesek. Tesztverzió; lásd VALIDATION.md.
+A másolatodban keresd meg a megfelelő egységet, és cseréld le a `native` értékeit a megadottakra.
+
+### Az íjászok újratöltésének lassítása
+
+Adj az európai íjászoknak több időt két lövés között.
+
+```yaml
+units:
+  European archer:
+    interval: 600
+```
+
+### Nagyobb hatótáv a katapultoknak
+
+Engedd, hogy a katapultok akár 40 mezőre lévő célpontokra is lőhessenek.
+
+```yaml
+units:
+  Catapult:
+    interval: 700
+    range: 40
+```
+
+### Több kő kilövése egyszerre
+
+Állítsd be, hogy a kővetőgép minden sortűzzel tíz követ lőjön ki.
+
+```yaml
+units:
+  Mangonel:
+    count: 10
+    spread: 48
+```
+
+![Egy kővetőgép sortüze repülés közben](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/534bfdd4d0c01dfdefece636841d2fc336bc0ddb/docs/screenshots/mangonel-volley.jpg)
+
+### Lőszer kiválasztása célpont szerint
+
+Állítsd be, hogy a katapultok automatikusan teheneket lőjenek az ellenséges katapultokra.
+
+```yaml
+units:
+  Catapult:
+    interval: 700
+    ammo_by_target: {units: {Catapult: cow}}
+```
+
+## Más bővítmények
+
+Ha Smarter Walls, Improved Siegeengines vagy Improved Tunnelers bővítményt is használsz, a betöltési sorrendben tedd őket a Custom Projectiles elé.
+
+*Megjegyzés: ez egy gépi fordítás, amely még emberi ellenőrzésre vár.*

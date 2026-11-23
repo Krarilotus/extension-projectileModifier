@@ -1,5 +1,116 @@
 # Changelog
 
+## 1.8.20 (provisional test candidate)
+
+Brings in Monsterfish's 1.8.17 and 1.8.18 changes with save checks that stay
+as strict as before for damaged data.
+
+- Start alongside Smarter Walls, Improved Siegeengines, the ghost-object fix
+  and Improved Tunnelers when one of them already redirects the unit update
+  loop, the entity update or the toolbar handler: this module's handler runs
+  first and continues into theirs, so the original instructions still run
+  once. A redirect that leads back into the game is refused before anything
+  is written. Load those extensions before Custom Projectiles (Improved
+  Siegeengines also when you use range, interval or accuracy settings
+  without custom graphics).
+- Changing the projectile file no longer stops saves from loading. After a
+  graphics change, projectiles in flight take their default look, and placed
+  decorations keep their kind by name; a decoration whose kind was removed
+  becomes an ordinary brazier. The game's own entity records get their
+  native graphics ID back; if they cannot be found, the save is refused.
+  Saves and maps from the other
+  edition (2500 vs 10000 unit slots) move their unit timers to this game's
+  limit. Saves from the 1.3.2–1.7.x test builds start this module's timers
+  fresh. Each step is logged as a warning.
+- New saved state format 6 records the unit capacity, the decoration names
+  and each custom projectile's native graphics ID. Format 5 saves load unchanged; with placed custom decorations their
+  definitions must stay as they were. 1.8.19 and older cannot read format 6.
+- Damaged data is still refused: missing or wrongly sized blocks, out-of-range
+  values (including graphics IDs outside the native sheets), invalid or
+  non-canonical capacities, incomplete format 6 metadata, duplicate or
+  out-of-range decoration names, undefined variant IDs and unknown formats.
+  Graphics IDs are only written back into live entities of the saved kind.
+  `allow_config_changes_on_load: false` keeps all earlier exact-match rules.
+- Custom Projectiles is Krarilotus' module. Monsterfish's original module,
+  ideas and code contributions are credited in CREDITS.md and are covered by
+  the same license as the rest of the module.
+
+## 1.8.19 (provisional test candidate)
+
+- Fix the game stopping at startup with `error in script: -121` when the
+  selected projectile file changes units, for example with any of the guide's
+  examples. An unused siege-engine rest check was passed
+  to the assembler as -1, which the framework writes as a 64-bit number. Every assembler constant is
+  now passed as an unsigned 32-bit value, and the tests format constants and
+  assemble twice exactly like framework 3.0.7 and 3.0.8.
+- Keep the file picker empty by default and ship the full vanilla reference plus
+  standalone examples for individual features.
+  Reconquista settings will come as its own plugin.
+- If you selected one of the earlier tester's examples, copy that YAML into
+  your game's `ucp/resources/custom-projectiles/` folder and select the copy
+  before updating.
+- Add a shorter setup guide and tooltip. Keep the full setting reference,
+  dependencies, and plugin file-selection examples in the README.
+
+## 1.8.16 (provisional test candidate)
+
+- Enforce an explicit range on supported native shooters' manual acquisition
+  independently of a custom reload interval or animation synchronization.
+  Reuse the existing native acquisition hook, exact range helper and profile
+  flag table. Respect AI-only profiles; strict_range false retains native behavior.
+- Include Monsterfish's supplied Reconquista settings with duplicate keys
+  consolidated, preserving the last supplied values and all timing/spread values.
+  Explain selected-target range versus scattered impacts in the schema, guide
+  and short preview help in all nine GUI languages.
+- Native-code checks on both 1.41 families reject a target one eighth-tile past
+  the 30-tile boundary. The supplied eight-pebble volley reaches each scattered
+  aim using native speed solving; spread 48 can land beyond the selected radius.
+  No projectile solver, velocity override, native dispatcher or extra hook added.
+
+## 1.8.15 (provisional test candidate)
+
+- Add optional root `projectile_physics` using existing Rebalancer
+  `apply_rebalance` and framework `afterInit` APIs. Fixed speed uses the native
+  angle solver; fixed/adaptive angle use the native launch-speed solver. This
+  lets non-stone replacements reach siege distances with explicit flight tuning.
+- Require an active Rebalancer balance configuration only for this feature;
+  unchanged configurations do not activate its unrelated balance hooks. Flight
+  settings are global per native type, including inherited sprite variants.
+- Include nine canonical native physics entries as explicit `native` in the
+  inert vanilla reference, schema completions, short help in nine preview
+  languages and `examples/long-range-replacements.yml`. Physics participates in
+  the existing saved configuration identity; gameplay retuning rules still apply.
+- No new native hook, fixed address, private table resolver or trajectory solver.
+
+## 1.8.14 (provisional test candidate)
+
+- Allow gameplay config edits when loading format-5 saves. Reset obsolete module
+  firing timers/queues while retaining the saved random seed and visual identities.
+  Root `allow_config_changes_on_load: false` preserves strict configuration matching.
+  Custom graphics definitions and slots must still match; older custom-graphics
+  saves need one unchanged load/resave before gameplay retuning.
+- Reuse native acquisition and the existing exact range check to reject
+  out-of-range native-timed manual shots before wind-up. Let an already started
+  rejected swing finish without firing, instead of freezing at its release frame.
+  `strict_range: false` disables this correction. Keep native scatter, targeting,
+  projectile dispatch and cow controls with their existing owners.
+- Update the schema, full vanilla reference, Reconquista example and nine preview
+  languages without adding GUI controls or another hook site.
+
+## 1.8.13 (provisional test candidate)
+
+- Add optional `ammo_by_target.units` and `ammo_by_target.groups`, with reusable
+  top-level `unit_groups`. Exact unit rules win; conflicting overlapping groups
+  require an exact rule. Compile once into the existing ammunition selector.
+- Keep existing ammunition behavior for unmatched targets and native manual/cow
+  orders. Regular/cow slots retain their own counts and custom sprites. Random
+  volleys choose ammunition per actual victim without resizing the volley.
+- Ship the Reconquista example: catapults/trebuchets use regular ammunition
+  against the named siege group and retain AIC cow behavior against troops.
+  Opt into individual-unit fallback after clusters, including isolated troops.
+- Extend the VS Code schema, full inert vanilla reference, guide and all nine
+  GUI preview languages. No new GUI control, hook, binding or targeting system.
+
 ## 1.8.12 (provisional test candidate)
 
 - Rename the preset-facing automatic unit score setting to

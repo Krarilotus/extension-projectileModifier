@@ -13,8 +13,9 @@ local MAX_PROFILES     = MAX_TYPES * 2
 local MAX_UNITS
 
 local function resolve(native_cadence, config, has_priorities)
-local function locate(pattern)
-    local ok, address = pcall(core.AOBScan, pattern)
+local function locate(pattern, scanned)
+    local ok, address = true, scanned
+    if not scanned then ok, address = pcall(core.AOBScan, pattern) end
     assert(ok and type(address) == 'number' and address >= 0x400000 and address < 0x700000,
         '[custom-projectiles] unsupported executable or conflicting module at signature: ' .. pattern)
     -- A still-valid cached site need not be the first match after another
@@ -30,6 +31,45 @@ local function locate(pattern)
     assert(not found or type(duplicate) ~= 'number' or duplicate <= 0,
         '[custom-projectiles] ambiguous native signature: ' .. pattern)
     return address
+end
+
+-- Some sites are also redirected by other extensions: Smarter Walls at the
+-- unit update loop, Improved Siegeengines and the ghost-object fix at the
+-- entity update, Improved Tunnelers at the toolbar button handler. Each one
+-- replaces the first instructions with a jump (padded with nops) to its own
+-- handler, which replays those instructions once and returns after them.
+-- Find the site by the unchanged code that follows. When another extension
+-- got there first, return its handler as `chain`: this module's handler then
+-- continues into it instead of replaying the instructions itself, so they
+-- still run exactly once. The jump must lead into extension code, never into
+-- the game image. Nothing is written here; install() redirects the sites.
+local image_end
+-- End of the game image, from its own PE header at the image base 0x400000
+-- that every binding in this module assumes (see locate).
+local function game_image_end()
+    if not image_end then
+        assert(core.readSmallInteger(0x400000) % 65536 == 0x5A4D,
+            '[custom-projectiles] unsupported executable image header')
+        local header = 0x400000 + core.readInteger(0x40003C)
+        assert(core.readInteger(header) == 0x4550, '[custom-projectiles] unsupported executable image header')
+        image_end = 0x400000 + core.readInteger(header + 0x50)
+    end
+    return image_end
+end
+local function shared_site(displaced, size, tail, what)
+    local plain = displaced .. ' ' .. tail
+    local found, address = pcall(core.AOBScan, plain)
+    if found and type(address) == 'number' and address >= 0x400000 and address < 0x700000 then
+        return locate(plain, address)
+    end
+    local site = locate('E9 ? ? ? ?' .. string.rep(' 90', size - 5) .. ' ' .. tail)
+    local chain = (site + 5 + core.readInteger(site + 1)) % 4294967296
+    -- Extension code lies outside the whole game image and the null region.
+    assert(chain >= 0x10000 and (chain < 0x400000 or chain >= game_image_end()),
+        '[custom-projectiles] unsupported executable or conflicting module at signature: ' .. plain)
+    log(INFO, string.format('%s is already redirected by another extension; continuing into its handler at 0x%X',
+        what, chain))
+    return site, chain
 end
 
 -- UnitsState::fireUnitProjectile(unitID, entityType, targetX, targetY, targetZ)
@@ -101,7 +141,9 @@ for _, cfg in pairs(config.units) do
 end
 
 -- Inside UnitsState::updateUnits, reached once per tick for every living unit.
-local unit_tick_addr = locate("83 C2 01 89 16 8B 15 ? ? ? ? 69 D2 90 04 00 00 33 C9 66 89 8C 32 AE 09 00 00")
+-- Its first 5 bytes are `add edx,1` + `mov [esi],edx`.
+local unit_tick_addr, unit_tick_chain = shared_site('83 C2 01 89 16', 5,
+    '8B 15 ? ? ? ? 69 D2 90 04 00 00 33 C9 66 89 8C 32 AE 09 00 00', 'the unit update loop')
 local animation_addr, release_cycles, catapult_rest, trebuchet_rest, horse_addr, hunter_addr, hunter_script, hunter_sound, sound_this, hunter_end, face_point, face_unit
 if native_cadence then
     animation_addr = locate('A1 ? ? ? ? 69 C0 90 04 00 00 01 9C 30 54 06 00 00')
@@ -191,20 +233,31 @@ assert(core.readSmallInteger(unit_tick_addr + 0x3A2) % 65536 == 0xFA81
 local unit_capacity = core.readInteger(unit_tick_addr + 0x3A4)
 assert(unit_capacity == (data.version.isExtreme() and 10000 or 2500),
     '[custom-projectiles] unsupported unit-array capacity modification')
-local spawn_site, entity_site, entity_array
-if next(config.projectiles or {}) or next(config.decorations or {}) then
-    spawn_site = locate('83 EC 08 53 8B 5C 24 34 83 FB 2B 56 8B F1')
-    entity_site = locate('51 53 55 56 8B F1 8B 0D ? ? ? ? B8 67 66 66 66 F7 E9')
-    -- The dispatcher loads EntityState as `this` immediately before calling
-    -- the resolved native spawner. Decode both operands from that call site.
+-- The dispatcher loads EntityState as `this` immediately before calling
+-- the resolved native spawner. Decode both operands from that call site.
+local function entity_records()
+    local spawn = locate('83 EC 08 53 8B 5C 24 34 83 FB 2B 56 8B F1')
     local call_site = locate('52 51 50 B9 ? ? ? ? E8 ? ? ? ? 0F BF 86 EC 08 00 00 85 C0 5F 5E 5B 74 0F 69')
     local target = (call_site + 13 + core.readInteger(call_site + 9)) % 4294967296
     local entity_state = core.readInteger(call_site + 4)
-    assert(target == spawn_site and entity_state >= 0x700000 and entity_state % 4 == 0,
+    assert(target == spawn and entity_state >= 0x700000 and entity_state % 4 == 0,
         '[custom-projectiles] unsupported native entity spawner context')
-    entity_array = entity_state + 20
+    return spawn, entity_state + 20
 end
-return {locate=locate, fire=fire_projectile_addr, acquire=acquire_target_addr, tick=unit_tick_addr,
+local spawn_site, entity_site, entity_chain, entity_array, entity_records_addr
+if next(config.projectiles or {}) or next(config.decorations or {}) then
+    spawn_site, entity_array = entity_records()
+    entity_records_addr = entity_array
+    -- EntityState::update prologue: push ecx/ebx/ebp/esi, mov esi, ecx.
+    entity_site, entity_chain = shared_site('51 53 55 56 8B F1', 6,
+        '8B 0D ? ? ? ? B8 67 66 66 66 F7 E9', 'the entity update')
+else
+    -- Read-only: lets a save with custom graphics be loaded with a file that
+    -- has none. Without it those records keep their saved graphics IDs.
+    local ok, _, records = pcall(entity_records)
+    entity_records_addr = ok and records or nil
+end
+return {locate=locate, fire=fire_projectile_addr, acquire=acquire_target_addr, tick=unit_tick_addr, tickChain=unit_tick_chain, sharedSite=shared_site,
     prepareTarget=prepare_target_addr,
     priorityGate=priority_gate, priorityGateContinue=priority_gate_continue,
     priorityReject=priority_reject, priorityScore=priority_score,
@@ -220,13 +273,15 @@ return {locate=locate, fire=fire_projectile_addr, acquire=acquire_target_addr, t
     rows=tile_rows_addr, flags=tile_flags_addr, terrain=terrain_height_addr,
     teams=team_table_addr, buildings=building_base_addr, aic=aic_array_base,
     playerAic=player_aic_addr, cow=aic_cow_addr, units=unit_array_base,
-    spawn=spawn_site, entityUpdate=entity_site, entityArray=entity_array,
+    spawn=spawn_site, entityUpdate=entity_site, entityChain=entity_chain, entityArray=entity_array,
+    entityRecords=entity_records_addr,
     this=unit_state_this, current=current_unit_id_addr, capacity=unit_capacity}
 end
 
 -- Private tables, non-overlapping scratch and persistent per-unit firing state.
 local TABLE_BYTES, OFF_REENTRY, OFF_SEED, OFF_SCATY, OFF_REMAP, OFF_COUNT, OFF_SPREAD, OFF_INTERVAL, OFF_SUPPRESS, OFF_FORCED, OFF_COOLDOWN, OFF_ORDER, OFF_RANGE, OFF_WALLMIN, OFF_MULTI, OFF_HEIGHT, OFF_MANNED, OFF_BLDCLASS, OFF_SCRATCH, OFF_CANDS, OFF_IMOVE, OFF_ISTAND, OFF_LASTPOS, OFF_MOVECD, OFF_STAGMIN, OFF_STAGMAX, OFF_PENDING, OFF_PENDCD, OFF_DMIN, OFF_DRAD, OFF_ATTINT, OFF_ATTCREW, OFF_ATTBOARD, OFF_ATTBR2, OFF_AICOW, OFF_COWREMAP, OFF_COWCOUNT, OFF_PRELOAD, OFF_PRELPOLL, OFF_SYNC, OFF_SYNCMAX, OFF_SYNCWAIT, OFF_INACC, OFF_INACCSET, OFF_AIONLY, OFF_UID, OFF_IDENTITY, OFF_NATIVESEEN, OFF_FORTIFIED, OFF_PROFILESTATE, OFF_NATIVECYCLE, OFF_NATIVEINT, OFF_NATIVEBLOCK, OFF_NATIVEATTACK, OFF_NATIVESTART, OFF_WEAPONSEEN, OFF_WEAPONCYCLE, OFF_WEAPONTICK, OFF_WEAPONPHASE, OFF_SPRITE, OFF_COWSPRITE, OFF_CURRENTVARIANT, OFF_VARIANTGM, OFF_VARIANTBASEGM, OFF_VARIANTCOUNT, OFF_ENTITYVARIANT, OFF_ENTITYUID, OFF_ENTITYTYPE, OFF_DECORVARIANT, OFF_DECORUID, OFF_DECORGM, OFF_DECORGRID, OFF_DECORNEXT, OFF_DECORRULEMAP, OFF_DECORRULEST, OFF_TURNBEFORE, OFF_STRICTRANGE, OFF_AUTOTARGET, OFF_RELEASECYCLE, OFF_PRIORITYPTR, OFF_PRIORITYTYPE, OFF_ACTIVECOUNT, OFF_ACTIVEIDS, OFF_ACTIVEINDEX, OFF_DECORACTIVECOUNT, OFF_DECORACTIVEIDS, OFF_DECORCELLSCOUNT, OFF_DECORCELLS, OFF_DECORWRITE, DATA_SIZE
-local function layout(profile_count, has_visuals, has_decorations, has_priorities)
+local OFF_AMMOPTR
+local function layout(profile_count, has_visuals, has_decorations, has_priorities, has_ammo_rules)
     MAX_PROFILES = profile_count
     TABLE_BYTES = MAX_PROFILES * 4
     OFF_REENTRY   = 0x00
@@ -247,7 +302,7 @@ local function layout(profile_count, has_visuals, has_decorations, has_prioritie
     OFF_MANNED    = OFF_HEIGHT   + TABLE_BYTES     -- crew members required
     OFF_BLDCLASS  = OFF_MANNED   + TABLE_BYTES     -- byte per building type
     OFF_SCRATCH   = OFF_BLDCLASS + constants.MAX_BUILDING_TYPES
-    OFF_CANDS     = OFF_SCRATCH  + 0x100           -- scratch includes fields through 0xD4
+    OFF_CANDS     = OFF_SCRATCH  + 0x100           -- scratch includes fields through 0xE0
     OFF_IMOVE     = OFF_CANDS    + constants.MAX_CANDIDATES * 4
     OFF_ISTAND    = OFF_IMOVE    + TABLE_BYTES
     OFF_LASTPOS   = OFF_ISTAND   + TABLE_BYTES     -- packed position, per unit
@@ -309,7 +364,8 @@ local function layout(profile_count, has_visuals, has_decorations, has_prioritie
     OFF_RELEASECYCLE = OFF_AUTOTARGET + TABLE_BYTES
     OFF_PRIORITYPTR = OFF_RELEASECYCLE + MAX_TYPES * 4
     OFF_PRIORITYTYPE = OFF_PRIORITYPTR + (has_priorities and TABLE_BYTES or 0)
-    OFF_ACTIVECOUNT = OFF_PRIORITYTYPE + (has_priorities and MAX_TYPES or 0)
+    OFF_AMMOPTR = OFF_PRIORITYTYPE + (has_priorities and MAX_TYPES or 0)
+    OFF_ACTIVECOUNT = OFF_AMMOPTR + (has_ammo_rules and TABLE_BYTES or 0)
     OFF_ACTIVEIDS = OFF_ACTIVECOUNT + 4
     OFF_ACTIVEINDEX = OFF_ACTIVEIDS + 3000 * 4
     OFF_DECORACTIVECOUNT = OFF_ACTIVEINDEX + 3000 * 4
@@ -355,6 +411,20 @@ end
 -- the assembler inside that budget.
 local NEWLINE = string.char(10)
 
+-- The framework writes each constant above the script as
+-- string.format("0x%X", value) (core.assemble, framework 3.0.7 and 3.0.8).
+-- A negative Lua integer becomes a 64-bit literal there, which no 32-bit
+-- operand accepts (FASM error -121, "value out of range"), and a fraction
+-- stops the format call. Every constant here is a 32-bit operand, so pass its
+-- unsigned 32-bit encoding and name any value that has none.
+local function dword_constant(name, value)
+    local integer = type(value) == 'number' and math.tointeger(value)
+    assert(integer and integer >= -0x80000000 and integer <= 0xFFFFFFFF,
+        '[custom-projectiles] assembler constant ' .. tostring(name)
+        .. ' is not a 32-bit integer: ' .. tostring(value))
+    return integer & 0xFFFFFFFF
+end
+
 local function assemble_blob(script, values)
     local lines = {}
     for raw in (script .. NEWLINE):gmatch("([^" .. NEWLINE .. "]*)" .. NEWLINE) do
@@ -368,19 +438,23 @@ local function assemble_blob(script, values)
     local used = {}
     for name, value in pairs(values) do
         if body:find("%f[%w_]" .. name .. "%f[^%w_]") then
-            used[name] = value
+            used[name] = dword_constant(name, value)
         end
     end
     return core.allocateAssembly(body, used)
 end
 
 local function install(config)
+    -- Checked before any binding, allocation or write.
+    assert(modules['map-extensions'], '[custom-projectiles] map-extensions is required')
     local has_decorations = next(config.decorations or {}) ~= nil
     local profile_count = MAX_TYPES * 2
     for _, cfg in pairs(config.units) do profile_count = profile_count + 2 * #(cfg.near_decorations or {}) end
     local manual_only = false
     local has_priorities = false
-    for _, cfg in pairs(config.units) do
+    local has_ammo_rules = false
+    local has_manual_range = false
+    for name, cfg in pairs(config.units) do
         if configuration.any_profile(cfg, function(profile)
             return profile.threat_priority ~= nil
         end) then
@@ -389,11 +463,18 @@ local function install(config)
         if configuration.any_profile(cfg, function(profile) return profile.auto_targeting == false end) then
             manual_only = true
         end
+        if configuration.any_profile(cfg, function(profile) return profile.ammo_by_target ~= nil end) then
+            has_ammo_rules = true
+        end
+        if constants.native_reload_crews[name] ~= nil and configuration.any_profile(cfg, function(profile)
+            return profile.strict_range ~= false and (profile.range ~= nil
+                or (profile.interval ~= nil and profile.sync_to_animation ~= false))
+        end) then has_manual_range = true end
     end
     local native = resolve(cadence.required(config), config, has_priorities)
     MAX_UNITS = native.capacity
-    layout(profile_count, next(config.projectiles or {})~=nil or has_decorations, has_decorations, has_priorities)
-    local native_decorations = has_decorations and decorations.resolve(native.locate)
+    layout(profile_count, next(config.projectiles or {})~=nil or has_decorations, has_decorations, has_priorities, has_ammo_rules)
+    local native_decorations = has_decorations and decorations.resolve(native.locate, native.sharedSite)
     if native_decorations then
         assert(native_decorations.entityState == native.entityArray - 20,
             '[custom-projectiles] conflicting native entity-state bindings')
@@ -476,9 +557,11 @@ local function install(config)
         NATIVEBLOCKT  = data_addr + OFF_NATIVEBLOCK,
         NATIVEATTACKT = data_addr + OFF_NATIVEATTACK,
         NATIVESTARTT  = data_addr + OFF_NATIVESTART,
-        CATRESTCYCLE = native.catapultRest and native.catapultRest.cycle or -1,
+        -- No native reload pose has this cycle, so an inactive siege engine
+        -- never matches its rest check.
+        CATRESTCYCLE = native.catapultRest and native.catapultRest.cycle or constants.NO_REST_CYCLE,
         CATRELEASELEAD = native.catapultRest and native.catapultRest.lead or 0,
-        TREBRESTCYCLE = native.trebuchetRest and native.trebuchetRest.cycle or -1,
+        TREBRESTCYCLE = native.trebuchetRest and native.trebuchetRest.cycle or constants.NO_REST_CYCLE,
         TREBRELEASELEAD = native.trebuchetRest and native.trebuchetRest.lead or 0,
         FACEPOINT     = native.facePoint or 0,
         FACEUNIT      = native.faceUnit or 0,
@@ -486,6 +569,9 @@ local function install(config)
         STRICTRANGET  = data_addr + OFF_STRICTRANGE,
         AUTOTARGETT   = data_addr + OFF_AUTOTARGET,
         HASPRIORITY   = has_priorities and 1 or 0,
+        HASAMMORULES  = has_ammo_rules and 1 or 0,
+        HASMANUALRANGE = has_manual_range and 1 or 0,
+        AMMOPTRT      = data_addr + OFF_AMMOPTR,
         PRIORITYPTRT  = data_addr + OFF_PRIORITYPTR,
         PRIORITYTYPET = data_addr + OFF_PRIORITYTYPE,
         FORCEACQUIRE  = data_addr + OFF_SCRATCH + 0xD0,
@@ -569,6 +655,9 @@ local function install(config)
         S_PROFILE     = data_addr + OFF_SCRATCH + 0xC0,
         S_FIRED       = data_addr + OFF_SCRATCH + 0xC8,
         S_RANGE8SQ    = data_addr + OFF_SCRATCH + 0xCC,
+        S_TARGETAMMO  = data_addr + OFF_SCRATCH + 0xD8,
+        S_DEFAULTPROJ = data_addr + OFF_SCRATCH + 0xDC,
+        S_DEFAULTVARIANT = data_addr + OFF_SCRATCH + 0xE0,
         S_SELF        = data_addr + OFF_SCRATCH + 0x50,
         S_ID          = data_addr + OFF_SCRATCH + 0x54,
         S_INTV        = data_addr + OFF_SCRATCH + 0x58,
@@ -688,6 +777,9 @@ local function install(config)
         values.ACCURACYSET = assemble_blob(templates.accuracy_set_code, values)
     end
     values.WANTSCOW = assemble_blob(templates.aicow_code, values)
+    values.MANUALORDER = assemble_blob(templates.manual_order_code, values)
+    values.SHOOTTARGETINRANGE = assemble_blob(templates.shoot_target_in_range_code, values)
+    values.TARGETAMMO = has_ammo_rules and assemble_blob(templates.target_ammo_code, values) or 0
     values.CHOOSEAMMO = assemble_blob(templates.ammo_code, values)
     values.SYNCREADY = assemble_blob(templates.sync_code, values)
     values.CHOOSEINTERVAL = assemble_blob(templates.interval_code, values)
@@ -697,12 +789,12 @@ local function install(config)
     values.SCANWALL = assemble_blob(templates.scan_wall_code, values)
     volley_addr = assemble_blob(templates.volley_code, values)
     values.VOLLEY = volley_addr
-    values.MANUALORDER = assemble_blob(templates.manual_order_code, values)
     values.NATIVECONTEXT = assemble_blob(cadence.context_code, values)
     values.ACCEPTEDVALID = assemble_blob(cadence.accepted_code, values)
     local acquire_hook
-    if manual_only then
+    if manual_only or has_manual_range then
         values.RESUME = acquire_target_addr + 6
+        values.ACQUIREORIGINAL = has_manual_range and assemble_blob(templates.acquire_original_code, values) or 0
         acquire_hook = assemble_blob(templates.acquire_hook_code, values)
     end
     values.PICKTARGET = assemble_blob(templates.pick_code, values)
@@ -717,8 +809,11 @@ local function install(config)
     values.RESUME = fire_projectile_addr + 7
     local fire_hook = assemble_blob(templates.fire_hook_code, values)
 
-    -- Tick hook: exactly 5 bytes (`add edx,1` + `mov [esi],edx`), replayed at the end.
+    -- Tick hook: exactly 5 bytes (`add edx,1` + `mov [esi],edx`). It ends in
+    -- TICKCONTINUE: the replay of those instructions, or the handler of an
+    -- extension that redirected the site first and replays them itself.
     values.RESUME = unit_tick_addr + 5
+    values.TICKCONTINUE = native.tickChain or assemble_blob(templates.tick_original_code, values)
     local tick_hook = assemble_blob(templates.tick_hook_code, values)
 
     local ground_hook, accuracy_hook
@@ -762,7 +857,9 @@ local function install(config)
         values.SPAWNORIGINAL=assemble_blob(runtime.spawn_original,values)
         spawn_hook=assemble_blob(runtime.spawn,values)
         values.ENTITYRESUME=entity_site+6
-        values.ENTITYORIGINAL=assemble_blob(runtime.update_original,values)
+        -- An extension that redirected the prologue first replays it in its
+        -- own handler; calling that handler is calling the original.
+        values.ENTITYORIGINAL=native.entityChain or assemble_blob(runtime.update_original,values)
         entity_hook=assemble_blob(runtime.update,values)
     end
 
@@ -775,26 +872,52 @@ local function install(config)
     end
     persistent = require('state').new({
         {'seed', data_addr + OFF_SEED, 4},
-        {'cooldown', data_addr + OFF_COOLDOWN, MAX_UNITS * 4},
-        {'lastpos', data_addr + OFF_LASTPOS, MAX_UNITS * 4},
-        {'movement', data_addr + OFF_MOVECD, MAX_UNITS * 4},
-        {'pending', data_addr + OFF_PENDING, MAX_UNITS * 4},
-        {'pending-cooldown', data_addr + OFF_PENDCD, MAX_UNITS * 4},
-        {'sync-wait', data_addr + OFF_SYNCWAIT, MAX_UNITS * 4},
-        {'uid', data_addr + OFF_UID, MAX_UNITS * 4},
-        {'identity', data_addr + OFF_IDENTITY, MAX_UNITS * 4},
-        {'profile', data_addr + OFF_PROFILESTATE, MAX_UNITS * 4},
-        {'weapon-cycle', data_addr + OFF_WEAPONCYCLE, MAX_UNITS * 4},
-        {'weapon-tick', data_addr + OFF_WEAPONTICK, MAX_UNITS * 4},
-        {'weapon-phase', data_addr + OFF_WEAPONPHASE, MAX_UNITS * 4},
+        {'cooldown', data_addr + OFF_COOLDOWN, MAX_UNITS * 4, units=true},
+        {'lastpos', data_addr + OFF_LASTPOS, MAX_UNITS * 4, units=true},
+        {'movement', data_addr + OFF_MOVECD, MAX_UNITS * 4, units=true},
+        {'pending', data_addr + OFF_PENDING, MAX_UNITS * 4, units=true},
+        {'pending-cooldown', data_addr + OFF_PENDCD, MAX_UNITS * 4, units=true},
+        {'sync-wait', data_addr + OFF_SYNCWAIT, MAX_UNITS * 4, units=true},
+        {'uid', data_addr + OFF_UID, MAX_UNITS * 4, units=true},
+        {'identity', data_addr + OFF_IDENTITY, MAX_UNITS * 4, units=true},
+        {'profile', data_addr + OFF_PROFILESTATE, MAX_UNITS * 4, units=true},
+        {'weapon-cycle', data_addr + OFF_WEAPONCYCLE, MAX_UNITS * 4, units=true},
+        {'weapon-tick', data_addr + OFF_WEAPONTICK, MAX_UNITS * 4, units=true},
+        {'weapon-phase', data_addr + OFF_WEAPONPHASE, MAX_UNITS * 4, units=true},
         {'entity-variant', data_addr + OFF_ENTITYVARIANT, 3000*4},
         {'entity-uid', data_addr + OFF_ENTITYUID, 3000*4},
         {'entity-type', data_addr + OFF_ENTITYTYPE, 3000*4},
         {'variant-gm', data_addr + OFF_VARIANTGM, 34*4, true},
+        -- Native graphics ID each variant replaces; format 6 and later.
+        {'variant-base-gm', data_addr + OFF_VARIANTBASEGM, 34*4, true, since=6},
         {'decoration-variant', data_addr + OFF_DECORVARIANT, 3000*4},
         {'decoration-uid', data_addr + OFF_DECORUID, 3000*4},
         {'decoration-gm', data_addr + OFF_DECORGM, 34*4, true},
-    }, config, MAX_PROFILES, rebuild)
+    }, config, MAX_PROFILES, rebuild, MAX_UNITS, {
+        -- Native graphics ID of a projectile kind, as spawned by the game.
+        projectile_gm = function(kind) return sprites.projectile_gm[kind] end,
+        -- Whether a native graphics ID fits an entity kind. The game spawns
+        -- fire arrows as arrows (kind 1) on the fire-arrow sheet.
+        native_sheet = function(kind, gm)
+            return gm == sprites.projectile_gm[kind]
+                or (kind == constants.projectile_names.arrow
+                    and gm == sprites.projectile_gm[constants.projectile_names.fire_arrow])
+        end,
+        -- Write a native graphics ID back into a game entity record (232
+        -- bytes; UID at +0x30, graphics ID at +0x06), only while it is still
+        -- the saved entity showing the saved custom slot.
+        restore = native.entityRecords and function(entity, uid, slot, gm, kind)
+            if entity < 1 or entity >= 3000 then return end
+            local record = native.entityRecords + entity * 232
+            local alive = core.readSmallInteger(record + 0x28) % 65536
+            if (alive == 1 or alive == 2)
+                    and core.readSmallInteger(record + 0x2A) % 65536 == kind
+                    and core.readInteger(record + 0x30) % 4294967296 == uid
+                    and core.readSmallInteger(record + 0x06) % 65536 == slot then
+                core.writeSmallInteger(record + 0x06, gm)
+            end
+        end,
+    })
     sprites.install(resources,function(asset)
         for _, name in ipairs(asset.decorations or {}) do
             set_entry(OFF_DECORGM, config.decorations[name].id, asset.slot)
@@ -813,7 +936,6 @@ local function install(config)
         core.writeCode(native_decorations.filter, {0xE9,
             core.itob(core.getRelativeAddress(native_decorations.filter,decoration_filter,-5)),0x90})
     end
-    assert(modules['map-extensions'], '[custom-projectiles] map-extensions is required')
     modules['map-extensions']:registerSection('projectileModifier', persistent)
     core.writeCode(fire_projectile_addr, {
         0xE9, core.itob(core.getRelativeAddress(fire_projectile_addr, fire_hook, -5)), 0x90, 0x90
@@ -890,7 +1012,12 @@ apply_unit = function(name, cfg, profile)
         core.writeByte(data_addr + OFF_PRIORITYTYPE + configuration.units[name], 1)
     end
     set_entry(OFF_TURNBEFORE, id, cfg.turn_before_shot == false and 0 or 1)
-    set_entry(OFF_STRICTRANGE, id, cfg.strict_range == false and 0 or 1)
+    -- Bit 0 keeps existing scheduled-shot range checks; bit 1 admits the
+    -- native manual acquisition guard independently of reload customization.
+    -- Reuse this immutable profile flag rather than another per-unit table.
+    local manual_range = constants.native_reload_crews[name] ~= nil
+        and (cfg.range ~= nil or (cfg.interval ~= nil and cfg.sync_to_animation ~= false))
+    set_entry(OFF_STRICTRANGE, id, cfg.strict_range == false and 0 or (manual_range and 3 or 1))
     set_entry(OFF_AUTOTARGET, id, cfg.auto_targeting == false and 0 or 1)
 
     if cfg["projectile"] ~= nil then
@@ -908,6 +1035,22 @@ apply_unit = function(name, cfg, profile)
         if variant_by_id[cfg.cow_projectile] then set_entry(OFF_COWSPRITE,id,cfg.cow_projectile-256) end
     end
     if cfg.cow_count ~= nil then set_entry(OFF_COWCOUNT, id, cfg.cow_count) end
+
+    if cfg.ammo_by_target then
+        -- Compile validated groups once into the existing ammunition selector.
+        -- No native target scan or new lifecycle hook is needed.
+        local rules = core.allocate(MAX_TYPES * 12, true)
+        for target, choice in pairs(cfg.ammo_by_target) do
+            local cow = choice == 'cow'
+            local value = cow and (cfg.cow_projectile or 23)
+                or choice == 'regular' and cfg.projectile or choice
+            local entry = rules + configuration.units[target] * 12
+            core.writeInteger(entry, projectile_id(value))
+            core.writeInteger(entry + 4, variant_by_id[value] and value - 256 or 0)
+            core.writeInteger(entry + 8, cow and 2 or 1)
+        end
+        set_entry(OFF_AMMOPTR, id, rules)
+    end
 
     if cfg["spread"] ~= nil then
         set_entry(OFF_SPREAD, id, cfg["spread"])
@@ -1050,8 +1193,24 @@ end
 namespace.apply = function(config)
     assert(not installed, '[custom-projectiles] settings cannot be changed during a running session; relaunch the game')
     local validated = configuration.validate(config)
-    if next(validated.units) == nil and not next(validated.decorations or {}) then return end
-    install(validated)
+    if validated.projectile_physics then
+        local owner = modules.rebalancer
+        assert(owner and type(owner.apply_rebalance) == 'function',
+            '[custom-projectiles] projectile_physics requires active Rebalancer 1.1.3+ with a balance configuration')
+        -- Use the existing owner; no private flight tables, resolver or solver.
+        -- The framework event runs after every extension enabled its balance
+        -- preset, regardless of load order. No extra native hook is installed.
+        assert(hooks and type(hooks.registerHookCallback) == 'function',
+            '[custom-projectiles] projectile_physics requires the framework afterInit callback')
+    end
+    local native_changes = next(validated.units) ~= nil or next(validated.decorations or {}) ~= nil
+    if native_changes then install(validated) end
+    if validated.projectile_physics then
+        hooks.registerHookCallback('afterInit', function()
+            modules.rebalancer.apply_rebalance({projectiles=validated.projectile_physics})
+        end)
+    end
+    if not native_changes and not validated.projectile_physics then return end
     installed = true
 end
 
@@ -1083,7 +1242,7 @@ namespace.disable = function(self, config)
     return true
 end
 
-namespace.simulationStateFormat = 5
+namespace.simulationStateFormat = 6  -- the saved state format written by state.lua
 namespace.serializeSimulationState = function(self, handle)
     if persistent then persistent:serialize(handle) end
 end

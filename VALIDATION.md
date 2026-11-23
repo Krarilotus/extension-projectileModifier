@@ -1,5 +1,131 @@
 # Validation — unreleased work
 
+## 1.8.16 Mangonel range investigation, 2 October
+
+Four new native-code regressions pass on normal/Extreme 1.41. Before the change,
+range: 3 without an interval accepted a manual target four tiles away; adding
+interval: 400 rejected it. The same native acquisition hook now rejects the
+out-of-range target with native timing, native-synchronized timing and independent
+timer mode, for native pebbles and firethrower replacements. Tests cover the
+exact eighth-tile boundary, OFF control, AI-only human pass-through and a wall
+override. Native timing retains seven shots and completes its animation with
+no module animation hook. The initial wall fixture omitted its required native
+structure height; correcting that fixture made the inherited-profile test pass.
+
+The supplied Monsterfish Mangonel settings reject a target 30 tiles plus one
+eighth-tile away and accept exactly 30. Eight shots execute native allocation,
+initialization/velocity solving and movement/collision to completion on flat
+terrain. Each impact lies within one tile of its scattered aim; native speed
+varies with each aim distance. Both families produce identical aim/impact/speed
+results. With spread: 48, additional aims can extend six tiles per axis beyond
+the selected target; this intentional spread is not clamped or silently changed.
+No fixed-speed limitation was reproduced for these native pebbles. No new
+physics override or Rebalancer dependency is needed for this supplied config.
+
+The cleaned bundled example keeps every supplied gameplay value, consolidating
+duplicate Catapult fields using their last values. All nine preview languages
+explain target radius versus scatter. These are native-code emulation results,
+not live rendered game acceptance. Desktop bindings remain unavailable; actual
+input/cursor range presentation, hills/walls, live saves, multiplayer/replay,
+crowded performance and broader executable variants remain acceptance gaps.
+
+Final selected suite: 31 tests pass in 196.138 seconds, including the 24 earlier
+physics/save/native-config regressions and three manual-only policy regressions.
+All 23 GUI/archive tests pass; deterministic packaging contains 50 files and
+three explicit directories. The cleaned example validates against the schema
+and existing runtime configuration owner. Final production review confirms the
+only native code changes extend the existing acquisition guard/profile flags.
+
+## 1.8.15 native flight settings, 2 October
+
+Six focused tests pass using actual Rebalancer table-writing/API code and the
+framework's real afterInit registration. Native construction/movement tests cover
+120 cases: normal/Extreme 1.41, five engines, arrow/crossbow/sling/firethrower
+replacements, and 30/40/50-tile targets on flat terrain. Fixed-angle mode finishes
+within one tile of the prepared aim; native collision can land slightly before
+the ground coordinate. Shooter owner/type attribution remains native. These
+tests execute the game's initializer, ballistic solver and movement/collision
+owner, rather than a synthetic trajectory or spawner stub for the flight stage.
+
+Other cases cover mode/parameter validation before writes, existing owner table
+roots matching native reader operands, inactive/native configurations staying
+inert, missing owner/event rejection, initialization ordering after balance
+presets and physics changes participating in existing save retuning/strict mode.
+Flight settings are global deliberate balance options, not silently applied to
+existing presets. Physics requires an already active Rebalancer balance config;
+the module does not enable its general hooks automatically.
+
+The preceding native dispatcher suite passed all 34 existing tests, including
+the 77-unit/every-projectile allocation matrix and deterministic saved staggered
+shots. Two early test-fixture mistakes (an empty Lua list indistinguishable from
+an empty mapping, and a table-operand offset) were corrected; focused tests then
+passed. All 24 final physics/save/native-config feedback regressions and all 23
+GUI/archive tests pass. The published schema shares one physics definition for
+all types; native configuration remains inert for all 77 units.
+
+Live rendered flight/impact/damage, paired multiplayer/replay and broader builds
+remain acceptance gaps. This session's native desktop bindings are unavailable,
+as recorded in the 1.8.14 probe. No desktop reservation is retained. The tests
+do not prove that every angle, terrain or wall geometry admits an unobstructed
+shot. Startup errors remain with the existing English configuration owner; all
+nine launcher preview languages include the short setup instructions.
+
+## 1.8.14 tester feedback, 2 October
+
+Seven new production Lua/FASM/x86/save-owner regressions pass against normal and
+Extreme 1.41. They cover exact-edge manual range admission, the OFF control,
+native thiscall stack balance, an older out-of-range Mangonel wind-up finishing
+without projectiles, valid retargeting, seven-shot volleys and 400-tick cadence.
+Save cases cover read-only validation, retuned queues/timers, retained seed and
+visual IDs, strict mode, legacy format-5 saves and changed-graphics rejection.
+
+The surrounding suite ran 69 tests: 68 passed, with one schema check having
+loaded the previous schema before regeneration. That check passed when rerun
+against the final schema. The final rerun also passed all six inert/native
+configuration tests, five save-validation tests and both selected acquisition
+policy regressions (15 tests including the schema/load-policy cases). All seven
+feedback tests were rerun after sharing the original acquisition trampoline and
+passed. All 23 GUI/archive tests pass for the 1.8.14 package and nine locales.
+
+On 2 October the queued native probe again returned `Native app bindings are
+unavailable for windows`; the slot was released immediately. Actual game
+rendering, paired multiplayer, save/recorder playback, long-match performance and
+broader executable variants remain unverified. This is a provisional test build,
+not accepted Store completion. Gameplay retuning intentionally changes a saved
+continuation; same-config resume preserves existing semantics. Custom graphics
+definitions/slots remain subject to compatibility checks.
+
+## 1.8.13 target ammunition, 1 October
+
+The 13 focused target-ammunition tests pass, plus the additional native artillery
+release test (eight normal/Extreme, Catapult/Trebuchet, siege/troop cases).
+Production Lua/FASM runs against both 1.41 reference PE images. Cases cover
+groups/exact precedence, conflicts and startup rejection before patching,
+wall-map clearing/replacement, identity guards, AIC cow fallback, separate slot
+counts, mixed random victims and cow-flag restoration, custom GM-owner variants,
+previously non-shooting types and deterministic staggered save continuation.
+No lookup adds a scan, RNG call or allocation during firing.
+
+All 23 launcher component/archive tests pass for the generated package, including
+the one Legacy Balance Changes file picker and all nine locale catalogs/previews.
+The schema and full vanilla/Reconquista presets validate. The vanilla map is
+explicitly native for all 77 units; unused group definitions stay inert.
+
+A broader regression run is recorded with the PR. The earlier exhaustive
+77-unit/every-projectile native allocation matrix is unchanged and was not
+repeated for this ammunition-selection change; native release, dispatch,
+sprite, configuration, resolver, turning, saved state and targeting regressions
+are included in the broader run.
+
+Native desktop testing remains blocked: the 1 October queued probe returned
+`Native app bindings are unavailable for windows`; the slot was released. Live
+artillery impact/damage, paired multiplayer/replay, crowded-match performance
+and broader executable variants remain unverified. English startup diagnostics
+are the existing configuration owner's localization gap; no separate translation
+loader was added. Preview help is translated in all nine GUI languages, pending
+human translation review. This build does not claim to fix the separate reported
+trebuchet impact/aiming problem or constitute accepted Store completion.
+
 ## 1.8.11 native automatic target score, 28 September
 
 The 1.8.10 flat-rank test candidate is superseded. Normal Crusader and Extreme

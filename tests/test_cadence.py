@@ -172,10 +172,11 @@ class CadenceTests(unittest.TestCase):
         self.assertGreater(release,0)
         rest=lib.resolve_trebuchet_rest(h.scan,release if kind==40 else None)
         cat=lib.resolve_catapult_rest(h.scan,release if kind==39 else None)
+        no_rest=h.lua.execute(b"return (require('constants')).NO_REST_CYCLE")
         values=dict(h.v, RELEASECYCLE=release, ANIMATIONDONE=end,
-                    CATRESTCYCLE=cat[b'cycle'] if cat else -1,
+                    CATRESTCYCLE=cat[b'cycle'] if cat else no_rest,
                     CATRELEASELEAD=cat[b'lead'] if cat else 0,
-                    TREBRESTCYCLE=rest[b'cycle'] if rest else -1,
+                    TREBRESTCYCLE=rest[b'cycle'] if rest else no_rest,
                     TREBRELEASELEAD=rest[b'lead'] if rest else 0,
                     RESUME=animation+18, BLOCKEDT=h.allocate(h.v['MAXUNITS']*4))
         def assemble(code):
@@ -384,11 +385,16 @@ class CadenceTests(unittest.TestCase):
         self.assertEqual(first,second)
         self.assertTrue(any(queued or shots for queued,shots in first))
         self.assertEqual(h.get(a+0x362,2),stones)
-        handle[b'files'][b'format']=b'3'
+        handle[b'files'][b'format']=b'9'
         before=h.get(h.v['COOLDOWNT']+4)
         with self.assertRaisesRegex(Exception,'unsupported saved state format'):
             state.deserialize(state,handle)
         self.assertEqual(h.get(h.v['COOLDOWNT']+4),before)
+        # Test-build formats 1-4 keep the world and start these timers fresh.
+        handle[b'files'][b'format']=b'3'
+        state.deserialize(state,handle)
+        self.assertEqual(h.get(h.v['COOLDOWNT']+4),0)
+        self.assertEqual(h.get(h.v['SEED']),0x1d872b41)
 
     def test_no_target_polling_is_bounded_and_preload_changes_poll_rate(self):
         for preload,period in [(False,20),(True,5)]:

@@ -1,11 +1,64 @@
-# Custom Projectiles 1.8.12
+# Custom Projectiles
 
-Configurez les 77 types d’unités en YAML. Munitions normales et vaches sont indépendantes. Les intervalles respectent les animations de tir prises en charge ; inaccuracy utilise les unités natives : 1 = 1/8 de case, 8 = 1 case, 0 = visée exacte.
+Modifiez ce que tirent les unités, leur cadence, leur portée et les cibles qu'elles privilégient.
 
-Le seuil de regroupement ne concerne que l’IA ; les joueurs peuvent toujours donner leurs ordres d’attaque. Pour les cibles automatiques, target_bias_tiles: {Monk: 3} rapproche virtuellement les moines de trois cases au plus dans le score natif ; portée et autres règles restent actives.
+## Comment l'utiliser
 
-Copiez le fichier complet vanilla-projectiles.yml depuis le ZIP, modifiez-le et sélectionnez la copie. native conserve les règles du jeu ; un chemin vide ne change rien. auto_targeting: false impose des ordres d’attaque manuels. strict_range: false rétablit les contrôles de portée arrondis ; turn_before_shot: false désactive la correction de rotation. Obligatoire/suggéré concerne la sélection du fichier entier. Redémarrez après modification.
+1. Laissez **Fichier de configuration des projectiles (YAML)** vide pour le jeu normal.
+2. Copiez `vanilla-projectiles.yml` depuis le dossier de l’extension ou l’archive ZIP vers `ucp/resources/custom-projectiles/` dans le dossier du jeu. Créez ce dossier si nécessaire, puis modifiez la copie et sélectionnez-la dans **Personnalisations > Balance Changes**.
+3. Redémarrez le jeu.
 
-Images personnalisées : ajoutez un nom sous projectiles avec inherits et sprites (fichier GM1 complet compatible). Définissez decorations et les règles near_decorations des unités ; placez-les via le bouton brasero. Formats : README.md et examples/custom-sprites-and-decorations.yml. Placez-les sur des murs ou tours valides ; les manoirs n’acceptent pas de braseros.
+## Ce que vous pouvez faire
 
-Nécessite UCP 3.0.7+, Crusader/Extreme 1.41 et les dépendances du module. Version de test ; voir VALIDATION.md.
+Dans votre copie, trouvez l'unité correspondante et remplacez ses valeurs `native` par celles indiquées.
+
+### Ralentir le rechargement des archers
+
+Donnez plus de temps entre deux tirs aux archers européens.
+
+```yaml
+units:
+  European archer:
+    interval: 600
+```
+
+### Augmenter la portée des catapultes
+
+Permettez aux catapultes de viser des cibles jusqu'à 40 cases de distance.
+
+```yaml
+units:
+  Catapult:
+    interval: 700
+    range: 40
+```
+
+### Tirer plus de pierres à la fois
+
+Faites lancer dix pierres à chaque salve de mangonneau.
+
+```yaml
+units:
+  Mangonel:
+    count: 10
+    spread: 48
+```
+
+![Une salve de mangonneau en vol](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/534bfdd4d0c01dfdefece636841d2fc336bc0ddb/docs/screenshots/mangonel-volley.jpg)
+
+### Choisir les munitions selon la cible
+
+Faites lancer automatiquement des vaches par les catapultes sur les catapultes ennemies.
+
+```yaml
+units:
+  Catapult:
+    interval: 700
+    ammo_by_target: {units: {Catapult: cow}}
+```
+
+## Autres extensions
+
+Si vous utilisez Smarter Walls, Improved Siegeengines ou Improved Tunnelers, placez-les avant Custom Projectiles dans l'ordre de chargement.
+
+*Remarque : cette traduction automatique attend encore une relecture humaine.*

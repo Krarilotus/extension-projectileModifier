@@ -6,6 +6,9 @@
 # It preserves the game and other modules; it does not undo their balance changes.
 # Copy this file and the schema into ucp/resources/custom-projectiles/ and select
 # your edited copy in the launcher. Restart the game after changing a file.
+# Gameplay edits can load existing saves; old module firing queues/timers reset.
+# Set allow_config_changes_on_load: false to require the original settings.
+# Custom projectile/decorations definitions must stay unchanged for that save.
 #
 # Replace native only for settings you want to override, for example:
 #   Catapult:
@@ -23,7 +26,8 @@
 #   suppress_default: false      # Add native shots only in independent timer mode.
 # Automatic attacks:
 #   auto_targeting: false        # Manual orders only; true permits automatic acquisition.
-#   strict_range: true           # Exact automatic range checks; false restores old tile checks.
+#   strict_range: true           # Exact automatic/manual target range; independent of reload.
+#                               # false restores old automatic/manual range behavior.
 #   interval: 100                # Optional fallback; 1..60000 ticks, not ms.
 #                                # Applies only without a matching state rate.
 #   interval_moving: 200          # 0..60000; 0 holds fire while moving.
@@ -32,7 +36,7 @@
 #   target_bias_tiles:             # Optional native automatic target-score bias.
 #     Monk: 3                     # Treat Monk as up to 3 tiles closer in the native score.
 #                                # Eligibility, range, LOS and other native rules still apply.
-#   range: 20                    # 1..100 tiles; automatic targeting only.
+#   range: 20                    # 1..100 tiles; explicit manual cap even with native reload.
 #   require_manned: 1            # 0..4 engineers aboard; true=1, false=0.
 #   random_targets: false        # Pick per projectile; targets can repeat.
 #   shoot_height: 0              # 0..500 extra native height units.
@@ -86,6 +90,20 @@
 #       count: 2
 #
 # Optional top-level definitions (alongside units, not inside a unit):
+# projectile_physics:           # Global per native type; Rebalancer owns the tables.
+#                               # Requires active Rebalancer 1.1.3+ with a balance config.
+#   firethrower_pot: {mode: fixed_angle, angle: 30} # Native speed solver reaches the aim point.
+#   arrow: {mode: fixed_speed, speed: 125} # Native speed units, not tiles/tick.
+#                               # native/omission preserves existing balance values.
+#                               # Sprite variants share their base type's physics.
+# unit_groups:
+#   siege: [Catapult, Trebuchet, Mangonel, Siege tower, Battering ram]
+# Per shooting unit (requires an automatic-fire interval):
+#   ammo_by_target: {groups: {siege: regular}, units: {Monk: cow}}
+#                               # Exact unit rules win; unmatched victims keep native/configured ammo.
+#                               # regular/cow use their configured slots and counts.
+#                               # Projectile/variant names use the regular count.
+#                               # Native manual and cow orders remain unchanged.
 # projectiles:
 #   training_arrow:
 #     inherits: arrow           # Native damage/flight behavior; only sprites change.
@@ -121,8 +139,20 @@
 # auto_targeting: native preserves native autonomy; false requires manual orders.
 # The *_tiles compatibility aliases are documented above; canonical fields use eighth-tiles.
 
+allow_config_changes_on_load: true
+projectile_physics:
+  arrow: native
+  ballista_bolt: native
+  catapult_rock: native
+  cow: native
+  crossbow_bolt: native
+  firethrower_pot: native
+  mangonel_pebble: native
+  slinger_stone: native
+  trebuchet_rock: native
 projectiles: {}
 decorations: {}
+unit_groups: {}
 units:
   # No regular native ranged weapon; native does not add one.
   Peasant:
@@ -160,6 +190,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -198,6 +229,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -236,6 +268,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -274,6 +307,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -312,6 +346,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # Native regular ammunition: arrow. Other native modes remain available.
@@ -350,6 +385,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -388,6 +424,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -426,6 +463,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -464,6 +502,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -502,6 +541,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -540,6 +580,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -578,6 +619,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -616,6 +658,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -654,6 +697,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -692,6 +736,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -730,6 +775,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -768,6 +814,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -806,6 +853,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -844,6 +892,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -882,6 +931,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -920,6 +970,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # Native regular ammunition: arrow. Other native modes remain available.
@@ -958,6 +1009,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # Native regular ammunition: crossbow_bolt. Other native modes remain available.
@@ -996,6 +1048,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -1034,6 +1087,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -1072,6 +1126,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -1110,6 +1165,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -1148,6 +1204,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -1186,6 +1243,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -1224,6 +1282,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -1262,6 +1321,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -1300,6 +1360,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -1338,6 +1399,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -1376,6 +1438,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -1414,6 +1477,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -1452,6 +1516,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -1490,6 +1555,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -1528,6 +1594,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -1566,6 +1633,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # Native regular ammunition: catapult_rock. Other native modes remain available.
@@ -1604,6 +1672,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # Native regular ammunition: trebuchet_rock. Other native modes remain available.
@@ -1642,6 +1711,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # Native regular ammunition: mangonel_pebble. Other native modes remain available.
@@ -1680,6 +1750,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -1718,6 +1789,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -1756,6 +1828,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -1794,6 +1867,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -1832,6 +1906,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -1870,6 +1945,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -1908,6 +1984,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -1946,6 +2023,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -1984,6 +2062,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -2022,6 +2101,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -2060,6 +2140,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -2098,6 +2179,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -2136,6 +2218,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -2174,6 +2257,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -2212,6 +2296,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -2250,6 +2335,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -2288,6 +2374,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -2326,6 +2413,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -2364,6 +2452,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -2402,6 +2491,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # Native regular ammunition: ballista_bolt. Other native modes remain available.
@@ -2440,6 +2530,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -2478,6 +2569,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -2516,6 +2608,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -2554,6 +2647,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -2592,6 +2686,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -2630,6 +2725,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -2668,6 +2764,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -2706,6 +2803,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -2744,6 +2842,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # Native regular ammunition: arrow. Other native modes remain available.
@@ -2782,6 +2881,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -2820,6 +2920,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # Native regular ammunition: slinger_stone. Other native modes remain available.
@@ -2858,6 +2959,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -2896,6 +2998,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # Native regular ammunition: arrow. Other native modes remain available.
@@ -2934,6 +3037,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # No regular native ranged weapon; native does not add one.
@@ -2972,6 +3076,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # Native regular ammunition: firethrower_pot_untargeted. Other native modes remain available.
@@ -3010,6 +3115,7 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []
   # Native regular ammunition: fire_ballista_bolt. Other native modes remain available.
@@ -3048,5 +3154,6 @@ units:
     turn_before_shot: native
     sync_to_animation: native
     sync_max_wait: native
+    ammo_by_target: native
     on_fortification: {}
     near_decorations: []

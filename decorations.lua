@@ -98,7 +98,7 @@ function M.protocol(by_id, invoker, place)
     }
 end
 
-function M.resolve(locate)
+function M.resolve(locate, shared_site)
     local command=locate('A1 ? ? ? ? 83 EC 08 83 F8 01 C7 05 ? ? ? ? 09 00 00 00 0F 85 ? ? ? ? 6A 00 50 50')
     local function relative(offset)
         check(core.readByte(command+offset)==0xE8,'unsupported entity dispatcher')
@@ -116,6 +116,10 @@ function M.resolve(locate)
     local validation=locate('8B 44 24 04 66 83 3C 45 ? ? ? ? 00 75 05 33 C0 C2 08 00')
     local height=locate('56 57 8B 7C 24 0C 8B F1 0F BF 84 7E B0 29 20 00 85 C0')
     local funds=locate('69 D2 F4 39 00 00 3B 8A ? ? ? ? 7E 09 33 FF')
+    -- Toolbar button handler: push ebx; xor ebx, ebx; cmp [sync], ebx (9 bytes).
+    -- Improved Tunnelers may already redirect it; see shared_site in init.lua.
+    local action,action_chain=shared_site('53 33 DB 39 1D ? ? ? ?',9,
+        '0F 85 ? ? ? ? 39 1D ? ? ? ? 0F 85 ? ? ? ? A1 ? ? ? ? 8B C8','the toolbar button handler')
     return {
         command=command, commandID=69, spawn=relative(0x190), cost=relative(0x1BD), debit=relative(0x1D7),
         entityState=core.readInteger(command+0x18C), buildings=core.readInteger(command+0x1B9),
@@ -123,7 +127,7 @@ function M.resolve(locate)
         gameMode=core.readInteger(command+0x197), gold=core.readInteger(funds+8),
         x=core.readInteger(command+0x35), y=core.readInteger(command+0x4A),
         kind=core.readInteger(command+0x74), queue=queue, valid=validation, height=height,
-        action=locate('53 33 DB 39 1D ? ? ? ? 0F 85 ? ? ? ? 39 1D ? ? ? ? 0F 85 ? ? ? ? A1 ? ? ? ? 8B C8'),
+        action=action,actionChain=action_chain,
         filter=near+0x27, filterResume=near+0x2D, filterNext=near+0x64,
     }
 end
@@ -175,12 +179,25 @@ function M.install(definitions, native, values, open_menu)
         end
         return original_queue(this,command)
     end,native.queue,2,1,10)
+    local action=native.action
+    if native.actionChain then
+        -- hookCode relocates nine plain bytes. Give it nine nops that continue
+        -- into the other extension's handler; the site is sent there only
+        -- after the hook is in place, so that handler still runs once after
+        -- this one and a failed hook leaves the site untouched.
+        action=core.allocateCode(14)
+        core.writeCode(action,{0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,
+            0xE9,core.itob(core.getRelativeAddress(action+9,native.actionChain,-5))})
+    end
     local original_action
     original_action=core.hookCode(function(parameter)
         selected=0
         if parameter==148 then open_menu();return 0 end
         return original_action(parameter)
-    end,native.action,1,0,9)
+    end,action,1,0,9)
+    if native.actionChain then
+        core.writeCode(native.action,{0xE9,core.itob(core.getRelativeAddress(native.action,action,-5))})
+    end
     return function(variant)
         check(variant==0 or by_id[variant],'unknown decoration choice')
         original_action(148)

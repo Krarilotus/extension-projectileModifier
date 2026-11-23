@@ -1,11 +1,64 @@
-# Custom Projectiles 1.8.12
+# Custom Projectiles
 
-Alle 77 Einheitentypen per YAML einstellen. Normale Munition und Kühe sind unabhängig. Intervalle beachten unterstützte Schussanimationen; inaccuracy nutzt native Einheiten: 1 = 1/8 Feld, 8 = 1 Feld, 0 = genaues Zielen.
+Ändert, was Einheiten abfeuern, wie oft und wie weit sie schießen und welche Ziele sie bevorzugen.
 
-Die Mindestgröße von Zielgruppen gilt nur für die KI; menschliche Angriffsbefehle bleiben möglich. Bei automatischen Einheitenzielen bewertet target_bias_tiles: {Monk: 3} Mönche im nativen Wert um bis zu drei Felder näher; Reichweite und übrige Spielregeln gelten weiter.
+## Verwendung
 
-Die vollständige vanilla-projectiles.yml aus der ZIP kopieren, bearbeiten und auswählen. native erhält die Spielregeln; ein leerer Pfad ändert nichts. auto_targeting: false erlaubt nur manuelle Angriffsbefehle. strict_range: false stellt gerundete Reichweitenprüfungen wieder her; turn_before_shot: false deaktiviert die Drehkorrektur. Erforderlich/empfohlen gilt für die gesamte Dateiauswahl. Nach Änderungen neu starten.
+1. **Geschosskonfigurationsdatei (YAML)** für das normale Spiel leer lassen.
+2. `vanilla-projectiles.yml` aus dem Erweiterungsordner oder der ZIP-Datei nach `ucp/resources/custom-projectiles/` im Spielordner kopieren. Den Ordner bei Bedarf anlegen, die Kopie bearbeiten und unter **Anpassungen > Balance Changes** auswählen.
+3. Das Spiel neu starten.
 
-Eigene Grafik: unter projectiles einen Namen mit inherits und sprites anlegen (vollständige passende GM1-Datei). Dekorationen unter decorations und Einheitenregeln unter near_decorations definieren; über die Feuerkorb-Schaltfläche bauen. Formate: README.md und examples/custom-sprites-and-decorations.yml. Auf geeigneten Mauern oder Türmen bauen; Herrenhäuser unterstützen keine Feuerkörbe.
+## Was möglich ist
 
-Benötigt UCP 3.0.7+, Crusader/Extreme 1.41 und die Modulabhängigkeiten. Testversion; siehe VALIDATION.md.
+In der Kopie bei der passenden Einheit die Werte `native` durch die gezeigten Werte ersetzen.
+
+### Nachladen von Bogenschützen verlangsamen
+
+Europäischen Bogenschützen mehr Zeit zwischen den Schüssen geben.
+
+```yaml
+units:
+  European archer:
+    interval: 600
+```
+
+### Katapulten mehr Reichweite geben
+
+Katapulte auf Ziele in bis zu 40 Feldern Entfernung zielen lassen.
+
+```yaml
+units:
+  Catapult:
+    interval: 700
+    range: 40
+```
+
+### Mehr Steine auf einmal abfeuern
+
+Jede Salve einer Mange zehn Steine abfeuern lassen.
+
+```yaml
+units:
+  Mangonel:
+    count: 10
+    spread: 48
+```
+
+![Eine Salve einer Mange im Flug](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/534bfdd4d0c01dfdefece636841d2fc336bc0ddb/docs/screenshots/mangonel-volley.jpg)
+
+### Munition nach Ziel wählen
+
+Katapulte automatisch Kühe auf feindliche Katapulte schleudern lassen.
+
+```yaml
+units:
+  Catapult:
+    interval: 700
+    ammo_by_target: {units: {Catapult: cow}}
+```
+
+## Andere Erweiterungen
+
+Bei Verwendung von Smarter Walls, Improved Siegeengines oder Improved Tunnelers die jeweilige Erweiterung in der Ladereihenfolge vor Custom Projectiles einordnen.
+
+*Hinweis: Dies ist eine maschinelle Übersetzung, die noch auf eine menschliche Prüfung wartet.*

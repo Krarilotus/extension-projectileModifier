@@ -1,11 +1,64 @@
-# Custom Projectiles 1.8.12
+# Custom Projectiles
 
-通过 YAML 配置全部 77 种单位。普通弹药和牛弹可分别设置。射击间隔遵循受支持的射击动画；inaccuracy 使用游戏原生单位：1 = 1/8 格，8 = 1 格，0 = 精确瞄准。
+自定义单位发射的弹药、射击频率与射程，以及它们优先攻击的目标。
 
-集群数量限制仅用于 AI；玩家仍可手动指定攻击目标。自动选择单位目标时，target_bias_tiles: {Monk: 3} 会在原生评分中将僧侣视为最多近三格；射程及其他游戏规则仍然生效。
+## 使用方法
 
-从 ZIP 中复制完整的 vanilla-projectiles.yml，编辑后选择副本。native 保留游戏原有规则；路径留空则不作更改。auto_targeting: false 表示仅接受手动攻击命令。strict_range: false 恢复取整后的射程检查；turn_before_shot: false 关闭转向修正。必需/建议规则适用于整个文件的选择。编辑后请重启游戏。
+1. 如需正常游玩，请将 **弹射物配置文件（YAML）** 留空。
+2. 将扩展文件夹或 ZIP 压缩包中的 `vanilla-projectiles.yml` 复制到游戏目录下的 `ucp/resources/custom-projectiles/`。如果该文件夹不存在，请先创建它，然后编辑副本并在 **自定义 > Balance Changes** 中选择该文件。
+3. 重启游戏。
 
-自定义图像：在 projectiles 下添加名称，并设置 inherits 和 sprites（完整且匹配的 GM1 文件）。定义 decorations 及单位的 near_decorations 规则，再通过火盆按钮放置。格式参见 README.md 和 examples/custom-sprites-and-decorations.yml。 只能放在符合条件的城墙或塔楼上；庄园不能放置火盆。
+## 可实现的效果
 
-需要 UCP 3.0.7+、Crusader/Extreme 1.41 及模块依赖项。测试版本；参见 VALIDATION.md。
+在你的副本中找到对应的单位，将其 `native` 值替换为下面显示的值。
+
+### 减慢弓箭手装填速度
+
+增加欧洲弓箭手两次射击之间的间隔。
+
+```yaml
+units:
+  European archer:
+    interval: 600
+```
+
+### 增加投石车射程
+
+让投石车能够瞄准最远 40 格外的目标。
+
+```yaml
+units:
+  Catapult:
+    interval: 700
+    range: 40
+```
+
+### 一次发射更多石块
+
+让塔楼投石机每次齐射发射十块石头。
+
+```yaml
+units:
+  Mangonel:
+    count: 10
+    spread: 48
+```
+
+![塔楼投石机齐射的石块正在空中飞行](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/534bfdd4d0c01dfdefece636841d2fc336bc0ddb/docs/screenshots/mangonel-volley.jpg)
+
+### 按目标选择弹药
+
+让投石车在攻击敌方投石车时自动发射奶牛。
+
+```yaml
+units:
+  Catapult:
+    interval: 700
+    ammo_by_target: {units: {Catapult: cow}}
+```
+
+## 其他扩展
+
+如果你同时使用 Smarter Walls、Improved Siegeengines 或 Improved Tunnelers，请在加载顺序中把它们放在 Custom Projectiles 之前。
+
+*注：此为机器翻译，尚待人工审校。*

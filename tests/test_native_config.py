@@ -17,7 +17,7 @@ class NativeConfigTests(unittest.TestCase):
             c=h.lua.execute(b"return (require('configuration'))")
             canonical={key.decode() for key in c.numbers.keys() if not key.endswith(b'_tiles')}
             canonical|={key.decode() for key in c.booleans.keys()}
-            canonical|={'projectile','cow_projectile','targets','target_bias_tiles','on_fortification','near_decorations'}
+            canonical|={'projectile','cow_projectile','targets','target_bias_tiles','ammo_by_target','on_fortification','near_decorations'}
             self.assertEqual(len(source['units']),77)
             self.assertTrue(all(set(fields)==canonical for fields in source['units'].values()))
             projectile_tests.ConfigTests().load_file(h,ROOT/'vanilla-projectiles.yml')

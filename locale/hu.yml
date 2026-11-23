@@ -1,10 +1,6 @@
 balance_changes: Balance Changes
 config_file: Lövedékbeállítások fájlja (YAML)
-config_help: 'Másold ki a teljes vanilla-projectiles.yml fájlt a ZIP-ből, szerkeszd, majd válaszd ki a másolatot.
-  A native megőrzi a játék szabályait; az üres útvonal nem változtat semmin. Az auto_targeting: false csak kézi
-  támadási parancsokat enged. A strict_range: false visszaállítja a kerekített hatótáv-ellenőrzést; a turn_before_shot:
-  false kikapcsolja a fordulás javítását. A kötelező/javasolt jelölés a teljes fájl kiválasztására vonatkozik. Módosítás
-  után indítsd újra a játékot.'
+config_help: Normál játékhoz hagyd üresen. A lövedékek módosításához szerkeszd a vanilla-projectiles.yml egy másolatát, válaszd ki, majd indítsd újra a játékot.
 tags.behavior: Viselkedés
 tags.textures: Textúrák
 tags.tools: Eszközök

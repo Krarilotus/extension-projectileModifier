@@ -121,6 +121,9 @@ return {
     MOVE_HYSTERESIS = 20,
     projectile_names = projectile_names,
     MAX_UNIT_TYPES = 80,
+    -- Rest-cycle value for a siege engine without native reload timing.
+    -- Unsigned, because the framework formats assembler constants as hex.
+    NO_REST_CYCLE = 0xFFFFFFFF,
     UNIT_STRUCT_SIZE = 0x490,
     OFFSET_UNIT_TYPE = 0x8E,
 }

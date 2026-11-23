@@ -1,11 +1,64 @@
-# Custom Projectiles 1.8.12
+# Custom Projectiles
 
-77 birim türünün tamamını YAML ile ayarlayın. Normal mühimmat ve inekler ayrı ayarlanır. Aralıklar desteklenen atış animasyonlarına uyar; inaccuracy yerel oyun birimlerini kullanır: 1 = 1/8 karo, 8 = 1 karo, 0 = tam isabetli nişan.
+Birimlerin ne ateşlediğini, ne sıklıkla ve ne kadar uzağa atış yaptığını ve hangi hedefleri tercih ettiğini değiştirin.
 
-Hedef grubu eşiği yalnızca yapay zekâ için geçerlidir; oyuncular saldırı hedefini elle seçebilir. Otomatik hedeflemede target_bias_tiles: {Monk: 3}, keşişleri yerel puanda en fazla üç kare daha yakın sayar; menzil ve diğer oyun kuralları geçerlidir.
+## Nasıl kullanılır
 
-ZIP içindeki eksiksiz vanilla-projectiles.yml dosyasını kopyalayın, düzenleyin ve kopyayı seçin. native oyunun kurallarını korur; boş yol hiçbir şeyi değiştirmez. auto_targeting: false yalnızca elle verilen saldırı emirlerine izin verir. strict_range: false yuvarlanmış menzil denetimlerini geri getirir; turn_before_shot: false dönüş düzeltmesini kapatır. Zorunlu/önerilen, dosya seçiminin tamamına uygulanır. Düzenledikten sonra oyunu yeniden başlatın.
+1. Normal oyun için **Mermi yapılandırma dosyası (YAML)** alanını boş bırakın.
+2. `vanilla-projectiles.yml` dosyasını eklenti klasöründen veya ZIP dosyasından oyunun `ucp/resources/custom-projectiles/` klasörüne kopyalayın. Gerekirse klasörü oluşturun, kopyayı düzenleyin ve **Özelleştirmeler > Balance Changes** altında seçin.
+3. Oyunu yeniden başlatın.
 
-Özel görseller: projectiles altında inherits ve sprites içeren bir ad ekleyin (tam ve uyumlu GM1 dosyası). decorations ve birimlerin near_decorations kurallarını tanımlayın; mangal düğmesiyle yerleştirin. Biçimler: README.md ve examples/custom-sprites-and-decorations.yml. Uygun surlara veya kulelere yerleştirin; malikânelere yerleştirilemez.
+## Neler yapabilirsiniz
 
-UCP 3.0.7+, Crusader/Extreme 1.41 ve modül bağımlılıkları gerekir. Test sürümü; bkz. VALIDATION.md.
+Kopyanızda ilgili birimi bulun ve `native` değerlerini gösterilen değerlerle değiştirin.
+
+### Okçuların yeniden doldurmasını yavaşlatma
+
+Avrupalı okçuların atışları arasındaki süreyi artırın.
+
+```yaml
+units:
+  European archer:
+    interval: 600
+```
+
+### Mancınıklara daha fazla menzil verme
+
+Mancınıkların 40 kareye kadar uzaklıktaki hedeflere nişan almasını sağlayın.
+
+```yaml
+units:
+  Catapult:
+    interval: 700
+    range: 40
+```
+
+### Aynı anda daha fazla taş fırlatma
+
+Her mangonel yaylım atışının on taş fırlatmasını sağlayın.
+
+```yaml
+units:
+  Mangonel:
+    count: 10
+    spread: 48
+```
+
+![Havadaki bir Mangonel salvosu](https://raw.githubusercontent.com/Krarilotus/extension-projectileModifier/534bfdd4d0c01dfdefece636841d2fc336bc0ddb/docs/screenshots/mangonel-volley.jpg)
+
+### Hedefe göre mühimmat seçme
+
+Mancınıkların düşman mancınıklarına otomatik olarak inek fırlatmasını sağlayın.
+
+```yaml
+units:
+  Catapult:
+    interval: 700
+    ammo_by_target: {units: {Catapult: cow}}
+```
+
+## Diğer eklentiler
+
+Smarter Walls, Improved Siegeengines veya Improved Tunnelers kullanıyorsanız bunları yükleme sıralamasında Custom Projectiles'ın önüne yerleştirin.
+
+*Not: Bu metin makine çevirisidir ve insan incelemesi beklemektedir.*

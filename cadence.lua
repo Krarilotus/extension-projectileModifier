@@ -633,6 +633,21 @@ ca_cadence:
     add esp, 8
     cmp eax, 2
     je ca_pass
+    if HASMANUALRANGE
+        cmp eax, 1
+        jne ca_target
+        cmp dword [STRICTRANGET+edi*4], 0
+        je ca_target
+        push edi
+        push ebx
+        call NATIVETARGET      ; native target preparation, before native scatter
+        add esp, 8
+        test eax, eax
+        jnz ca_pass
+        mov dword [NATIVEBLOCKT+ebx*4], 1
+        jmp ca_pass            ; finish the swing; existing release gate cancels/refunds
+    ca_target:
+    end if
     ; Automatic siege aim was admitted before native state 8 turned the body.
     ; Do not pick another target while loaded or at release: after Halt this
     ; would replace the old aim without another native aiming transition.

@@ -14,6 +14,27 @@ ROOT = Path(__file__).resolve().parents[1]
 ORIGINAL = Path(os.environ.get('SHC_REFERENCE_DIR', 'C:/UCPTools/Original-SHC141'))
 FASM = Path(os.environ.get('FASM', 'C:/UCPTools/fasm-1.73.35/FASM.EXE'))
 
+# Reproduces how the framework hands constants to the assembler
+# (content/ucp/code/core.lua, core.assemble, in 3.0.7 77c6acc and main
+# d891e0e): each one is prepended as `NAME = 0x%X` using Lua's own
+# string.format, then `org` and `use32`. Running it in the same Lua 5.4 keeps
+# negative integers as 64-bit literals and rejects fractions, exactly as the
+# game does. Do not convert values in Python before this step.
+FRAMEWORK_ASSEMBLE = b'''
+return function(fasm)
+  return function(script, values, origin)
+    for name, value in pairs(values) do
+      script = name .. " = " .. string.format("0x%X", value) .. "\\n" .. script
+    end
+    script = "org " .. string.format("0x%X", origin) .. "\\n" .. script
+    return fasm("use32" .. "\\n" .. script)
+  end
+end
+'''
+
+class AssemblyError(RuntimeError):
+    pass
+
 class Harness:
     def __init__(self, extreme=False):
         self.path = ORIGINAL / ('Stronghold_Crusader_Extreme.exe' if extreme else 'Stronghold Crusader.exe')
@@ -26,6 +47,7 @@ class Harness:
         self.cursor = 0x5000000
         self.allocations = []
         self.lua = LuaRuntime(unpack_returned_tuples=True, encoding=None)
+        self.framework_assemble = self.lua.execute(FRAMEWORK_ASSEMBLE)(self.fasm)
         self.writes, self.blobs, self.scans = [], {}, []
         self.sections = {}
         g = self.lua.globals()
@@ -46,6 +68,7 @@ class Harness:
         c.readString = lambda a,n: bytes(self.uc.mem_read(a,n))
         c.readBytes = lambda a,n: self.lua.table_from(list(self.uc.mem_read(a,n)))
         c.allocate = self.allocate
+        c.allocateCode = lambda size: self.allocate(size)
         c.allocateAssembly = self.assemble
         c.exposeCode = lambda address, count, convention: lambda *args: self.call(address, args=args)
         c.writeInteger = lambda a,v: self.put(a,v)
@@ -85,21 +108,30 @@ class Harness:
                 else: yield from flat(x)
         code=bytes(flat(values)); self.writes.append((a,code)); self.uc.mem_write(a,code)
 
-    def assemble(self, source, values):
-        address=self.allocate(0x4000)
-        constants={k.decode():int(v) for k,v in values.items()}
-        script='use32\norg '+hex(address)+'\n'
-        script+='\n'.join(k+' = '+hex(v & 0xffffffff) for k,v in constants.items())+'\n'+source.decode()
+    def fasm(self, script):
         with tempfile.TemporaryDirectory() as directory:
             src=Path(directory)/'code.asm'; out=Path(directory)/'code.bin'
-            src.write_text(script)
+            src.write_bytes(bytes(script))
             # Framework uses 64,000 bytes; 62 KiB is a slightly tighter budget.
             result=subprocess.run([str(FASM),'-m','62',str(src),str(out)],capture_output=True,text=True)
-            if result.returncode: raise RuntimeError(source.decode().splitlines()[1]+'\n'+result.stdout+result.stderr)
-            code=out.read_bytes()
-        assert len(code) < 0x4000
-        self.uc.mem_write(address,code)
+            if result.returncode: raise AssemblyError(result.stdout+result.stderr)
+            return out.read_bytes()
+
+    def assemble(self, source, values):
+        # Same steps as the framework's core.allocateAssembly: format every
+        # constant with Lua's "0x%X", assemble at origin 0, allocate that many
+        # bytes, then assemble again at the allocated address.
         name=next((s.strip()[:-1] for s in source.decode().splitlines() if s.strip().endswith(':')), 'hook')
+        try:
+            pass1=bytes(self.framework_assemble(source, values, 0))
+            address=self.allocate(len(pass1))
+            code=bytes(self.framework_assemble(source, values, address))
+        except AssemblyError as error:
+            raise AssemblyError(name+'\n'+str(error)) from None
+        # The framework writes pass two into the pass-one allocation.
+        assert len(code) <= len(pass1), name+' grew between assembler passes'
+        self.uc.mem_write(address,code)
+        constants={k.decode():int(v) for k,v in values.items()}
         self.blobs[name]=(address,code,constants)
         return address
 
