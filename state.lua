@@ -2,12 +2,12 @@
 -- state belongs here; configuration, code and temporary targeting scratch do not.
 --
 -- Saved formats (`format` entry):
---   1-4  written by 1.3.2-1.7.x; block layouts differ from format 5, so the
---        world keeps its units and this module's timers start fresh.
---   5    1.8.x up to 1.8.19. No unit capacity entry; it is derived from the
---        per-unit blocks, which must all agree.
---   6    1.8.20+. Records the unit capacity, the decoration names and the
---        native graphics ID each custom projectile replaces.
+--   1-4  older block layouts: the world keeps its units and this module's
+--        timers start fresh.
+--   5    no unit capacity entry; it is derived from the per-unit blocks,
+--        which must all agree.
+--   6    records the unit capacity, the decoration names and the native
+--        graphics ID each custom projectile replaces.
 -- Any other value is refused, so a newer or damaged save is never guessed at.
 -- Within formats 5 and 6 every block must be present, have the size its
 -- format defines and stay inside its value range; damaged data is refused.
@@ -78,13 +78,12 @@ end
 
 local ENTITIES = 3000  -- native entity array length, both editions
 local BRAZIER_GM = 138
--- Native sheets a custom projectile can replace (sprite_resources.sheets).
-local PROJECTILE_GM = {[34]=true, [122]=true, [135]=true, [145]=true, [158]=true}
 
 -- blocks: {name, address, size, layout} with `units=true` on per-unit blocks
 -- (size = capacity * 4) and `since=N` on blocks first written by format N.
 -- Layout blocks are rebuilt from the current configuration and never restored.
--- looks: {projectile_gm(type) -> native GM, restore(entity, uid, slot, gm, kind)}
+-- looks: {projectile_gm(kind) -> native GM, native_sheet(kind, gm) -> bool,
+-- restore(entity, uid, slot, gm, kind)}
 -- from init.lua. restore writes `gm` into the game's entity record only if it
 -- is still the same live entity of that kind and still shows the old custom slot.
 function M.new(blocks, config, profile_count, rebuild, capacity, looks)
@@ -153,7 +152,13 @@ function M.new(blocks, config, profile_count, rebuild, capacity, looks)
     -- use the same validator; no pending state is retained between callbacks.
     function state:validate(handle)
         local present = handle:exists('format')
-        if not present and not handle.required then return end
+        if not present then
+            -- A section without its format entry is damaged, not absent.
+            local partial = handle:exists('config')
+            for _, block in ipairs(self.blocks) do partial = partial or handle:exists(block[1] .. '.bin') end
+            assert(not partial, '[custom-projectiles] invalid saved state: format')
+            if not handle.required then return end
+        end
         local format = present and handle:get('format')
         if LEGACY_FORMATS[format] and self.allow_config_changes then
             return {fresh=true, notes={'saved by an older test version (state format ' .. format
@@ -173,7 +178,8 @@ function M.new(blocks, config, profile_count, rebuild, capacity, looks)
         end
         if format == FORMAT then
             -- Format 6 always writes these entries; their absence is damage.
-            assert(type(handle:exists('assets') and handle:get('assets')) == 'string',
+            local assets = handle:exists('assets') and handle:get('assets')
+            assert(type(assets) == 'string' and assets:sub(1, 1) == '{' and assets:sub(-1) == '}',
                 '[custom-projectiles] invalid saved state: assets')
             assert(handle:exists('decoration-names'), '[custom-projectiles] invalid saved graphics names')
             names = decode_names(handle:get('decoration-names'))
@@ -266,13 +272,17 @@ function M.new(blocks, config, profile_count, rebuild, capacity, looks)
         if reset then
             for entity = 1, ENTITIES - 1 do
                 local variant = dword(variants, entity)
+                -- Format 6 defines every saved variant by its native graphics ID.
+                local base = variant ~= 0 and bases and dword(bases, variant)
+                assert(base ~= 0, '[custom-projectiles] invalid saved state: variant-base-gm.bin')
                 local slot = variant ~= 0 and dword(old_slots, variant) or 0
                 if slot ~= 0 then
                     -- The ID the runtime itself checks: format 6 saves it per
-                    -- variant; format 5 falls back to the native type's sheet.
-                    local kind, gm = dword(types, entity), nil
-                    if bases then gm = dword(bases, variant) else gm = looks and looks.projectile_gm(kind) end
-                    assert(PROJECTILE_GM[gm], '[custom-projectiles] invalid saved state: variant-base-gm.bin')
+                    -- variant; format 5 falls back to the native kind's sheet.
+                    local kind = dword(types, entity)
+                    local gm = base or (looks and looks.projectile_gm(kind))
+                    assert(gm and looks.native_sheet(kind, gm),
+                        '[custom-projectiles] invalid saved state: variant-base-gm.bin')
                     if slot ~= gm then fixes[#fixes+1] = {entity, dword(uids, entity), slot, gm, kind} end
                 end
             end
@@ -287,6 +297,13 @@ function M.new(blocks, config, profile_count, rebuild, capacity, looks)
         local old_decor = saved('decoration-gm')
         local layout_changed = old_decor ~= current('decoration-gm')
         if empty(placed) then return end
+        if names then
+            -- Format 6 names every decoration kind it saved.
+            for entity = 1, ENTITIES - 1 do
+                local variant = dword(placed, entity)
+                assert(variant == 0 or names[variant], '[custom-projectiles] invalid saved state: decoration-variant.bin')
+            end
+        end
         local map = {}
         if assets_changed then
             assert(names,

@@ -297,11 +297,19 @@ class GraphicsMigrationTests(unittest.TestCase):
         state, handle = self.transfer(old, new)
         entities = new.get(new.v['FIREPROJ'] + 0x416)
         self.live_arrow(new, self.record(entities, 25), 777)
-        self.live_arrow(new, self.record(entities, 27), 777)  # same UID, wrong slot owner below
-        new.put(self.record(entities, 27) + 0x2A, 14, 2)    # a brazier, not the saved arrow
         state.deserialize(state, handle)
         self.assertEqual(new.get(self.record(entities, 25) + 0x06, 2), 34)
-        self.assertEqual(new.get(self.record(entities, 27) + 0x06, 2), 207)
+
+    def test_restore_skips_a_record_of_another_kind(self):
+        old = self.projectile_in_flight()
+        new = self.units_only()
+        state, handle = self.transfer(old, new)
+        entities = new.get(new.v['FIREPROJ'] + 0x416)
+        record = self.record(entities, 25)
+        self.live_arrow(new, record, 777)
+        new.put(record + 0x2A, 14, 2)  # same index, UID and slot, but a brazier
+        state.deserialize(state, handle)
+        self.assertEqual(new.get(record + 0x06, 2), 207)
 
     def test_save_is_refused_when_game_records_cannot_be_found(self):
         old = self.projectile_in_flight()
@@ -348,6 +356,23 @@ class DamagedSaveTests(unittest.TestCase):
         handle.files[b'variant-gm.bin'] = bytes(slots)
         self.assert_refused(state, handle, 'out-of-range saved state: variant-gm.bin')
 
+    def test_a_section_without_its_format_entry_is_refused(self):
+        new, state, handle = self.changed_handle()
+        handle.files[b'format'] = None
+        self.assert_refused(state, handle, 'invalid saved state: format')
+
+    def test_projectile_sheets_must_fit_the_saved_kind_and_definition(self):
+        new, state, handle = self.changed_handle()
+        bases = bytearray(handle.files[b'variant-base-gm.bin'])
+        bases[4:8] = (135).to_bytes(4, 'little')  # cow sheet for an arrow
+        handle.files[b'variant-base-gm.bin'] = bytes(bases)
+        self.assert_refused(state, handle, 'variant-base-gm.bin')
+        new, state, handle = self.changed_handle()
+        variants = bytearray(handle.files[b'entity-variant.bin'])
+        variants[26 * 4:27 * 4] = (5).to_bytes(4, 'little')  # no variant 5 in the saved definitions
+        handle.files[b'entity-variant.bin'] = bytes(variants)
+        self.assert_refused(state, handle, 'variant-base-gm.bin')
+
     def test_entity_zero_is_refused(self):
         new, state, handle = self.changed_handle()
         handle.files[b'entity-variant.bin'] = (1).to_bytes(4, 'little') + handle.files[b'entity-variant.bin'][4:]
@@ -376,6 +401,7 @@ class DamagedSaveTests(unittest.TestCase):
                 (b'decoration-names', b'0=frost;', 'invalid saved graphics names'),
                 (b'decoration-names', b'34=frost;', 'invalid saved graphics names'),
                 (b'assets', None, 'invalid saved state: assets'),
+                (b'assets', b'garbage', 'invalid saved state: assets'),
                 (b'capacity', b'0x9C4', 'invalid saved unit capacity'),
                 (b'capacity', b'2500.0', 'invalid saved unit capacity'),
                 (b'capacity', b' 2500', 'invalid saved unit capacity')):
@@ -384,6 +410,14 @@ class DamagedSaveTests(unittest.TestCase):
                 state, handle = self.graphics.transfer(old, new)
                 handle.files[name] = value
                 self.assert_refused(state, handle, message)
+
+    def test_placed_decorations_must_be_named_even_when_nothing_changed(self):
+        old = self.graphics.decorations(['frost'])
+        self.graphics.place(old, 40, 1, 4001)
+        new = self.graphics.decorations(['frost'])
+        state, handle = self.graphics.move(old, new)
+        handle.files[b'decoration-names'] = b''
+        self.assert_refused(state, handle, 'decoration-variant.bin')
 
 
 if __name__ == '__main__':

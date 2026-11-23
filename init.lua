@@ -13,8 +13,9 @@ local MAX_PROFILES     = MAX_TYPES * 2
 local MAX_UNITS
 
 local function resolve(native_cadence, config, has_priorities)
-local function locate(pattern)
-    local ok, address = pcall(core.AOBScan, pattern)
+local function locate(pattern, scanned)
+    local ok, address = true, scanned
+    if not scanned then ok, address = pcall(core.AOBScan, pattern) end
     assert(ok and type(address) == 'number' and address >= 0x400000 and address < 0x700000,
         '[custom-projectiles] unsupported executable or conflicting module at signature: ' .. pattern)
     -- A still-valid cached site need not be the first match after another
@@ -59,7 +60,7 @@ local function shared_site(displaced, size, tail, what)
     local plain = displaced .. ' ' .. tail
     local found, address = pcall(core.AOBScan, plain)
     if found and type(address) == 'number' and address >= 0x400000 and address < 0x700000 then
-        return locate(plain)
+        return locate(plain, address)
     end
     local site = locate('E9 ? ? ? ?' .. string.rep(' 90', size - 5) .. ' ' .. tail)
     local chain = (site + 5 + core.readInteger(site + 1)) % 4294967296
@@ -893,8 +894,15 @@ local function install(config)
         {'decoration-uid', data_addr + OFF_DECORUID, 3000*4},
         {'decoration-gm', data_addr + OFF_DECORGM, 34*4, true},
     }, config, MAX_PROFILES, rebuild, MAX_UNITS, {
-        -- Native graphics ID of a projectile type, as spawned by the game.
+        -- Native graphics ID of a projectile kind, as spawned by the game.
         projectile_gm = function(kind) return sprites.projectile_gm[kind] end,
+        -- Whether a native graphics ID fits an entity kind. The game spawns
+        -- fire arrows as arrows (kind 1) on the fire-arrow sheet.
+        native_sheet = function(kind, gm)
+            return gm == sprites.projectile_gm[kind]
+                or (kind == constants.projectile_names.arrow
+                    and gm == sprites.projectile_gm[constants.projectile_names.fire_arrow])
+        end,
         -- Write a native graphics ID back into a game entity record (232
         -- bytes; UID at +0x30, graphics ID at +0x06), only while it is still
         -- the saved entity showing the saved custom slot.
