@@ -203,7 +203,7 @@ class SpriteResourcesTests(unittest.TestCase):
     def test_saved_sprite_layout_conflict_resets_look_or_refuses_in_strict_mode(self):
         h,state,config=self.prepare()
         observer=projectile_tests.NativeTests();handle=observer.state_handle(h)
-        h.put(h.v['ENTITYVARIANT']+4,1)
+        h.put(h.v['ENTITYVARIANT']+4,1);h.put(h.v['ENTITYTYPE']+4,1)  # an arrow variant in flight
         saved=h.sections[b'projectileModifier'];saved.serialize(saved,handle)
         saved.initialize(saved)
         self.assertEqual(h.get(h.v['VARIANTGM']+4),207)
