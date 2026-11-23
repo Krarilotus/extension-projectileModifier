@@ -272,15 +272,13 @@ function M.new(blocks, config, profile_count, rebuild, capacity, looks)
         if reset then
             for entity = 1, ENTITIES - 1 do
                 local variant = dword(variants, entity)
-                -- Format 6 defines every saved variant by its native graphics ID.
-                local base = variant ~= 0 and bases and dword(bases, variant)
-                assert(base ~= 0, '[custom-projectiles] invalid saved state: variant-base-gm.bin')
                 local slot = variant ~= 0 and dword(old_slots, variant) or 0
+                -- Without a custom slot the game record kept its native ID.
                 if slot ~= 0 then
                     -- The ID the runtime itself checks: format 6 saves it per
                     -- variant; format 5 falls back to the native kind's sheet.
                     local kind = dword(types, entity)
-                    local gm = base or (looks and looks.projectile_gm(kind))
+                    local gm = bases and dword(bases, variant) or (looks and looks.projectile_gm(kind))
                     assert(gm and looks.native_sheet(kind, gm),
                         '[custom-projectiles] invalid saved state: variant-base-gm.bin')
                     if slot ~= gm then fixes[#fixes+1] = {entity, dword(uids, entity), slot, gm, kind} end

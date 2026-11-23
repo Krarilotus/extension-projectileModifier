@@ -367,11 +367,14 @@ class DamagedSaveTests(unittest.TestCase):
         bases[4:8] = (135).to_bytes(4, 'little')  # cow sheet for an arrow
         handle.files[b'variant-base-gm.bin'] = bytes(bases)
         self.assert_refused(state, handle, 'variant-base-gm.bin')
+        # A variant without a custom slot left the record native: it is
+        # dropped, and nothing is written into the game record.
         new, state, handle = self.changed_handle()
         variants = bytearray(handle.files[b'entity-variant.bin'])
-        variants[26 * 4:27 * 4] = (5).to_bytes(4, 'little')  # no variant 5 in the saved definitions
+        variants[26 * 4:27 * 4] = (5).to_bytes(4, 'little')
         handle.files[b'entity-variant.bin'] = bytes(variants)
-        self.assert_refused(state, handle, 'variant-base-gm.bin')
+        pending = state.validate(state, handle)
+        self.assertFalse(any(fix[1] == 26 for fix in pending[b'looks'].values()))
 
     def test_entity_zero_is_refused(self):
         new, state, handle = self.changed_handle()
