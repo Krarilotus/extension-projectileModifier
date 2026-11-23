@@ -1,4 +1,3 @@
-import hashlib
 from pathlib import Path
 import struct
 import tempfile
@@ -24,9 +23,9 @@ class SpriteResourcesTests(unittest.TestCase):
 
     def test_owner_rejection_releases_earlier_unreserved_resources(self):
         h=Harness();m=self.module(h);loads=[];freed=[]
-        h.lua.globals().load_resource=lambda path,count,kind:loads.append(path) or ((7,b'0'*64) if len(loads)==1 else (-1,None))
+        h.lua.globals().load_resource=lambda path:loads.append(path) or (7 if len(loads)==1 else -1)
         h.lua.globals().free_resource=lambda resource:freed.append(resource) or True
-        h.lua.execute(b"modules.gmResourceModifier={LoadCompleteGm1Resource=function(self,p,c,t) return load_resource(p,c,t) end, FreeGm1Resource=function(self,r) return free_resource(r) end, ReserveGm=function() end, GetReservedGm=function() end}")
+        h.lua.execute(b"modules.gmResourceModifier={LoadGm1Resource=function(self,p) return load_resource(p) end, FreeGm1Resource=function(self,r) return free_resource(r) end, ReserveGm=function() end, GetReservedGm=function() end}")
         definitions=h.config({'first':{'gm':34,'path':'a.gm1'},'second':{'gm':135,'path':'b.gm1'}})
         with self.assertRaises(LuaError):m.prepare(definitions,h.config({}))
         self.assertEqual(loads,[b'a.gm1',b'b.gm1'])
@@ -40,12 +39,12 @@ class SpriteResourcesTests(unittest.TestCase):
         asset=Path(directory.name)/'arrow.gm1';asset.write_bytes(gm1())
         path=asset.relative_to(ROOT).as_posix()
         requests=[];callbacks=[];loads=[]
-        h.lua.globals().load_resource=lambda path,count,kind:loads.append((path,count,kind)) or (1,hashlib.sha256(asset.read_bytes()).hexdigest().encode())
+        h.lua.globals().load_resource=lambda path:loads.append(path) or 1
         h.lua.globals().reserve_resource=lambda base,resource:requests.append((base,resource)) or 0
         h.lua.globals().free_resource=lambda resource:True
         h.lua.globals().get_reserved=lambda token:207
         h.lua.globals().register_after=lambda hook,callback:callbacks.append((hook,callback))
-        h.lua.execute(b"modules.gmResourceModifier={LoadCompleteGm1Resource=function(self,p,c,t) return load_resource(p,c,t) end, FreeGm1Resource=function(self,r) return free_resource(r) end, ReserveGm=function(self,b,r) return reserve_resource(b,r) end, GetReservedGm=function(self,t) return get_reserved(t) end}; hooks={registerHookCallback=function(h,f) register_after(h,f) end}")
+        h.lua.execute(b"modules.gmResourceModifier={LoadGm1Resource=function(self,p) return load_resource(p) end, FreeGm1Resource=function(self,r) return free_resource(r) end, ReserveGm=function(self,b,r) return reserve_resource(b,r) end, GetReservedGm=function(self,t) return get_reserved(t) end}; hooks={registerHookCallback=function(h,f) register_after(h,f) end}")
         def unexpected_hook(*args):raise AssertionError('consumer installed a private resource loader hook')
         h.lua.globals().core.hookCode=unexpected_hook
         if mutate: mutate(h)
@@ -55,7 +54,7 @@ class SpriteResourcesTests(unittest.TestCase):
         h.v={k:v for _,_,values in h.blobs.values() for k,v in values.items()}
         for owner in range(9):h.put(h.v['TEAMTBL']+owner*4,owner)
         self.assertEqual(requests,[(34,1)])
-        self.assertEqual(loads,[(path.encode(),184,2)])
+        self.assertEqual(loads,[path.encode()])
         self.assertEqual(len(callbacks),1)
         self.assertEqual(callbacks[0][0],b'afterInit')
         self.assertEqual(h.get(h.v['VARIANTGM']+4),0)

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.8.21 (provisional test candidate)
+
+- Custom sprite sheets load through gmResourceModifier's `LoadGm1Resource`;
+  `ReserveGm` checks their image count and type against the base sheet.
+
 ## 1.8.20 (provisional test candidate)
 
 Brings in Monsterfish's 1.8.17 and 1.8.18 changes with save checks that stay
@@ -254,7 +259,7 @@ as strict as before for damaged data.
 
 Implementation is complete for the requested feature list. Rendered gameplay,
 paired multiplayer/replay and long-session acceptance remain required before
-release; see VALIDATION.md. No licensed graphics are distributed.
+release. No licensed graphics are distributed.
 
 ## 1.7.0 (unreleased test candidate)
 

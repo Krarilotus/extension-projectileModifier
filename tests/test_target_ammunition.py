@@ -175,7 +175,7 @@ class TargetAmmunitionTests(unittest.TestCase):
         for extreme in (False, True):
             h = Harness(extreme)
             h.lua.execute(b'''modules.gmResourceModifier={
-                LoadCompleteGm1Resource=function() return 1,string.rep('a',64) end,
+                LoadGm1Resource=function() return 1 end,
                 FreeGm1Resource=function() end, ReserveGm=function() return 0 end,
                 GetReservedGm=function() return 207 end}
                 hooks={registerHookCallback=function() end}''')
