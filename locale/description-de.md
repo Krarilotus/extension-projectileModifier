@@ -59,6 +59,6 @@ units:
 
 ## Andere Erweiterungen
 
-Smarter Walls, Improved Siegeengines oder Improved Tunnelers in der Ladereihenfolge vor Custom Projectiles einordnen.
+Bei Verwendung von Smarter Walls, Improved Siegeengines oder Improved Tunnelers die jeweilige Erweiterung in der Ladereihenfolge vor Custom Projectiles einordnen.
 
 *Hinweis: Dies ist eine maschinelle Übersetzung, die noch auf eine menschliche Prüfung wartet.*

@@ -59,6 +59,6 @@ units:
 
 ## Diğer eklentiler
 
-Smarter Walls, Improved Siegeengines veya Improved Tunnelers kullanıyorsanız, yükleme sırasında bunları Custom Projectiles'tan önceye koyun.
+Smarter Walls, Improved Siegeengines veya Improved Tunnelers kullanıyorsanız bunları yükleme sıralamasında Custom Projectiles'ın önüne yerleştirin.
 
 *Not: Bu metin makine çevirisidir ve insan incelemesi beklemektedir.*
